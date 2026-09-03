@@ -1,0 +1,17 @@
+{
+  "TutorialStageSpec": {
+    "Id": "Wardens.BadwaterAndBiomass.BuildSludgePump",
+    "IntroLocKey": "Tutorial.Wardens.BadwaterAndBiomass.BuildSludgePump"
+  },
+  "Children": {
+    "Step1": {
+      "BuildingTutorialStepSpec": {
+        "TemplateNames": [
+          "SludgePump.Wardens"
+        ],
+        "OnlyFinishedBuildings": true,
+        "RequiredAmount": 1
+      }
+    }
+  }
+}

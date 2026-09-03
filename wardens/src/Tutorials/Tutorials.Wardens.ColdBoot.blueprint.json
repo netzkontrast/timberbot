@@ -1,0 +1,14 @@
+{
+  "TutorialSpec": {
+    "Id": "Wardens.ColdBoot",
+    "NameLocKey": "Tutorial.Wardens.ColdBoot",
+    "RequiredTutorialIds": [],
+    "SkipIfTutorialFinished": "",
+    "SortOrder": 0,
+    "Stages": [
+      "Wardens.ColdBoot.Wake",
+      "Wardens.ColdBoot.Directive"
+    ]
+  },
+  "BlinkingTutorialSpec": {}
+}

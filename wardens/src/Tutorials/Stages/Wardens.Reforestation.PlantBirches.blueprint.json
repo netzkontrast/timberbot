@@ -1,0 +1,14 @@
+{
+  "TutorialStageSpec": {
+    "Id": "Wardens.Reforestation.PlantBirches",
+    "IntroLocKey": "Tutorial.Wardens.Reforestation.PlantBirches"
+  },
+  "Children": {
+    "Step1": {
+      "MarkPlantablesTutorialStepSpec": {
+        "TemplateName": "Birch",
+        "RequiredAmount": 20
+      }
+    }
+  }
+}

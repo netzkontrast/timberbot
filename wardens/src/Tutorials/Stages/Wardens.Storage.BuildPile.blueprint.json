@@ -1,0 +1,24 @@
+{
+  "TutorialStageSpec": {
+    "Id": "Wardens.Storage.BuildPile",
+    "IntroLocKey": "Tutorial.Wardens.Storage.BuildPile"
+  },
+  "Children": {
+    "Step1": {
+      "BuildingTutorialStepSpec": {
+        "TemplateNames": [
+          "ScrapPile.Wardens"
+        ],
+        "OnlyFinishedBuildings": true,
+        "RequiredAmount": 1
+      }
+    },
+    "Step2": {
+      "SelectStockpileGoodTutorialStepSpec": {
+        "TemplateName": "ScrapPile.Wardens",
+        "RequiredAmount": 1,
+        "GoodId": "ScrapMetal"
+      }
+    }
+  }
+}

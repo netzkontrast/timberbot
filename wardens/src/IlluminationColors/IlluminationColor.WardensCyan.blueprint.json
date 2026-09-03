@@ -1,0 +1,14 @@
+{
+  "IlluminationColorSpec": {
+    "Id": "WardensCyan",
+    "Color": {
+      "r": 0.25,
+      "g": 0.85,
+      "b": 1.0,
+      "a": 1.0
+    }
+  },
+  "IlluminationPresetSpec": {
+    "Order": 110
+  }
+}

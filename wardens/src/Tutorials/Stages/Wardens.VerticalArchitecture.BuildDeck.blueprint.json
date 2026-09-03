@@ -1,0 +1,28 @@
+{
+  "TutorialStageSpec": {
+    "Id": "Wardens.VerticalArchitecture.BuildDeck",
+    "IntroLocKey": "Tutorial.Wardens.VerticalArchitecture.BuildDeck"
+  },
+  "Children": {
+    "Step1": {
+      "BuildingTutorialStepSpec": {
+        "TemplateNames": [
+          "Deck.Wardens"
+        ],
+        "OnlyFinishedBuildings": true,
+        "RequiredAmount": 1
+      }
+    },
+    "Step2": {
+      "ConnectBuildingsTutorialStepSpec": {
+        "TemplateName": "Deck.Wardens",
+        "RequiredAmount": 1,
+        "CountUnfinishedBuildings": true,
+        "HighlightableBuildingIds": [
+          "Path",
+          "Stairs.Wardens"
+        ]
+      }
+    }
+  }
+}

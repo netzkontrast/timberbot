@@ -1,0 +1,18 @@
+{
+  "TutorialStageSpec": {
+    "Id": "Wardens.Scrap.ConnectScavengers",
+    "IntroLocKey": "Tutorial.Wardens.Scrap.ConnectScavengers"
+  },
+  "Children": {
+    "Step1": {
+      "ConnectBuildingsTutorialStepSpec": {
+        "TemplateName": "ScavengerFlag.IronTeeth",
+        "RequiredAmount": 2,
+        "CountUnfinishedBuildings": false,
+        "HighlightableBuildingIds": [
+          "Path"
+        ]
+      }
+    }
+  }
+}

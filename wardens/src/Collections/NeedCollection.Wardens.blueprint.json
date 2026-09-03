@@ -1,0 +1,11 @@
+{
+  "NeedCollectionSpec": {
+    "CollectionId": "Wardens",
+    "Needs": [
+      "Firmware",
+      "Calibration",
+      "Telemetry",
+      "Uplink"
+    ]
+  }
+}

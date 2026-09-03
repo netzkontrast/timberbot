@@ -1,0 +1,25 @@
+{
+  "GoodSpec": {
+    "Id": "DataCore",
+    "BackwardCompatibleIds": [],
+    "ConsumptionEffects": [],
+    "GoodType": "Box",
+    "StockpileVisualization": "Box",
+    "VisibleContainer": "Box",
+    "ContainerColor": {
+      "r": 0.16,
+      "g": 0.55,
+      "b": 0.75,
+      "a": 1.0
+    },
+    "ContainerMaterial": "",
+    "CarryingAnimation": "CarryInHands",
+    "Weight": 1,
+    "GoodGroupId": "Materials",
+    "GoodOrder": 90,
+    "Icon": "Sprites/Goods/PunchCardIcon",
+    "ForceImport": false,
+    "DisplayNameLocKey": "Good.DataCore.DisplayName",
+    "PluralDisplayNameLocKey": "Good.DataCore.PluralDisplayName"
+  }
+}

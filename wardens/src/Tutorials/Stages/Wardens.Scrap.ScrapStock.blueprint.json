@@ -1,0 +1,14 @@
+{
+  "TutorialStageSpec": {
+    "Id": "Wardens.Scrap.ScrapStock",
+    "IntroLocKey": "Tutorial.Wardens.Scrap.ScrapStock"
+  },
+  "Children": {
+    "Step1": {
+      "GoodStockStepSpec": {
+        "GoodId": "ScrapMetal",
+        "Amount": 10
+      }
+    }
+  }
+}

@@ -1,0 +1,196 @@
+ID,Text,Comment
+Faction.Wardens.DisplayName,The Wardens,Name of the faction
+Faction.Wardens.Description,"Machines stranded in a poisoned wasteland. They run on badwater, their industry kills the soil, and the only thing they value is Data. Their purpose: make the land livable for beavers again, and remember enough to bring back the ones who came before.",Description of the faction
+Faction.Wardens.WonderCompletionMessage,The Ark is complete.,Wonder completion message
+Faction.Wardens.WonderCompletionFlavor,"Every observation, every failure, every season of green: archived. The Wardens spend it all on a single question. What if the old ones came back?",Wonder completion flavor
+Good.DataCore.DisplayName,Data Core,Item name
+Good.DataCore.PluralDisplayName,Data Cores,Plural item name
+Good.Firmware.DisplayName,Firmware,Item name
+Good.Firmware.PluralDisplayName,Firmware,Plural item name
+Need.Calibration.DisplayName,Calibration,Bot need
+Need.Telemetry.DisplayName,Telemetry,Bot need
+Need.Uplink.DisplayName,Uplink,Bot need
+Wardens.Chat.Title,WARDENS UPLINK,In-game chat panel title
+Wardens.Chat.Send,Send,Chat send button
+Wardens.Chat.Hint,Type here to talk to the agent. Enter sends.,Chat placeholder
+Building.Core.DisplayName,The Core,Wardens district center
+Building.Core.Description,"District center and reactor. Every Warden reports here, and the Core's 150 hp of power runs the first machines.",
+Building.Core.FlavorDescription,It was never meant to run this long. It has not stopped.,
+Building.ChargingPost.DisplayName,Charging Post,Wardens charging station
+Building.ChargingPost.Description,A Warden standing here recharges. Needs 50 hp of power.,
+Building.ChargingPost.FlavorDescription,Power is life.,
+Building.Cruncher.DisplayName,The Cruncher,Wardens research building
+Building.Cruncher.Description,"Turns power into Science Points, or Badwater and Scrap Metal into Data Cores. Never both.",
+Building.Cruncher.FlavorDescription,Research burns power. Choose what to think about.,
+Building.SludgeBurner.DisplayName,Sludge Burner,Wardens generator
+Building.SludgeBurner.Description,Burns Biomass from Sludge Reed for 200 hp of power. Poisons the ground around it.,
+Building.SludgeBurner.FlavorDescription,The first ecological debt. It will not be the last.,
+Building.ReedBed.DisplayName,Reed Bed,Wardens farmhouse
+Building.ReedBed.Description,"Plants and harvests Sludge Reed, the only crop that grows in poisoned soil.",
+Building.ReedBed.FlavorDescription,Something grows here. Nobody said it had to be pretty.,
+NaturalResource.SludgeReed.DisplayName,Sludge Reed,Wardens crop
+NaturalResource.SludgeReed.FlavorDescription,Thrives on contamination. Harvested for Biomass.,
+Good.Biomass.DisplayName,Biomass,Wardens fuel
+Good.Biomass.PluralDisplayName,Biomass,"Wardens fuel, plural"
+Building.WardensPod.DisplayName,Breeding Pod,Wardens pod
+Building.WardensPod.Description,Grows a new beaver from Biomass. Needs 100 hp of power. The pod the Iron Teeth will inherit.,
+Building.WardensPod.FlavorDescription,The first thing the Wardens ever built for someone else.,
+Building.WardensAdvancedPod.DisplayName,Advanced Breeding Pod,Wardens pod
+Building.WardensAdvancedPod.Description,Grows an adult beaver from Biomass and Firmware. Needs 150 hp of power.,
+Building.WardensAdvancedPod.FlavorDescription,It comes out knowing things. Nobody is sure that is a kindness.,
+Building.SludgePump.DisplayName,Sludge Pump,Wardens badwater pump
+Building.SludgePump.Description,"Pumps Badwater, the only liquid this land has to offer. Wardens work it without complaint.",
+Building.SludgePump.FlavorDescription,Do not drink. Nobody here drinks.,
+Building.BadwaterCell.DisplayName,Badwater Cell,Wardens early generator
+Building.BadwaterCell.Description,"Burns Badwater for 100 hp of power. Cheap, dirty, and the first thing that keeps the lights on.",
+Building.BadwaterCell.FlavorDescription,The Wardens run on badwater. So does everything they build.,
+Building.Planter.DisplayName,Planter Rig,Wardens forester
+Building.Planter.Description,Plants trees and bushes in its range. Nothing grows here yet; one day it will.,
+Building.Planter.FlavorDescription,"Directive 2, in hardware.",
+Building.Rack.DisplayName,Crate Rack,Wardens small warehouse
+Building.Rack.Description,"Stores one kind of boxed good, Biomass included. Set the good after selecting the rack.",
+Building.Rack.FlavorDescription,Everything in its place. The Wardens like it that way.,
+Building.HaulerDock.DisplayName,Hauler Dock,Wardens hauling post
+Building.HaulerDock.Description,Wardens stationed here carry goods around the district wherever they are needed.,
+Building.HaulerDock.FlavorDescription,Someone has to carry it. Nobody said it had to be the builder.,
+Building.Deck.DisplayName,Observation Deck,Wardens rooftop terrace
+Building.Deck.Description,"A place to stand and look at the land. Beavers gather here, and their well-being rises.",
+Building.Deck.FlavorDescription,Directive 3: record everything. The view is part of the record.,
+Tutorial.Wardens.ColdBoot,Cold Boot,Tutorial title
+Tutorial.Wardens.ColdBoot.Wake,"SYSTEM RESTART.
+
+The uptime counter overflowed 3,000 days ago. Sensors report no growth, no water worth drinking, no beavers.
+
+Five Wardens online. Power: the Core, and nothing else.",
+Tutorial.Wardens.ColdBoot.Directive,"We were not built to live here. We were built so that others could.
+
+Directive 1: keep the machines running.
+Directive 2: make this land livable.
+Directive 3: record everything. One day, someone will need to know how.",
+Tutorial.Wardens.Basics,Basics,Tutorial title
+Tutorial.Wardens.Basics.MoveCamera,"First, a survey of the site. Move the view across the ground.
+
+Look for ruins. The old world left its metal behind, and metal is the only thing this ground still gives.",
+Tutorial.Wardens.Basics.RotateCamera,Now rotate the view. Ruins hide behind ruins.,
+Tutorial.Wardens.Basics.ZoomCamera,"Zoom in to inspect a single Warden, or pull back to see the whole site.",
+Tutorial.Wardens.Basics.ManagePause,"Time runs whether we are ready or not.
+
+Pause when you need to think. The Wardens will wait. They are good at waiting.",
+Tutorial.Wardens.Basics.ManageSpeed,"Speed up when there is nothing to decide. Wardens do not tire of working, and you should not tire of watching them.",
+Tutorial.Wardens.Scrap,Scrap,Tutorial title
+Tutorial.Wardens.Scrap.PlaceScavengers,"There is no wood here. There is scrap.
+
+Only scavengers collect Scrap Metal, and only from ruins within their flag's range. Place two Scavenger Flags beside the ruins.",
+Tutorial.Wardens.Scrap.FinishScavengers,"The Flags will not be built unless they are in the district's building range.
+
+Select the Core to see its range. Paths connected to the Core's entrance extend it.",
+Tutorial.Wardens.Scrap.ConnectScavengers,"Every building with an entrance must be connected to the Core with a Path. Select a building to see its entrance marked by an arrow.
+
+Build Paths to connect the Scavenger Flags to the Core.",
+Tutorial.Wardens.Scrap.ScrapStock,"Scrap Metal is the only material this land gives freely.
+
+Gather ten. Everything the Wardens will ever build starts as someone else's wreckage.",
+Tutorial.Wardens.BadwaterAndBiomass,Badwater and Biomass,Tutorial title
+Tutorial.Wardens.BadwaterAndBiomass.BuildSludgePump,"Wardens do not drink. They do need Badwater: it feeds the generators and, later, the Data Cores.
+
+Build a Sludge Pump on a badwater source and connect it to the Core.",
+Tutorial.Wardens.BadwaterAndBiomass.BuildChargingPost,"Power is life. A Warden that runs dry stops where it stands, and it does not get up again.
+
+Build a Charging Post next to the Core. Then select a Warden and read its Energy; keep every unit above half charge.",
+Tutorial.Wardens.BadwaterAndBiomass.BuildReedBed,"Directive 2 needs something that grows. Sludge Reed grows in poisoned soil, and its Biomass will feed the pods.
+
+Build a Reed Bed. Like flags, it has a limited range.",
+Tutorial.Wardens.BadwaterAndBiomass.PlantReed,"The Reed Bed does not start working until you tell it what and where to plant.
+
+Use the Plant Crops tool to designate a Sludge Reed field. Reed asks for no irrigation. It asks for nothing at all.",
+Tutorial.Wardens.WorkingHours,Working hours,Tutorial title
+Tutorial.Wardens.WorkingHours.SetWorkingHours,"Wardens do not sleep, but the Core sets a shift length for everything that works here.
+
+Longer shifts mean faster progress and a faster drain on the units. For now, extend the shift a little.",
+Tutorial.Wardens.Storage,Storage,Tutorial title
+Tutorial.Wardens.Storage.BuildPile,"Many buildings have some built-in storage, and it fills up quickly.
+
+Build a Scrap Pile. Each storage building holds a single good; set it after selecting the building.",
+Tutorial.Wardens.Storage.BuildTanks,"All liquids are stored in tanks, Badwater included.
+
+Build two Sludge Tanks and set them to Badwater.",
+Tutorial.Wardens.Storage.BuildRacks,"Biomass is a boxed good, and boxed goods go in racks.
+
+Build a Crate Rack and set it to Biomass before the first harvest comes in.",
+Tutorial.Wardens.Science,Science,Tutorial title
+Tutorial.Wardens.Science.BuildCruncher,"Metal is not the goal. Knowledge is.
+
+Build the Cruncher and connect it to the Core with a Power Shaft. The Core can barely run it; that is the point.",
+Tutorial.Wardens.Science.SciencePoints,"For now, let the Cruncher think.
+
+Once enough Science Points accumulate, we will spend them to unlock what the Wardens forgot how to build.",
+Tutorial.Wardens.Housing,Pods,Tutorial title
+Tutorial.Wardens.Housing.BuildPods,"We were built so that others could live here. Breeding Pods grow beavers from Biomass.
+
+Build two Breeding Pods. They stay dark until they have power; that comes next.",
+Tutorial.Wardens.Power,Power and pods,Tutorial title
+Tutorial.Wardens.Power.BuildCell,"The Core cannot feed everything. Wardens run on what this land has: Badwater.
+
+Build a Badwater Cell. It burns Badwater from the Sludge Pump for 100 hp of power.",
+Tutorial.Wardens.Power.PowerPods,"Connect the Cell to a Breeding Pod with Power Shafts.
+
+Tip: buildings placed wall to wall pass power to each other. No shafts needed.",
+Tutorial.Wardens.MoreBeavers,First beaver,Tutorial title
+Tutorial.Wardens.MoreBeavers.FirstBeaver,"A pod needs power and Biomass, then five days.
+
+Wait for the first beaver. It will not know what the Wardens are. It will not need to.",
+Tutorial.Wardens.Reforestation,Reforestation,Tutorial title
+Tutorial.Wardens.Reforestation.UnlockPlanter,"Directive 2: make this land livable.
+
+Using Science Points from the Cruncher, unlock the Planter Rig. Then build it where you want trees to grow.",
+Tutorial.Wardens.Reforestation.PlantBirches,"Use the Plant Trees and Bushes tool to plant Birches. They grow quickly and ask for little.
+
+Trees only grow on irrigated, green ground. Find some. There is not much.",
+Tutorial.Wardens.Wellbeing,Maintenance,Tutorial title
+Tutorial.Wardens.Wellbeing.SelectWarden,"You can see the state of every unit.
+
+Select a Warden by clicking on it. Its panel shows Energy, attributes and needs. A need at zero has consequences.",
+Tutorial.Wardens.Wellbeing.WellbeingPanel,"The settlement's average well-being is shown in the top left corner.
+
+Click it to see every need and how well it is met. Wardens have few needs. The beavers will have more.",
+Tutorial.Wardens.Wellbeing.SetWorkingHours,"Long shifts drain Wardens faster than the Charging Posts can fill them.
+
+For now, return to the default working hours.",
+Tutorial.Wardens.Dams,Dams,Tutorial title
+Tutorial.Wardens.Dams.BuildDam,"Tanks hold Badwater for a while. Long-term survival depends on taming the flow of water.
+
+Build a line of Dams across the nearest river, bank to bank, and observe what happens.",
+Tutorial.Wardens.VerticalArchitecture,Vertical architecture,Tutorial title
+Tutorial.Wardens.VerticalArchitecture.BuildDeck,"Space is scarce in the wasteland. The Wardens build upward.
+
+Some buildings have flat roofs that can support other structures. Build an Observation Deck on one; you may need Stairs to connect it.",
+Tutorial.Wardens.Droughts,Droughts,Tutorial title
+Tutorial.Wardens.Droughts.Description,"The settlement has survived its first drought.
+
+Droughts are part of the seasonal cycle. They return, and each one lasts longer.
+
+If you have not built a dam, build one before the next.",
+Tutorial.Wardens.Badtides,Badtides,Tutorial title
+Tutorial.Wardens.Badtides.Description,"The settlement has weathered its first badtide.
+
+Badwater is nothing new to the Wardens, but the beavers and the reeds are not so indifferent. Future badtides will not be as forgiving.",
+Tutorial.Wardens.Haulers,Haulers and workforce,Tutorial title
+Tutorial.Wardens.Haulers.BuildHaulerDock,"As the settlement grows, it moves more goods. Transport takes a large part of a unit's shift.
+
+Haulers help. They move goods around the entire district, following demand. Build a Hauler Dock.",
+Tutorial.Wardens.Haulers.ChangeWorkforce,"Some workplaces, the Hauler Dock included, do not fill all their slots by default. Change the desired number of workers in the building's panel.
+
+Workplace priorities control staffing too. The Dock can usually run on low priority. Try both now.",
+Tutorial.Wardens.Haulers.PauseHaulerDock,"Buildings and construction sites can be paused. Paused workplaces are vacated at once and the units reassign themselves.
+
+Select the Hauler Dock and pause it from its panel.",
+Tutorial.Wardens.LayerTool,Layer tool,Tutorial title
+Tutorial.Wardens.LayerTool.ChangeUsingUI,"As the settlement grows upward, working beneath buildings gets difficult.
+
+The Layer tool hides everything above the selected layer. Change the visible layer with the highlighted buttons.",
+Tutorial.Wardens.LayerTool.ChangeUsingMouse,"The visible layer also has key bindings, like most actions. Find them in tooltips or in the Settings menu.",
+Tutorial.Wardens.SelectWarden,Select a Warden,Tutorial step
+Tutorial.Wardens.GoodStock,Stock: {0} ({1}/{2}),"{0} good name, {1} amount in stock, {2} amount required"
+Tutorial.Wardens.BotsCharged,Charge: every Warden above {0}% ({1}/{2}),"{0} percent, {1} charged bots, {2} all bots"
+Tutorial.Wardens.Beavers,Beavers: ({0}/{1}),"{0} beavers alive, {1} required"
+Tutorial.Wardens.Never,(disabled),Placeholder name for vanilla tutorials switched off for the Wardens

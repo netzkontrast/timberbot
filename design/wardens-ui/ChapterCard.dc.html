@@ -1,0 +1,92 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600;700&amp;display=swap">
+  <style>
+    body { margin: 0; font-family: 'Cabin', 'Segoe UI', system-ui, sans-serif; background: #1b2219; }
+    a { color: #5ee0ea; } a:hover { color: #e8e84c; }
+    .t13 { font-size: 13px; line-height: 16px; color: #cccccc; }
+    .ann { font-size: 11px; line-height: 14px; color: #9a865e; }
+    .card { width: 400px; display: flex; flex-direction: column; }
+    .content { background: rgba(48,35,55,0.85); padding: 4px 22px 4px 4px; position: relative; display: flex; flex-direction: column; }
+    .header { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 4px 8px 4px 4px; background: rgba(48,35,55,0.92); border-top: 1px solid rgba(179,179,128,0.8); }
+    .step { display: flex; align-items: center; gap: 4px; padding: 2px 4px; }
+    .box { width: 16px; height: 16px; box-sizing: border-box; border: 1.5px solid #cccccc; border-radius: 2px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .chip { margin-left: auto; padding: 0 4px; background: #9a865e; color: #000000; font-size: 13px; line-height: 16px; border-radius: 1px; white-space: nowrap; }
+  </style>
+</helmet>
+<div style="width: 900px; height: 340px; position: relative; overflow: hidden; background: linear-gradient(180deg, #2f3a2c 0%, #222a20 60%, #1a2018 100%); padding: 16px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px;">
+
+  <div style="display: flex; flex-direction: column; gap: 3px;">
+    <div style="font-size: 15px; line-height: 18px; color: #cccccc; font-weight: 600;">Chapter card · vanilla tutorial panel, 400 px, bottom-right</div>
+    <div class="ann">Header sits under the content, as in the game. Copy is localization only. The progress chip on each step reuses the key-binding style and is the one addition.</div>
+  </div>
+
+  <div style="display: flex; gap: 40px; align-items: flex-end;">
+
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <div class="ann">In progress</div>
+      <div class="card">
+        <div class="content">
+          <div style="position: absolute; right: 5px; top: 4px; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 18 18" width="14" height="14" xmlns="http://www.w3.org/2000/svg"><path d="M3 6l6 6 6-6" fill="none" stroke="#cccccc" stroke-width="2"></path></svg></div>
+          <div class="t13" style="padding: 4px;">Keep the machines charged. Find metal. Nothing else matters yet.</div>
+          <div style="margin-top: 2px; display: flex; flex-direction: column;">
+            <div class="step">
+              <div class="box"></div>
+              <span class="t13">Stockpile 20 Metal Parts</span>
+              <span class="chip">12 / 20</span>
+            </div>
+            <div class="step">
+              <div class="box"></div>
+              <span class="t13">Keep every Warden above 50% charge for one full day</span>
+              <span class="chip">0 / 1 d</span>
+            </div>
+          </div>
+        </div>
+        <div class="header">
+          <svg viewBox="0 0 98 98" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><path d="M49 6l37 21v44L49 92 12 71V27z" fill="#9a4a22" stroke="#15120f" stroke-width="3" stroke-linejoin="round"></path><circle cx="49" cy="49" r="24" fill="#15120f"></circle><circle cx="49" cy="49" r="14" fill="#5ee0ea"></circle><circle cx="49" cy="49" r="5" fill="#15120f"></circle></svg>
+          <span class="t13" style="margin: 0 8px; flex: 1; text-align: right;">Chapter 1 — First Light</span>
+          <span class="t13">1/3</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <div class="ann">All goals met · header highlights, Continue appears</div>
+      <div class="card">
+        <div class="content">
+          <div style="position: absolute; right: 5px; top: 4px; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 18 18" width="14" height="14" xmlns="http://www.w3.org/2000/svg"><path d="M3 6l6 6 6-6" fill="none" stroke="#cccccc" stroke-width="2"></path></svg></div>
+          <div class="t13" style="padding: 4px;">Keep the machines charged. Find metal. Nothing else matters yet.</div>
+          <div style="margin-top: 2px; display: flex; flex-direction: column;">
+            <div class="step">
+              <div class="box" style="border-color: #5ee0ea;"><svg viewBox="0 0 16 16" width="12" height="12" xmlns="http://www.w3.org/2000/svg"><path d="M3 8l3 3 7-7" fill="none" stroke="#5ee0ea" stroke-width="2.2"></path></svg></div>
+              <span class="t13">Stockpile 20 Metal Parts</span>
+              <span class="chip">20 / 20</span>
+            </div>
+            <div class="step">
+              <div class="box" style="border-color: #5ee0ea;"><svg viewBox="0 0 16 16" width="12" height="12" xmlns="http://www.w3.org/2000/svg"><path d="M3 8l3 3 7-7" fill="none" stroke="#5ee0ea" stroke-width="2.2"></path></svg></div>
+              <span class="t13">Keep every Warden above 50% charge for one full day</span>
+              <span class="chip">1 / 1 d</span>
+            </div>
+          </div>
+          <div style="align-self: center; min-width: 50%; margin: 4px 0 4px 18px; padding: 4px; box-sizing: border-box; display: flex; justify-content: center; background: linear-gradient(#8a7a52, #6e6040); border: 1px solid #b3b380; border-radius: 3px;"><span class="t13" style="color: #ffffff;">Continue</span></div>
+        </div>
+        <div class="header" style="background: rgba(179,179,128,0.85);">
+          <svg viewBox="0 0 98 98" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><path d="M49 6l37 21v44L49 92 12 71V27z" fill="#3a2a1e" stroke="#15120f" stroke-width="3" stroke-linejoin="round"></path><circle cx="49" cy="49" r="24" fill="#15120f"></circle><circle cx="49" cy="49" r="14" fill="#5ee0ea"></circle><circle cx="49" cy="49" r="5" fill="#15120f"></circle></svg>
+          <span class="t13" style="margin: 0 8px; flex: 1; text-align: right; color: #000000;">Chapter 1 — First Light</span>
+          <span class="t13" style="color: #000000;">1/3</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "TutorialSpec": {
+    "Id": "Wardens.WorkingHours",
+    "NameLocKey": "Tutorial.Wardens.WorkingHours",
+    "RequiredTutorialIds": [
+      "Wardens.BadwaterAndBiomass"
+    ],
+    "SkipIfTutorialFinished": "Wardens.Wellbeing",
+    "SortOrder": 35,
+    "Stages": [
+      "Wardens.WorkingHours.SetWorkingHours"
+    ]
+  }
+}

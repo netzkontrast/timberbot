@@ -1,0 +1,14 @@
+{
+  "TutorialSpec": {
+    "Id": "Wardens.Droughts",
+    "NameLocKey": "Tutorial.Wardens.Droughts",
+    "RequiredTutorialIds": [
+      "SurvivedFirstDroughtTrigger"
+    ],
+    "SkipIfTutorialFinished": "",
+    "SortOrder": 150,
+    "Stages": [
+      "Wardens.Droughts.Description"
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "TutorialSpec": {
+    "Id": "Wardens.Scrap",
+    "NameLocKey": "Tutorial.Wardens.Scrap",
+    "RequiredTutorialIds": [
+      "Wardens.Basics"
+    ],
+    "SkipIfTutorialFinished": "",
+    "SortOrder": 20,
+    "Stages": [
+      "Wardens.Scrap.PlaceScavengers",
+      "Wardens.Scrap.FinishScavengers",
+      "Wardens.Scrap.ConnectScavengers",
+      "Wardens.Scrap.ScrapStock"
+    ]
+  }
+}

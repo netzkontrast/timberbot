@@ -1,0 +1,14 @@
+{
+  "TutorialStageSpec": {
+    "Id": "Wardens.BadwaterAndBiomass.PlantReed",
+    "IntroLocKey": "Tutorial.Wardens.BadwaterAndBiomass.PlantReed"
+  },
+  "Children": {
+    "Step1": {
+      "MarkPlantablesTutorialStepSpec": {
+        "TemplateName": "SludgeReed",
+        "RequiredAmount": 40
+      }
+    }
+  }
+}

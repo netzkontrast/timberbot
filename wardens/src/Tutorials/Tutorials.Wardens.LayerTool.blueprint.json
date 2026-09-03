@@ -1,0 +1,15 @@
+{
+  "TutorialSpec": {
+    "Id": "Wardens.LayerTool",
+    "NameLocKey": "Tutorial.Wardens.LayerTool",
+    "RequiredTutorialIds": [
+      "Wardens.PlatformBuiltTrigger"
+    ],
+    "SkipIfTutorialFinished": "",
+    "SortOrder": 160,
+    "Stages": [
+      "Wardens.LayerTool.ChangeUsingUI",
+      "Wardens.LayerTool.ChangeUsingMouse"
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "TutorialSpec": {
+    "Id": "Wardens.VerticalArchitecture",
+    "NameLocKey": "Tutorial.Wardens.VerticalArchitecture",
+    "RequiredTutorialIds": [
+      "StairsUnlockedTrigger",
+      "Wardens.Wellbeing"
+    ],
+    "SkipIfTutorialFinished": "",
+    "SortOrder": 110,
+    "Stages": [
+      "Wardens.VerticalArchitecture.BuildDeck"
+    ]
+  }
+}

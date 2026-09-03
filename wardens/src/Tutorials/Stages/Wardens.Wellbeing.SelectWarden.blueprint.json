@@ -1,0 +1,16 @@
+{
+  "TutorialStageSpec": {
+    "Id": "Wardens.Wellbeing.SelectWarden",
+    "IntroLocKey": "Tutorial.Wardens.Wellbeing.SelectWarden"
+  },
+  "Children": {
+    "Step1": {
+      "SelectEntityStepSpec": {
+        "TemplateNames": [
+          "Bot.IronTeeth"
+        ],
+        "DescriptionLocKey": "Tutorial.Wardens.SelectWarden"
+      }
+    }
+  }
+}

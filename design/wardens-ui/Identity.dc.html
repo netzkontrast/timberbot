@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600;700&amp;display=swap">
+  <style>
+    body { margin: 0; font-family: 'Cabin', 'Segoe UI', system-ui, sans-serif; background: #1b2219; }
+    a { color: #5ee0ea; } a:hover { color: #e8e84c; }
+    .ann { font-size: 11px; line-height: 14px; color: #9a865e; }
+    .h { font-size: 15px; line-height: 18px; color: #cccccc; font-weight: 600; }
+    .t13 { font-size: 13px; line-height: 16px; color: #cccccc; }
+    .sw { display: flex; flex-direction: column; gap: 4px; width: 118px; }
+    .sw-c { height: 44px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.5); }
+    .sw-n { font-size: 12px; line-height: 14px; color: #cccccc; }
+    .sw-v { font-size: 10px; line-height: 12px; color: #9a865e; }
+    .type { display: flex; align-items: baseline; gap: 12px; }
+    .type-l { width: 150px; font-size: 10px; line-height: 12px; color: #9a865e; }
+  </style>
+</helmet>
+<div style="width: 700px; height: 700px; position: relative; overflow: hidden; background: linear-gradient(180deg, #2f3a2c 0%, #222a20 60%, #1a2018 100%); padding: 16px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px;">
+
+  <div style="display: flex; flex-direction: column; gap: 3px;">
+    <div class="h">Identity and tokens</div>
+    <div class="ann">Game UI values lifted from the shipped stylesheets; Wardens colours from the faction pillars. Cabin stands in for the game font, which is not on disk.</div>
+  </div>
+
+  <div style="display: flex; gap: 20px; align-items: center;">
+    <svg viewBox="0 0 98 98" width="128" height="128" xmlns="http://www.w3.org/2000/svg" style="flex-shrink: 0;"><path d="M49 6l37 21v44L49 92 12 71V27z" fill="#9a4a22" stroke="#15120f" stroke-width="3" stroke-linejoin="round"></path><circle cx="49" cy="49" r="24" fill="#15120f"></circle><circle cx="49" cy="49" r="14" fill="#5ee0ea"></circle><circle cx="49" cy="49" r="5" fill="#15120f"></circle><path d="M49 18v8M49 72v8M18 49h8M72 49h8" stroke="#e8e84c" stroke-width="4" stroke-linecap="round"></path></svg>
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <div style="font-size: 22px; line-height: 26px; color: #ffffff;">The Wardens</div>
+      <div class="t13" style="max-width: 460px; text-wrap: pretty;">Machines stranded in a poisoned wasteland. They run on badwater, their industry kills the soil, and the only thing they value is Data. Their purpose: make the land livable for beavers again.</div>
+      <div class="ann">Logo: a hex nut around an aperture. Machine outside, watcher inside. Reads at 22 px in the chapter header and at 512 px as the faction avatar.</div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px;">
+    <div class="ann">Wardens colours</div>
+    <div style="display: flex; gap: 12px;">
+      <div class="sw"><div class="sw-c" style="background: #9a4a22;"></div><span class="sw-n">Rust</span><span class="sw-v">#9a4a22 · Warden-made metal</span></div>
+      <div class="sw"><div class="sw-c" style="background: #15120f;"></div><span class="sw-n">Slag</span><span class="sw-v">#15120f · outlines, shadow, pools</span></div>
+      <div class="sw"><div class="sw-c" style="background: #e8e84c;"></div><span class="sw-n">Warning</span><span class="sw-v">#e8e84c · burns, pollutes, locked</span></div>
+      <div class="sw"><div class="sw-c" style="background: #5ee0ea;"></div><span class="sw-n">Data light</span><span class="sw-v">#5ee0ea · only where Data flows</span></div>
+      <div class="sw"><div class="sw-c" style="background: #6b6b66;"></div><span class="sw-n">Steel</span><span class="sw-v">#6b6b66 · salvage, cradles, masts</span></div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px;">
+    <div class="ann">Game UI colours the mod inherits</div>
+    <div style="display: flex; gap: 12px;">
+      <div class="sw"><div class="sw-c" style="background: #1d3529;"></div><span class="sw-n">Panel</span><span class="sw-v">rgb(29,53,41) · entity panels</span></div>
+      <div class="sw"><div class="sw-c" style="background: #302337;"></div><span class="sw-n">Tutorial</span><span class="sw-v">rgb(48,35,55) · chapter card</span></div>
+      <div class="sw"><div class="sw-c" style="background: #b3b380;"></div><span class="sw-n">Highlight</span><span class="sw-v">rgb(179,179,128) · goals met</span></div>
+      <div class="sw"><div class="sw-c" style="background: #9a865e;"></div><span class="sw-n">Key chip</span><span class="sw-v">rgb(154,134,94) · bindings, counts</span></div>
+      <div class="sw"><div class="sw-c" style="background: #cccccc;"></div><span class="sw-n">Text</span><span class="sw-v">rgb(204,204,204) · white for names</span></div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 6px;">
+    <div class="ann">Type ramp · the game's own classes</div>
+    <div class="type"><span class="type-l">entity-panel__sub-text · 12</span><span style="font-size: 12px; line-height: 15px; color: #cccccc;">Calibration 62%</span></div>
+    <div class="type"><span class="type-l">game-text-normal · 13</span><span style="font-size: 13px; line-height: 16px; color: #cccccc;">Stockpile 20 Metal Parts</span></div>
+    <div class="type"><span class="type-l">text--default · 14</span><span style="font-size: 14px; line-height: 17px; color: #ffffff;">Network power supply / demand: 150 / 120</span></div>
+    <div class="type"><span class="type-l">game-text-title · 18</span><span style="font-size: 18px; line-height: 22px; color: #ffffff;">The Core</span></div>
+    <div class="type"><span class="type-l">text--header · 22</span><span style="font-size: 22px; line-height: 26px; color: #ffffff;">The Wardens</span></div>
+    <div class="type"><span class="type-l">weather header · 24</span><span style="font-size: 24px; line-height: 28px; color: #e1e1e1; text-shadow: 0 0 4px #000000;">Chapter 1 complete</span></div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

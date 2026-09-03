@@ -1,0 +1,15 @@
+{
+  "TutorialSpec": {
+    "Id": "Wardens.Power",
+    "NameLocKey": "Tutorial.Wardens.Power",
+    "RequiredTutorialIds": [
+      "Wardens.Housing"
+    ],
+    "SkipIfTutorialFinished": "",
+    "SortOrder": 70,
+    "Stages": [
+      "Wardens.Power.BuildCell",
+      "Wardens.Power.PowerPods"
+    ]
+  }
+}

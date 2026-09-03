@@ -1,0 +1,18 @@
+{
+  "TutorialSpec": {
+    "Id": "Wardens.Basics",
+    "NameLocKey": "Tutorial.Wardens.Basics",
+    "RequiredTutorialIds": [
+      "Wardens.ColdBoot"
+    ],
+    "SkipIfTutorialFinished": "",
+    "SortOrder": 10,
+    "Stages": [
+      "Wardens.Basics.MoveCamera",
+      "Wardens.Basics.RotateCamera",
+      "Wardens.Basics.ZoomCamera",
+      "Wardens.Basics.ManagePause",
+      "Wardens.Basics.ManageSpeed"
+    ]
+  }
+}
