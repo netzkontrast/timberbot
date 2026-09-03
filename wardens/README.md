@@ -39,6 +39,7 @@ src/
   WardensMcpTools.cs                 the tool table
   PollutingBuilding.cs               Spike B stub
   Timberbot/                         verbatim copy of ../../timberbot/src (paths point at Mods/Wardens)
+  Maps/Wardens Wasteland.timber      the shipped map (tools/gen_map.py); deploy also installs it to Documents/Timberborn/Maps
 playtest/                            smoke.py (Timberbot API), mcp_smoke.py (MCP), PLAYTEST.md
 ```
 
@@ -101,7 +102,17 @@ as in vanilla; Dam, Hauler Dock and Observation Deck are free because their tuto
 - `tools/validate.py` cross-checks the C# table against the blueprints: every padlocked template has a
   chapter, every chapter template exists and is padlocked, the gating tutorial exists, loc rows present.
 
-Act I only. Out of scope for now: remediation, the Ark, custom art, the wasteland map.
+Act I only. Out of scope for now: remediation, the Ark, custom art.
+
+## The map
+
+`tools/gen_map.py` writes `Maps/Wardens Wasteland.timber`, the wasteland the faction design asks for: a badwater
+river from three sources at the north edge meandering to the south edge, the Sump beside the Core for the
+Sludge Pump, ruin clusters in scavenging range, underground ruins for later mines, and one clean spring in the
+north-east as the only green. The build deploys it into the mod folder and into `Documents/Timberborn/Maps`
+(override with `-p:MapsDir=...`), where the new-game screen lists it as `[Custom] Wardens Wasteland`. Design,
+file format and the choices behind them: [`../design/wardens-wasteland.md`](../design/wardens-wasteland.md).
+`gen_map.py --check <file>` runs the static checks; the generator runs them after every write.
 
 ## Art (v0.2)
 

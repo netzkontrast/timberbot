@@ -8,7 +8,8 @@ that Claude Code connects to directly.
 1. Build + deploy: `dotnet build wardens/src/Wardens.csproj -c Release`.
 2. In Timberborn's Mod Manager enable **The Wardens** and **disable Timberbot API** (the same
    code is compiled into the Wardens; two copies fight over port 8085).
-3. New Game → faction **The Wardens**, tutorial toggle on → any map for now. The Cold Boot
+3. New Game → faction **The Wardens**, tutorial toggle on → map **[Custom] Wardens Wasteland** (the
+   build installs it to `Documents/Timberborn/Maps`; any map works if it is missing). The Cold Boot
    orbit plays (14 s, paused), then the cards appear bottom-right.
 4. Save as settlement `Wardens`, save `smoke` so `tbot launch --settlement=Wardens --save=smoke` can
    reload it.
@@ -87,6 +88,13 @@ Every tool result may carry `chat`: player messages not yet delivered to the age
   (or start with the tutorial off, which opens every chapter). `"chapterGating": false` in
   `settings.json` does the same for every game.
 - `python wardens/tools/validate.py` must print `problems: none` before every in-game test.
+- The map (`design/wardens-wasteland.md`): the game may show an "older version" notice on load (the file
+  claims 0.7.10 on purpose). Expect the Core on a flat pad with a dry basin east of it that the badwater
+  from the north edge fills during the first day; ruin columns to the north-west and south of the Core;
+  a pond with pines and birches on the hill in the north-east. If the map does not appear in the list,
+  check `Documents/Timberborn/Maps/Wardens Wasteland.timber` exists; if it fails to load, the log names
+  the singleton or template, and `python wardens/tools/gen_map.py --check "<file>"` rules out the
+  static causes.
 - A Charging Post next to the Core, connected by a shaft, is what keeps the bots alive; build it first.
 - The Forestry section must show plant buttons for the common trees (Planter Rig) and Sludge Reed
   (Reed Bed); a missing planter building for a plantable crashes the bottom bar at load.
