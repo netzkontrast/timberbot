@@ -90,6 +90,10 @@ tbot watch --backend claude                         # long-running agent connect
 - **Safe by default**. Binds to `127.0.0.1`, refuses to start with a non-loopback listenAddress unless `authToken` is set, caps request body size.
 - **Zero-alloc hot path**. No garbage collection pressure on read endpoints.
 
+## The Wardens
+
+`wardens/` is a second mod built on the same code: a Timberborn faction in which the AI is a character. Bots are the starting population, their wellbeing is Data, a story tutorial opens the building bar chapter by chapter, the land is a generated wasteland, and an MCP server inside the game lets Claude Code play beside you: it reads a playbook, lives on a tick-driven `frame` heartbeat that tells it where to look, talks through an in-game panel, and acts through the Timberbot API compiled into the same DLL. Start at [`wardens/README.md`](wardens/README.md); the stance behind it is [`design/wardens-play.md`](design/wardens-play.md).
+
 ## Docs
 
 - [Getting Started](docs/getting-started.md). install, first steps, examples
@@ -100,7 +104,8 @@ tbot watch --backend claude                         # long-running agent connect
 - [Architecture](docs/architecture.md). internals, thread model, read/write pipeline, WS broadcaster
 - [Automation Plan](design/automation-plan.md). decompiled wiring API and `/api/automation/*` design
 - [Agent Prompts](python/src/timberbot/agent_prompts/). drop-in gameplay prompts (`timberbot`, `scout`, `wirer`, `auditor`, `connector-mode`). Materialize editable copies into your user config dir with `tbot init`. The development-agent prompt for working on this codebase lives separately at [`agents/beaver-developer.md`](agents/beaver-developer.md).
-- [Repo Guide](AGENTS.md). project layout, build commands, conventions
+- [Repo Guide](AGENTS.md). project layout, build commands, conventions, and the Wardens' current state
+- [The Wardens](wardens/README.md). the faction mod: chapters, the wasteland map, the in-game MCP server, the agent's playbook ([`WARDEN.md`](wardens/WARDEN.md))
 - [Developing](docs/developing.md). build from source, add endpoints, cutting a GitHub release
 
 ## Settings

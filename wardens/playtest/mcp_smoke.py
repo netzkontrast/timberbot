@@ -76,7 +76,7 @@ def main() -> int:
     tools = mcp.request("tools/list")["tools"]
     names = sorted(t["name"] for t in tools)
     print(f"tools ({len(names)}): {' '.join(names)}")
-    expected = {"wardens_status", "tutorial", "point", "say", "chat_read", "camera", "timberbot", "timberbot_ready"}
+    expected = {"wardens_status", "tutorial", "chapter", "frame", "manual", "point", "say", "chat_read", "camera", "timberbot", "timberbot_ready"}
     missing = expected - set(names)
     if missing:
         print("FAIL missing tools:", sorted(missing))

@@ -22,6 +22,7 @@
     <GameManagedDir Condition="'$(GameManagedDir)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">$(HOME)/Library/Application Support/Steam/steamapps/common/Timberborn/Timberborn.app/Contents/Resources/Data/Managed</GameManagedDir>
     <GameManagedDir Condition="'$(GameManagedDir)' == '' and $([MSBuild]::IsOSPlatform('Linux'))">$(HOME)/.local/share/Steam/steamapps/common/Timberborn/Timberborn_Data/Managed</GameManagedDir>
     <ModDir Condition="'$(ModDir)' == ''">$(UserHome)/Documents/Timberborn/Mods/Wardens</ModDir>
+    <MapsDir Condition="'$(MapsDir)' == ''">$(UserHome)/Documents/Timberborn/Maps</MapsDir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -166,6 +167,9 @@
   <ItemGroup>
     <!-- Everything the game loads from the mod folder besides the DLL. -->
     <ModContent Include="**\*" Exclude="bin\**;obj\**;**\*.cs;Wardens.csproj;Directory.Build.props;manifest.json;settings.json;thumbnail.png;.gitignore;.leafcoats-import.txt" />
+    <!-- The wasteland map (tools/gen_map.py). Shipped inside the mod and, because the game reads
+         custom maps from Documents/Timberborn/Maps, also installed there on deploy. -->
+    <MapFiles Include="Maps\*.timber" />
   </ItemGroup>
 
   <!-- Every build is a new version (user rule): tools/bump_version.py bumps manifest.json,
@@ -188,7 +192,9 @@
          would flatten Factions\X.json to X.json, breaking the FactionSpec.BlueprintModifiers paths. -->
     <Copy SourceFiles="@(ModContent)" DestinationFiles="@(ModContent->'$(ModDir)\%(RelativeDir)%(Filename)%(Extension)')" />
     <MakeDir Directories="$(ModDir)\docs" />
-    <Copy SourceFiles="..\..\docs\api-reference.md;..\..\docs\events.md;..\..\docs\websocket-protocol.md" DestinationFolder="$(ModDir)\docs" />
+    <Copy SourceFiles="..\..\docs\api-reference.md;..\..\docs\events.md;..\..\docs\websocket-protocol.md;..\WARDEN.md" DestinationFolder="$(ModDir)\docs" />
+    <MakeDir Directories="$(MapsDir)" />
+    <Copy SourceFiles="@(MapFiles)" DestinationFolder="$(MapsDir)" />
     <Message Text="Deployed Wardens (with Timberbot) to $(ModDir)" Importance="high" />
   </Target>
 

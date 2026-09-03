@@ -32,6 +32,7 @@ namespace Wardens
         public bool McpEnabled = true;
         public int HttpPort = 8085;          // Timberbot's port, for loopback tools
         public string AuthToken = "";        // Timberbot's bearer token, if any
+        public bool ChapterGating = true;    // WardensChapters.cs: false opens every chapter at load
 
         public static string Path =>
             System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
@@ -49,6 +50,7 @@ namespace Wardens
                     s.McpEnabled = json.Value<bool?>("mcpEnabled") ?? s.McpEnabled;
                     s.HttpPort = json.Value<int?>("httpPort") ?? s.HttpPort;
                     s.AuthToken = (json.Value<string>("authToken") ?? "").Trim();
+                    s.ChapterGating = json.Value<bool?>("chapterGating") ?? s.ChapterGating;
                 }
             }
             catch (Exception ex)

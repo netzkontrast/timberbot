@@ -194,3 +194,13 @@ Tutorial.Wardens.GoodStock,Stock: {0} ({1}/{2}),"{0} good name, {1} amount in st
 Tutorial.Wardens.BotsCharged,Charge: every Warden above {0}% ({1}/{2}),"{0} percent, {1} charged bots, {2} all bots"
 Tutorial.Wardens.Beavers,Beavers: ({0}/{1}),"{0} beavers alive, {1} required"
 Tutorial.Wardens.Never,(disabled),Placeholder name for vanilla tutorials switched off for the Wardens
+Wardens.Chapter.Badwater.Title,Chapter 2: Badwater.,Story chapter title
+Wardens.Chapter.Badwater.Unlocked,"Scrap in hand. The Sludge Pump, Reed Bed, Sludge Tank and Crate Rack are now available.",Chapter toast
+Wardens.Chapter.Signal.Title,Chapter 3: Signal.,Story chapter title
+Wardens.Chapter.Signal.Unlocked,"Shifts are set. The Cruncher is now available: power in, Science or Data Cores out.",Chapter toast
+Wardens.Chapter.Pods.Title,Chapter 4: Pods.,Story chapter title
+Wardens.Chapter.Pods.Unlocked,Stores are full. The Breeding Pod is now available. Built for someone else.,Chapter toast
+Wardens.Chapter.Power.Title,Chapter 5: Power.,Story chapter title
+Wardens.Chapter.Power.Unlocked,The pods are waiting. The Badwater Cell and the Sludge Burner are now available. Every hour of power is an hour of poison.,Chapter toast
+Wardens.Chapter.Green.Title,Chapter 6: Green.,Story chapter title
+Wardens.Chapter.Green.Unlocked,The first beaver is awake. The Advanced Breeding Pod is now available.,Chapter toast

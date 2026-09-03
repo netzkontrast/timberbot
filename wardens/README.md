@@ -1,10 +1,12 @@
 # The Wardens (faction mod, v0.2)
 
 Design: [`../design/faction-wardens.md`](../design/faction-wardens.md), Chapter 1 plan:
-[`../design/wardens-chapter-1-plan.md`](../design/wardens-chapter-1-plan.md).
-Playtesting with an agent: [`playtest/PLAYTEST.md`](playtest/PLAYTEST.md).
+[`../design/wardens-chapter-1-plan.md`](../design/wardens-chapter-1-plan.md), how the agent plays:
+[`../design/wardens-play.md`](../design/wardens-play.md), the map: [`../design/wardens-wasteland.md`](../design/wardens-wasteland.md).
+Playtesting with an agent: [`playtest/PLAYTEST.md`](playtest/PLAYTEST.md). Where things stand and what is
+still unverified: `../AGENTS.md`, "The Wardens: state".
 
-The mod is three things in one DLL:
+The mod is one DLL plus data, and it does four jobs:
 
 1. **The faction** (JSON blueprints): bots as starting population, four Data needs, Data Core
    and Firmware goods, and the Wardens tutorial: the Folktails tutorial ported to bots, tutorial
@@ -14,8 +16,13 @@ The mod is three things in one DLL:
    the standalone **Timberbot API mod must be disabled** when this one is enabled.
 3. **An in-game MCP server** (`src/Wardens*.cs`): Model Context Protocol over HTTP on
    127.0.0.1:8090 so Claude Code connects straight into the running game (`.mcp.json` in
-   the repo root). Tools: chat with the player, point at tiles, camera flights, tutorial
-   state, and a passthrough to the whole Timberbot API.
+   the repo root). Tools: chat with the player, point at tiles, camera flights, tutorial and
+   chapter state, a tick-driven `frame` heartbeat that says where to look, the playbook
+   (`WARDEN.md`, via `manual`), and a passthrough to the whole Timberbot API. How the Warden
+   plays: [`../design/wardens-play.md`](../design/wardens-play.md).
+4. **The story and the land**: chapters that open the building bar as the tutorial line advances
+   (`WardensChapters.cs`, "How the chapters work" below) and the shipped wasteland map
+   (`Maps/Wardens Wasteland.timber`, "The map" below).
 
 ```
 src/
@@ -31,6 +38,8 @@ src/
   WardensPopulationStep.cs           BeaversStepSpec: "Beavers: (n/m)" for the first pod-born beaver
   WardensTriggers.cs                 MissingDam / PlatformBuilt / IdleWardens triggers (optional tutorials)
   WardensColdBoot.cs                 start-of-run cutscene: paused orbit around the Core
+  WardensChapters.cs                 story chapters: tutorial progress unlocks the padlocked buildings
+  WardensFrames.cs                   the heartbeat: a sensor frame per N game ticks or per event, for the MCP `frame` tool
   WardensCameraDirector.cs           keyframe camera flights (cutscene, MCP, trailer)
   WardensPointer.cs                  highlight + arrow + toast on a tile ("look here")
   WardensChat.cs                     in-game chat panel (WARDENS UPLINK) + message store
@@ -38,7 +47,9 @@ src/
   WardensMcpTools.cs                 the tool table
   PollutingBuilding.cs               Spike B stub
   Timberbot/                         verbatim copy of ../../timberbot/src (paths point at Mods/Wardens)
+  Maps/Wardens Wasteland.timber      the shipped map (tools/gen_map.py); deploy also installs it to Documents/Timberborn/Maps
 playtest/                            smoke.py (Timberbot API), mcp_smoke.py (MCP), PLAYTEST.md
+WARDEN.md                            the Warden's playbook (deployed to the mod's docs/, served by the `manual` tool)
 ```
 
 Build: `dotnet build wardens/src/Wardens.csproj -c Release`; every build bumps the patch version
@@ -66,9 +77,51 @@ and the csproj, so the mod manager shows which build is deployed. (Uses the git-
 - `tools/validate.py` resolves every name the game looks up at load (collection blueprints, tutorial
   templates/goods/plantables, loc keys, planter groups) against the deployed mod + vanilla; run it
   after every generator change.
-- Finishing a tutorial posts `TutorialFinishedEvent`, the hook for the chapter unlock service.
+- Finishing a tutorial lands its id in `TutorialService`'s finished set (saved with the game); the chapter
+  service below polls that set.
 
-Act I only. Out of scope for now: breeding pods, remediation, the Ark, custom art, the wasteland map.
+## How the chapters work
+
+`WardensChapters.cs` is the chapter unlock service from the Chapter 1 plan (§4), driven by the tutorial
+line instead of its own goal checks. Buildings a chapter opens ship with `ScienceCost: 999999`
+(`CHAPTER_LOCK` in `tools/gen_buildings.py`), so the bar shows vanilla's padlock; when the chapter's
+tutorial is finished the service unlocks them through `BuildingUnlockingService.UnlockIgnoringCost`,
+refreshes the toolbar button the way Timberbot's `/api/science/unlock` does, and posts a toast plus a
+line in the chat panel (`Wardens.Chapter.<Id>.Title` / `.Unlocked` in `Localizations/enUS.csv`).
+
+| Chapter | Opens when | Buildings |
+|---|---|---|
+| 1 First Light | new game | Path, Scavenger Flag, Power Shaft, Charging Post, Scrap Pile (never locked) |
+| 2 Badwater | `Wardens.Scrap` finished | Sludge Pump, Reed Bed, Sludge Tank, Crate Rack |
+| 3 Signal | `Wardens.WorkingHours` finished | The Cruncher |
+| 4 Pods | `Wardens.Storage` finished | Breeding Pod |
+| 5 Power | `Wardens.Housing` finished | Badwater Cell, Sludge Burner |
+| 6 Green | `Wardens.MoreBeavers` finished | Advanced Breeding Pod |
+
+Each chapter opens right before the tutorial that asks for its buildings starts (the tutorial line's
+`RequiredTutorialIds` chain guarantees the order). Planter Rig, Stairs and Platform stay science-gated
+as in vanilla; Dam, Hauler Dock and Observation Deck are free because their tutorials fire on triggers
+(cycle count, stairs unlocked) that do not follow the chapter order.
+
+- No save state: finished tutorials and unlocked buildings are both persisted by vanilla, so a loaded
+  game reconciles on its first frame, silently. Tutorial off in the new-game panel, or
+  `"chapterGating": false` in `settings.json`, opens every chapter at load. Other factions are untouched.
+- MCP: `wardens_status` carries `chapter` (complete list, next chapter and the tutorial it waits for);
+  the `chapter` tool lists per-building lock state and `action=unlock` forces a chapter open for testing.
+- `tools/validate.py` cross-checks the C# table against the blueprints: every padlocked template has a
+  chapter, every chapter template exists and is padlocked, the gating tutorial exists, loc rows present.
+
+Act I only. Out of scope for now: remediation, the Ark, custom art.
+
+## The map
+
+`tools/gen_map.py` writes `Maps/Wardens Wasteland.timber`, the wasteland the faction design asks for: a badwater
+river from three sources at the north edge meandering to the south edge, the Sump beside the Core for the
+Sludge Pump, ruin clusters in scavenging range, underground ruins for later mines, and one clean spring in the
+north-east as the only green. The build deploys it into the mod folder and into `Documents/Timberborn/Maps`
+(override with `-p:MapsDir=...`), where the new-game screen lists it as `[Custom] Wardens Wasteland`. Design,
+file format and the choices behind them: [`../design/wardens-wasteland.md`](../design/wardens-wasteland.md).
+`gen_map.py --check <file>` runs the static checks; the generator runs them after every write.
 
 ## Art (v0.2)
 
@@ -95,7 +148,8 @@ with alpha premultiplied so fully-transparent-but-black source pixels don't frin
 `tools/gen_buildings.py` re-specs Iron Teeth blueprints from the game's own `Blueprints.zip` into
 `Buildings/`, `NaturalResources/`, `Goods/Good.Biomass` and the two Wardens template collections.
 Models stay vanilla references. Everything costs Scrap Metal (the Scavenger Flag is the only source);
-science cost is 0 until the chapter unlock service exists.
+science cost is 0 for the starting bar, `CHAPTER_LOCK` for the chapter-gated buildings (see above),
+and a real science price only for Planter Rig, Stairs and Platform.
 
 | Template | From | What changed |
 |---|---|---|
@@ -107,7 +161,7 @@ science cost is 0 until the chapter unlock service exists.
 | `ReedBed.Wardens` | FarmHouse.IronTeeth | plants Sludge Reed |
 | `BreedingPod.Wardens` | BreedingPod.IronTeeth | nutrients Biomass; 100 hp power input (transputs on every tile) |
 | `AdvancedBreedingPod.Wardens` | AdvancedBreedingPod.IronTeeth | Biomass + Firmware; 150 hp; costs Scrap 20 + Data Core 5 |
-| `SludgePump.Wardens` | DeepBadwaterPump.IronTeeth | the unlocked pump: badwater from day one, Scrap 12, bots work it free |
+| `SludgePump.Wardens` | DeepBadwaterPump.IronTeeth | the badwater pump, Scrap 12, bots work it free; chapter Badwater |
 | `BadwaterCell.Wardens` | SteamEngine.IronTeeth | early generator: burns Badwater 0.4/h for 100 hp, Scrap 8, cyan light, small pollution |
 | `SludgeTank.Wardens` | SmallTank.IronTeeth | Scrap 6 |
 | `Planter.Wardens` | Forester.IronTeeth | exists because the bar must hold exactly one tree-planter building (bottom-bar rule) |
