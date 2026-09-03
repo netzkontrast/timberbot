@@ -64,6 +64,7 @@ nav:
   - Getting Started: getting-started.md
   - Configuration: configuration.md
   - API Reference: api-reference.md
+  - MCP Endpoint: mcp.md
   - Timberbot Guide: timberbot.md
   - Features: features.md
   - Events: events.md

@@ -12,6 +12,8 @@ Beyond this file:
 - [`docs/websocket-protocol.md`](docs/websocket-protocol.md) — canonical WS wire contract (envelope, auth, reconnect, message types)
 - [`docs/api-reference.md`](docs/api-reference.md) — human-readable companion to the OpenAPI spec
 - [`docs/architecture.md`](docs/architecture.md) — thread model, server split, write-job queue
+- [`docs/spec/mcp-endpoint.md`](docs/spec/mcp-endpoint.md) + [`docs/adr/ADR-001-mcp-host.md`](docs/adr/ADR-001-mcp-host.md) — the in-mod MCP endpoint (`POST /mcp`); protocol core in `TimberbotMcp.cs`
+- [`docs/plan/roadmap-v2-mod-first.md`](docs/plan/roadmap-v2-mod-first.md) — current phase plan; `docs/audit/` — Phase 0 audit and contradiction log
 - [`docs/devenv.md`](docs/devenv.md) — toolchain (.NET, Python, `ilspycmd`)
 
 ## Quick Reference
@@ -77,6 +79,9 @@ timberbot/
 │   │   ├── Timberbot.csproj     # MSBuild project; manages game DLL refs & deploy
 │   │   ├── TimberbotConfigurator.cs      # Bindito DI registration
 │   │   ├── TimberbotHttpServer.cs        # HTTP listener, routing, ready-gate + auth middleware (port 8085)
+│   │   ├── TimberbotMcp.cs               # Stateless MCP 2026-07-28 protocol core (Unity-free): catalog, JSON-RPC, MRTR
+│   │   ├── TimberbotErrors.cs            # Structured error contract {ok,code,reason,hint,at} (Unity-free)
+│   │   ├── TimberbotMapText.cs           # Plain-text map renderer for get_region (Unity-free)
 │   │   ├── TimberbotWebSocketServer.cs   # WebSocket listener (port 8086): state + event broadcasts, heartbeat
 │   │   ├── TimberbotReadV2.cs            # All GET endpoints (buildings, beavers, map)
 │   │   ├── TimberbotWrite.cs             # All POST endpoints (pause, recipes, floodgates)

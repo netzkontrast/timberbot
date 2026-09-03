@@ -63,6 +63,7 @@ namespace Timberbot
         private int _httpPort = 8085;             // HTTP server port
         private int _wsPort = 8086;               // WebSocket server port (state + events)
         private bool _wsEnabled = true;           // toggle the WS server (events stop firing while off)
+        private bool _mcpEnabled = true;          // toggle the stateless MCP endpoint (POST /mcp, same port as HTTP)
         public const int DefaultSearchRadius = 30; // Default radius for proximity searches
         private double _writeBudgetMs = 1.0;
         // security settings
@@ -133,7 +134,7 @@ namespace Timberbot
             }
 
             var version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "unknown";
-            TimberbotLog.Info($"v{version} port={_httpPort} wsPort={_wsPort} wsEnabled={_wsEnabled} debug={_debugEnabled} listen={_listenAddress} maxBody={_maxBodyBytes} authTokenSet={(!string.IsNullOrEmpty(_authToken))}");
+            TimberbotLog.Info($"v{version} port={_httpPort} wsPort={_wsPort} wsEnabled={_wsEnabled} mcpEnabled={_mcpEnabled} debug={_debugEnabled} listen={_listenAddress} maxBody={_maxBodyBytes} authTokenSet={(!string.IsNullOrEmpty(_authToken))}");
             Registry.Events = Events;         // registry pushes WS events on entity lifecycle
             DebugTool.Service = this;         // debug needs Service reference for endpoint benchmarks
             _eventBus.Register(this);
@@ -143,7 +144,7 @@ namespace Timberbot
             Placement.DetectFaction();          // detect faction suffix. must run before BuildAllIndexes
             Registry.BuildAllIndexes();        // populate indexes from existing entities
             ReadV2.BuildAll();          // populate v2 building trackers from existing entities
-            _server = new TimberbotHttpServer(_httpPort, this, _debugEnabled, _listenAddress, _corsOrigin, _maxBodyBytes, _authToken);
+            _server = new TimberbotHttpServer(_httpPort, this, _debugEnabled, _listenAddress, _corsOrigin, _maxBodyBytes, _authToken, _mcpEnabled);
             TimberbotLog.Info($"HTTP server started on port {_httpPort}");
             if (_wsEnabled)
             {
@@ -180,6 +181,8 @@ namespace Timberbot
                     }
                     if (json["wsEnabled"] != null)
                         _wsEnabled = json.Value<bool>("wsEnabled");
+                    if (json["mcpEnabled"] != null)
+                        _mcpEnabled = json.Value<bool>("mcpEnabled");
                     if (json["writeBudgetMs"] != null)
                     {
                         double budget = json.Value<double>("writeBudgetMs");

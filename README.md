@@ -77,6 +77,7 @@ tbot watch --backend claude                         # long-running agent connect
 
 ## Features
 
+- **MCP endpoint**. Stateless [MCP 2026-07-28](docs/mcp.md) server on `POST /mcp` (same port): 14 `timberborn_*` tools, plain-text map view, confirmations for destructive actions, structured errors. Works with MCP Inspector and Claude Code out of the box.
 - **WebSocket push channel**. State changes and game events stream over `ws://<host>:8086/api/ws` as `{type, payload}` JSON frames. See [WebSocket Protocol](docs/websocket-protocol.md).
 - **Ready gate**. Player presses **Launch** in the in-game widget to authorize agent activity; until then all `/api/*` calls (read + write) return `409 game_not_ready` except `/api/agent/*`, `/api/ready`, `/api/ping`.
 - **`tbot watch` connector**. Long-running Python process that connects over WS, heartbeats, and dispatches agent runs (request or autonomous mode).
@@ -94,6 +95,7 @@ tbot watch --backend claude                         # long-running agent connect
 
 - [Getting Started](docs/getting-started.md). install, first steps, examples
 - [API Reference](docs/api-reference.md). all HTTP endpoints
+- [MCP Endpoint](docs/mcp.md). connect an MCP client, tool catalog, confirmation flow, error codes
 - [WebSocket Protocol](docs/websocket-protocol.md). `/api/ws` frame envelope, message types, reconnect
 - [Events](docs/events.md). consume the game-event stream with `tbot listen` or a custom WS client
 - [Timberbot Guide](docs/timberbot.md). AI guide for agents playing Timberborn
@@ -112,6 +114,7 @@ Drop a `settings.json` in your mod folder (`Documents/Timberborn/Mods/Timberbot/
   "httpPort": 8085,
   "wsPort": 8086,
   "wsEnabled": true,
+  "mcpEnabled": true,
   "listenAddress": "127.0.0.1",
   "authToken": "",
   "debugEndpointEnabled": false,

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Proposal, supersedes the phase plan in the kickoff (§6–§10) where they differ. Awaiting your approval before Phase 1 work starts. |
+| Status | Adopted 2026-09-02 ("Finish Mod" directive). Supersedes the kickoff phase plan (§6–§10) where they differ. **Progress:** slice 3c (in-mod MCP endpoint, read tools) and the MRTR part of 3d are implemented in `TimberbotMcp.cs`/`TimberbotHttpServer.cs` with 39 xUnit tests; the error contract (3a) is applied on the MCP surface via `TimberbotErrors.cs`; the plain-text map view (part of 3b) exists as `TimberbotMapText.cs`; the `TimberbotJw` cross-thread race (G-MOD-3) is fixed; `get_prefabs` no longer runs on the listener thread. **Not yet verified against the game**: the mod DLL has not been compiled against the Timberborn assemblies or exercised with MCP Inspector (Phase 1 spike S3) because this environment has no game install. |
 | Inputs | Kickoff prompt · `docs/audit/00-repo-audit.md` (Phase 0) · research report "Architektur und Implementierung eines autonomen LLM-Agenten … via MCP (2026-07-28)" (report 1) · research report "Technische Modding-Architektur, Ökosystem-Analyse und Claude-Code-Skill für Timberborn 1.0 und 1.1" (report 2) · primary-source checks made on 2026-09-02 (MCP changelog 2026-07-28, NuGet `ModelContextProtocol.Core`) |
 | Rule | Code and primary sources win over both reports; disagreements are logged in `docs/audit/contradictions.md` R1–R10. Identifiers carry a verification tag: **[code]** seen in this repo, **[spec]** read in the MCP changelog, **[nuget]** read on nuget.org, **[UNVERIFIED]** needs the game DLLs (Phase 1). |
 

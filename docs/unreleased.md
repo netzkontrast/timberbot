@@ -1,3 +1,17 @@
+## v0.9 In-mod MCP endpoint (`POST /mcp`)
+
+The mod now hosts a stateless [MCP 2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28/changelog) server on the existing HTTP port. No sidecar, no session handshake. See [MCP Endpoint](mcp.md).
+
+- [feature] **`POST /mcp`** on the HTTP listener: `server/discover`, `tools/list` (deterministic order, `ttlMs`, `cacheScope`), `tools/call`. Required headers `MCP-Protocol-Version`, `Mcp-Method`, `Mcp-Name` are validated against the body (`-32020` on mismatch); unsupported versions get `-32022` with the supported list; `initialize` gets `404`/`-32601`. `Origin` is validated (loopback or `corsOrigin`), `GET`/`DELETE` return `405`, notifications `202`.
+- [feature] **14 `timberborn_*` tools** with strict input schemas and honest annotations: `get_summary`, `get_region`, `get_buildings`, `get_beavers`, `get_prefabs`, `find_placement`, `place_building`, `place_path`, `demolish`, `set_speed`, `set_workers`, `unlock_science`, `set_distribution`, `wait_frames`. Read tools run on the listener thread from snapshots; write tools go through the existing write-job queue.
+- [feature] **Plain-text map** for `get_region` (`format=map`, default): about 1 token per cell instead of ~57 for the raw tiles JSON; no ANSI escapes. Raw JSON stays available (`format=json`, capped at 20×20).
+- [feature] **MRTR confirmations** for `demolish` and `unlock_science`: elicitation-capable clients get an `input_required` result with an HMAC-signed, expiring `requestState`; other clients must pass `confirm: true`.
+- [feature] **Structured errors on MCP**: game failures become tool errors with `{ok:false, code, reason, hint, at, details}` (`docs/spec/error-contract.md`). REST bodies are unchanged.
+- [feature] `timberborn_get_prefabs` runs prefab enumeration on the game thread (queued job) instead of the listener thread.
+- [fix] The HTTP-layer error writer (`TimberbotJw`) is now per-thread; it was one `StringBuilder` shared between the listener thread and the main thread.
+- [settings] New `mcpEnabled` (default `true`).
+- [internal] Protocol core `TimberbotMcp.cs`, error mapper `TimberbotErrors.cs` and map renderer `TimberbotMapText.cs` are Unity-free and covered by 39 new xUnit tests (455 total).
+
 ## v0.9 `tbot serve` waits for the mod by default
 
 - [feature] **Launch-order-agnostic startup.** `tbot serve` no longer fails fast when the mod is unreachable at startup. It now retries the `/api/ping` probe with `exp_backoff(1s→30s)` — the same cadence `tbot watch` and `tbot listen` already use — until the game is reachable. Run `tbot serve` first, then start Timberborn; both orderings work.
