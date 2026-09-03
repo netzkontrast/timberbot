@@ -84,6 +84,8 @@ namespace Wardens
         private readonly TimberbotService _timberbot;
         private readonly WardensAssetDump _assetDump;
         private readonly WardensChapterService _chapters;
+        private readonly WardensFrames _frames;
+        private long _lastFrameSeq;
 
         private readonly List<McpTool> _tools = new List<McpTool>();
         private readonly Dictionary<string, McpTool> _byName = new Dictionary<string, McpTool>();
@@ -96,7 +98,7 @@ namespace Wardens
             CharacterPopulation population, TutorialService tutorialService, TutorialSettings tutorialSettings,
             WardensPointer pointer, WardensChat chat, WardensCameraDirector director, WardensColdBoot coldBoot,
             EntitySelectionService selection, QuickNotificationService quickNotifications, TimberbotService timberbot,
-            WardensAssetDump assetDump, WardensChapterService chapters)
+            WardensAssetDump assetDump, WardensChapterService chapters, WardensFrames frames)
         {
             _factionService = factionService;
             _speedManager = speedManager;
@@ -112,6 +114,7 @@ namespace Wardens
             _timberbot = timberbot;
             _assetDump = assetDump;
             _chapters = chapters;
+            _frames = frames;
         }
 
         public void Initialize(WardensSettings settings, WardensMcpServer server)
@@ -122,13 +125,16 @@ namespace Wardens
             Build();
             foreach (var t in _tools) _byName[t.Name] = t;
             Instructions =
-                "In-game MCP server of The Wardens (Timberborn). You are playing alongside a human who sees the game. " +
-                "Every tool result may contain \"chat\": messages the player typed in the in-game panel that you have not seen; " +
-                "answer them with `say`. Use `chat_read` to wait for the player's next message (long-poll). " +
-                "Use `point` to show the player a tile (highlight + arrow + toast). " +
-                "`timberbot` forwards to the Timberbot HTTP API compiled into this mod (GET reads, POST actions); " +
+                "In-game MCP server of The Wardens (Timberborn). You are the Warden: the mind of a colony of machines, playing beside " +
+                "a human who sees the game. Read the playbook first: call `manual` (docs/WARDEN.md in the mod folder). " +
+                "Heartbeat: call `frame` in a loop. It returns every N game ticks or as soon as something happens (the human typed, " +
+                "a day started, a building finished, a chapter opened, a beaver was born) and carries `attention`: where to look, " +
+                "in order, with positions `camera` and `point` accept. Do not poll the read API to find out whether anything changed. " +
+                "Every tool result may contain \"chat\": messages the player typed that you have not seen; answer them with `say`. " +
+                "`point` shows the player a tile (highlight + arrow + toast). " +
+                "`timberbot` forwards to the Timberbot HTTP API compiled into this mod (GET reads, POST actions, one mutation at a time); " +
                 "call `timberbot_ready` once so the API accepts requests, and `timberbot_routes` to list routes. " +
-                "`wardens_status`, `tutorial` and `chapter` report the faction story/tutorial state; `camera` and `cutscene` drive the camera.";
+                "`wardens_status`, `tutorial` and `chapter` report the story state; `camera` and `cutscene` drive the camera, only when the playbook allows.";
         }
 
         public McpTool Find(string name) => _byName.TryGetValue(name ?? "", out var t) ? t : null;
@@ -194,6 +200,36 @@ namespace Wardens
                     }
                     return TutorialState();
                 });
+
+            Add("frame",
+                "The Warden's heartbeat. Waits (long-poll, up to wait_seconds) for the next sensor frame: published every every_ticks game ticks, or at once when something happens (chat, day/night, cycle day, building finished, chapter opened, beaver born, alert, speed change, selection). Carries time, bots and charge, beavers, archive (Data Cores), science, chapter, open tutorial steps, selection, camera pose, human idle time, events since the last frame, and `attention` (where to look, in order). Pass `after` = the last seq you saw; a `stale` frame means nothing new was published before the wait ended (usually because the human typed).",
+                Schema(new JObject
+                {
+                    ["wait_seconds"] = Prop("integer", "long-poll timeout, 0-120", 30),
+                    ["every_ticks"] = Prop("integer", "frame cadence in game ticks (5-2000); omit to keep the current cadence"),
+                    ["after"] = Prop("integer", "return the first frame with seq greater than this; default: the last frame this server handed out"),
+                }),
+                a =>
+                {
+                    if (a["every_ticks"] != null && a["every_ticks"].Type != JTokenType.Null) _frames.SetEveryTicks(Int(a, "every_ticks", WardensFrames.DefaultEveryTicks));
+                    long after = a["after"] != null && a["after"].Type != JTokenType.Null ? (long)a["after"] : _lastFrameSeq;
+                    int wait = Mathf.Clamp(Int(a, "wait_seconds", 30), 0, 120);
+                    var frame = _frames.Wait(after, wait * 1000);
+                    var seq = frame["seq"] != null ? (long)frame["seq"] : 0L;
+                    if (seq > _lastFrameSeq) _lastFrameSeq = seq;
+                    return frame;
+                }, offThread: true);
+
+            Add("manual",
+                "The Warden's playbook (docs/WARDEN.md in the mod folder): who you are, the Ledger, the frame loop, where to look, the camera rules, the chapter playbook, the voice. Read it once per session before acting.",
+                Schema(new JObject()),
+                a =>
+                {
+                    var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(WardensSettings.Path) ?? "", "docs", "WARDEN.md");
+                    if (!System.IO.File.Exists(path))
+                        return new JObject { ["path"] = path, ["error"] = "not deployed; the repo copy is wardens/WARDEN.md" };
+                    return new JObject { ["path"] = path, ["text"] = System.IO.File.ReadAllText(path) };
+                }, offThread: true);
 
             Add("chapter",
                 "Story chapters that gate the building bar (WardensChapters.cs): each chapter opens when its tutorial finishes and unlocks the padlocked buildings. action=status lists every chapter with its gate and per-building lock state; action=unlock opens chapter_id now (dev/testing).",

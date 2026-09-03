@@ -192,7 +192,7 @@
          would flatten Factions\X.json to X.json, breaking the FactionSpec.BlueprintModifiers paths. -->
     <Copy SourceFiles="@(ModContent)" DestinationFiles="@(ModContent->'$(ModDir)\%(RelativeDir)%(Filename)%(Extension)')" />
     <MakeDir Directories="$(ModDir)\docs" />
-    <Copy SourceFiles="..\..\docs\api-reference.md;..\..\docs\events.md;..\..\docs\websocket-protocol.md" DestinationFolder="$(ModDir)\docs" />
+    <Copy SourceFiles="..\..\docs\api-reference.md;..\..\docs\events.md;..\..\docs\websocket-protocol.md;..\WARDEN.md" DestinationFolder="$(ModDir)\docs" />
     <MakeDir Directories="$(MapsDir)" />
     <Copy SourceFiles="@(MapFiles)" DestinationFolder="$(MapsDir)" />
     <Message Text="Deployed Wardens (with Timberbot) to $(ModDir)" Importance="high" />

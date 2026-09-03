@@ -14,8 +14,10 @@ The mod is three things in one DLL:
    the standalone **Timberbot API mod must be disabled** when this one is enabled.
 3. **An in-game MCP server** (`src/Wardens*.cs`): Model Context Protocol over HTTP on
    127.0.0.1:8090 so Claude Code connects straight into the running game (`.mcp.json` in
-   the repo root). Tools: chat with the player, point at tiles, camera flights, tutorial
-   state, and a passthrough to the whole Timberbot API.
+   the repo root). Tools: chat with the player, point at tiles, camera flights, tutorial and
+   chapter state, a tick-driven `frame` heartbeat that says where to look, the playbook
+   (`WARDEN.md`, via `manual`), and a passthrough to the whole Timberbot API. How the Warden
+   plays: [`../design/wardens-play.md`](../design/wardens-play.md).
 
 ```
 src/
@@ -32,6 +34,7 @@ src/
   WardensTriggers.cs                 MissingDam / PlatformBuilt / IdleWardens triggers (optional tutorials)
   WardensColdBoot.cs                 start-of-run cutscene: paused orbit around the Core
   WardensChapters.cs                 story chapters: tutorial progress unlocks the padlocked buildings
+  WardensFrames.cs                   the heartbeat: a sensor frame per N game ticks or per event, for the MCP `frame` tool
   WardensCameraDirector.cs           keyframe camera flights (cutscene, MCP, trailer)
   WardensPointer.cs                  highlight + arrow + toast on a tile ("look here")
   WardensChat.cs                     in-game chat panel (WARDENS UPLINK) + message store
@@ -41,6 +44,7 @@ src/
   Timberbot/                         verbatim copy of ../../timberbot/src (paths point at Mods/Wardens)
   Maps/Wardens Wasteland.timber      the shipped map (tools/gen_map.py); deploy also installs it to Documents/Timberborn/Maps
 playtest/                            smoke.py (Timberbot API), mcp_smoke.py (MCP), PLAYTEST.md
+WARDEN.md                            the Warden's playbook (deployed to the mod's docs/, served by the `manual` tool)
 ```
 
 Build: `dotnet build wardens/src/Wardens.csproj -c Release`; every build bumps the patch version

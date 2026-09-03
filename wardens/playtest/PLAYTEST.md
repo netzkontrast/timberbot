@@ -35,6 +35,8 @@ or call the MCP tool `timberbot_ready`.
 | `wardens_status` | main | faction, speed, bots/beavers + avg Energy, tutorial + chapter state, pointers, camera, ready gate |
 | `tutorial` | main | `status`, or `next` to force the next stage of a tutorial id |
 | `chapter` | main | `status`: every story chapter with its gating tutorial and per-building lock state; `unlock` forces `chapter_id` open |
+| `frame` | listener | long-poll for the next sensor frame: every `every_ticks` game ticks or on an event (chat, day, building, chapter, birth, alert, selection); carries `attention` (where to look) |
+| `manual` | listener | the Warden's playbook, `docs/WARDEN.md` from the mod folder |
 | `point` / `unpoint` | main | highlight + bobbing arrow + toast on a tile, optional camera pan |
 | `say` | main | message into the in-game WARDENS UPLINK panel (optional toast) |
 | `chat_read` | listener | long-poll (≤120 s) for the player's next chat message |
@@ -52,7 +54,10 @@ Every tool result may carry `chat`: player messages not yet delivered to the age
 
 ## Conversation loop (how the agent plays with you)
 
-1. Agent calls `chat_read` (waits up to 20 s), you type in the panel and press Enter.
+The full loop is `wardens/WARDEN.md`: the agent reads it with `manual`, then lives on `frame`, which
+wakes it every 60 game ticks or when something happens, and tells it where to look. The short form:
+
+1. Agent calls `frame` (or `chat_read`, waits up to 20 s), you type in the panel and press Enter.
 2. Agent answers with `say`, points with `point` when it talks about a place, acts through
    `timberbot` (`POST /api/building/place` etc.).
 3. You point back by selecting something in the game; the agent reads it with `selection`.
