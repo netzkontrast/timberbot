@@ -1,6 +1,6 @@
 # The Wardens — Chapter 1 plan: identity, starting buildings, gating, cutscene, art, UI
 
-> **Status:** plan (2026-09-03), grounded in the 1.1.2.4 blueprint dump and decompile. Builds on [`faction-wardens.md`](faction-wardens.md) (the arc) and [`model-catalog.md`](model-catalog.md) (what art exists). Nothing here is implemented yet; the v0.1 scaffold in `wardens/` is the base it lands on.
+> **Status:** plan (2026-09-03), grounded in the 1.1.2.4 blueprint dump and decompile. Builds on [`faction-wardens.md`](faction-wardens.md) (the arc) and [`model-catalog.md`](model-catalog.md) (what art exists). Most of it is implemented now (see the status notes at the end: §3 buildings generated, §5 Cold Boot, §4 chapter service, with the deviations recorded); what is not is Spike B and the custom art in §6.
 
 ## 1. What makes a Warden
 

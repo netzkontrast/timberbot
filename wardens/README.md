@@ -1,10 +1,12 @@
 # The Wardens (faction mod, v0.2)
 
 Design: [`../design/faction-wardens.md`](../design/faction-wardens.md), Chapter 1 plan:
-[`../design/wardens-chapter-1-plan.md`](../design/wardens-chapter-1-plan.md).
-Playtesting with an agent: [`playtest/PLAYTEST.md`](playtest/PLAYTEST.md).
+[`../design/wardens-chapter-1-plan.md`](../design/wardens-chapter-1-plan.md), how the agent plays:
+[`../design/wardens-play.md`](../design/wardens-play.md), the map: [`../design/wardens-wasteland.md`](../design/wardens-wasteland.md).
+Playtesting with an agent: [`playtest/PLAYTEST.md`](playtest/PLAYTEST.md). Where things stand and what is
+still unverified: `../AGENTS.md`, "The Wardens: state".
 
-The mod is three things in one DLL:
+The mod is one DLL plus data, and it does four jobs:
 
 1. **The faction** (JSON blueprints): bots as starting population, four Data needs, Data Core
    and Firmware goods, and the Wardens tutorial: the Folktails tutorial ported to bots, tutorial
@@ -18,6 +20,9 @@ The mod is three things in one DLL:
    chapter state, a tick-driven `frame` heartbeat that says where to look, the playbook
    (`WARDEN.md`, via `manual`), and a passthrough to the whole Timberbot API. How the Warden
    plays: [`../design/wardens-play.md`](../design/wardens-play.md).
+4. **The story and the land**: chapters that open the building bar as the tutorial line advances
+   (`WardensChapters.cs`, "How the chapters work" below) and the shipped wasteland map
+   (`Maps/Wardens Wasteland.timber`, "The map" below).
 
 ```
 src/

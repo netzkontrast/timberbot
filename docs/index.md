@@ -10,6 +10,9 @@ Gameplay is stable; AI integration and automation features are under active deve
 
 Timberbot gives Claude, Codex, ChatGPT, or your own scripts complete access to a running Timberborn colony over HTTP. Read game state, place buildings, manage workers, plant crops, wire automation, and keep your beavers alive.
 
+!!! tip "The Wardens"
+    The same repository ships a second mod, [The Wardens](https://github.com/netzkontrast/timberbot/tree/main/wardens): a Timberborn faction in which the AI is a character, with an MCP server inside the game so Claude Code plays beside you. Its docs live in the repository, not on this site.
+
 !!! info "Modified fork"
     This project is a modified fork of [abix-/TimberbornMods](https://github.com/abix-/TimberbornMods). It extends the original mod with an expanded read/write HTTP API, automation wiring endpoints, a WebSocket event stream, and AI-agent integrations. All credit for the original mod goes to [abix-](https://github.com/abix-).
 
