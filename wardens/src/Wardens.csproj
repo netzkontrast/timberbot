@@ -1,0 +1,195 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The Wardens faction mod, with the Timberbot API compiled in (src/Timberbot/*.cs, namespace
+       Timberbot) and the in-game MCP server (Wardens*.cs). Same build shape as the standalone
+       Timberbot mod: netstandard2.1, vanilla game DLLs referenced with Publicize="true" (no
+       Harmony), post-build Deploy into the game's Mods directory. -->
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>Wardens</AssemblyName>
+    <RootNamespace>Wardens</RootNamespace>
+    <Version>0.2.6</Version>
+    <LangVersion>9.0</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <UserHome Condition="'$(UserHome)' == '' and '$(USERPROFILE)' != ''">$(USERPROFILE)</UserHome>
+    <UserHome Condition="'$(UserHome)' == '' and '$(HOME)' != ''">$(HOME)</UserHome>
+    <GameManagedDir Condition="'$(GameManagedDir)' == '' and $([MSBuild]::IsOSPlatform('Windows'))">C:\Games\Steam\steamapps\common\Timberborn\Timberborn_Data\Managed</GameManagedDir>
+    <GameManagedDir Condition="'$(GameManagedDir)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">$(HOME)/Library/Application Support/Steam/steamapps/common/Timberborn/Timberborn.app/Contents/Resources/Data/Managed</GameManagedDir>
+    <GameManagedDir Condition="'$(GameManagedDir)' == '' and $([MSBuild]::IsOSPlatform('Linux'))">$(HOME)/.local/share/Steam/steamapps/common/Timberborn/Timberborn_Data/Managed</GameManagedDir>
+    <ModDir Condition="'$(ModDir)' == ''">$(UserHome)/Documents/Timberborn/Mods/Wardens</ModDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.2" PrivateAssets="all"/>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'netstandard'">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2" PrivateAssets="all"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Union of the Timberbot references and the Wardens ones. Timberborn.BlueprintSystem is
+         deliberately NOT publicized: our specs are C# records deriving from ComponentSpec, and a
+         publicized (public) EqualityContract on the base cannot be overridden by the derived
+         record's protected one (CS0507). -->
+    <Reference Include="Bindito.Core" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Bindito.Core.dll</HintPath></Reference>
+    <Reference Include="Newtonsoft.Json"><Private>false</Private><HintPath>$(GameManagedDir)\Newtonsoft.Json.dll</HintPath></Reference>
+    <Reference Include="System.Collections.Immutable"><Private>false</Private><HintPath>$(GameManagedDir)\System.Collections.Immutable.dll</HintPath></Reference>
+    <Reference Include="Timberborn.AssetSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.AssetSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Automation" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Automation.dll</HintPath></Reference>
+    <Reference Include="Timberborn.AutomationBuildings" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.AutomationBuildings.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Autosaving" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Autosaving.dll</HintPath></Reference>
+    <Reference Include="Timberborn.BaseComponentSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.BaseComponentSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.BeaverContaminationSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.BeaverContaminationSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Beavers" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Beavers.dll</HintPath></Reference>
+    <Reference Include="Timberborn.BlockObjectTools" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.BlockObjectTools.dll</HintPath></Reference>
+    <Reference Include="Timberborn.BlockSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.BlockSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.BlueprintPrefabSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.BlueprintPrefabSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.BlueprintSystem"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.BlueprintSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Bots" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Bots.dll</HintPath></Reference>
+    <Reference Include="Timberborn.BotsUpkeep" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.BotsUpkeep.dll</HintPath></Reference>
+    <Reference Include="Timberborn.BuilderPrioritySystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.BuilderPrioritySystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.BuildingAvailability" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.BuildingAvailability.dll</HintPath></Reference>
+    <Reference Include="Timberborn.BuildingTools" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.BuildingTools.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Buildings" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Buildings.dll</HintPath></Reference>
+    <Reference Include="Timberborn.BuildingsNavigation" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.BuildingsNavigation.dll</HintPath></Reference>
+    <Reference Include="Timberborn.BuildingsReachability" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.BuildingsReachability.dll</HintPath></Reference>
+    <Reference Include="Timberborn.CameraSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.CameraSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Carrying" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Carrying.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Characters" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Characters.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Common" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Common.dll</HintPath></Reference>
+    <Reference Include="Timberborn.ConstructionGuidelines" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.ConstructionGuidelines.dll</HintPath></Reference>
+    <Reference Include="Timberborn.ConstructionMode" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.ConstructionMode.dll</HintPath></Reference>
+    <Reference Include="Timberborn.ConstructionSites" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.ConstructionSites.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Coordinates" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Coordinates.dll</HintPath></Reference>
+    <Reference Include="Timberborn.CoreUI" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.CoreUI.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Cutting" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Cutting.dll</HintPath></Reference>
+    <Reference Include="Timberborn.DeconstructionSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.DeconstructionSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Demolishing" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Demolishing.dll</HintPath></Reference>
+    <Reference Include="Timberborn.DeteriorationSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.DeteriorationSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.DistributionSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.DistributionSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.DropdownSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.DropdownSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.DwellingSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.DwellingSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Emptying" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Emptying.dll</HintPath></Reference>
+    <Reference Include="Timberborn.EntityNaming" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.EntityNaming.dll</HintPath></Reference>
+    <Reference Include="Timberborn.EntitySystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.EntitySystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Explosions" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Explosions.dll</HintPath></Reference>
+    <Reference Include="Timberborn.FactionSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.FactionSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Fields" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Fields.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Forestry" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Forestry.dll</HintPath></Reference>
+    <Reference Include="Timberborn.GameCycleSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.GameCycleSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.GameDistricts" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.GameDistricts.dll</HintPath></Reference>
+    <Reference Include="Timberborn.GameDistrictsMigration" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.GameDistrictsMigration.dll</HintPath></Reference>
+    <Reference Include="Timberborn.GameFactionSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.GameFactionSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.GameOver" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.GameOver.dll</HintPath></Reference>
+    <Reference Include="Timberborn.GameSaveRepositorySystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.GameSaveRepositorySystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.GameSaveRepositorySystemUI" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.GameSaveRepositorySystemUI.dll</HintPath></Reference>
+    <Reference Include="Timberborn.GameSceneLoading" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.GameSceneLoading.dll</HintPath></Reference>
+    <Reference Include="Timberborn.GameStartup" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.GameStartup.dll</HintPath></Reference>
+    <Reference Include="Timberborn.GameWonderCompletion" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.GameWonderCompletion.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Gathering" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Gathering.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Goods" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Goods.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Growing" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Growing.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Hauling" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Hauling.dll</HintPath></Reference>
+    <Reference Include="Timberborn.HazardousWeatherSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.HazardousWeatherSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.HazardousWeatherSystemUI" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.HazardousWeatherSystemUI.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Healthcare" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Healthcare.dll</HintPath></Reference>
+    <Reference Include="Timberborn.InputSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.InputSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.InventorySystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.InventorySystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.LifeSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.LifeSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Localization" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Localization.dll</HintPath></Reference>
+    <Reference Include="Timberborn.MapIndexSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.MapIndexSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.MechanicalSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.MechanicalSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.NaturalResources" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.NaturalResources.dll</HintPath></Reference>
+    <Reference Include="Timberborn.NaturalResourcesLifecycle" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.NaturalResourcesLifecycle.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Navigation" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Navigation.dll</HintPath></Reference>
+    <Reference Include="Timberborn.NeedSpecs" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.NeedSpecs.dll</HintPath></Reference>
+    <Reference Include="Timberborn.NeedSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.NeedSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.NotificationSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.NotificationSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Persistence" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Persistence.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Planting" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Planting.dll</HintPath></Reference>
+    <Reference Include="Timberborn.PlantingUI" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.PlantingUI.dll</HintPath></Reference>
+    <Reference Include="Timberborn.PlatformUtilities" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.PlatformUtilities.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Population" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Population.dll</HintPath></Reference>
+    <Reference Include="Timberborn.PowerGeneration" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.PowerGeneration.dll</HintPath></Reference>
+    <Reference Include="Timberborn.PowerManagement" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.PowerManagement.dll</HintPath></Reference>
+    <Reference Include="Timberborn.PrioritySystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.PrioritySystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.QuickNotificationSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.QuickNotificationSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.RangedEffectSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.RangedEffectSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Rendering" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Rendering.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Reproduction" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Reproduction.dll</HintPath></Reference>
+    <Reference Include="Timberborn.ResourceCountingSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.ResourceCountingSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.ScienceSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.ScienceSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.SelectionSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.SelectionSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.SingletonSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.SingletonSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.SoilContaminationSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.SoilContaminationSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.SoilMoistureSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.SoilMoistureSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.StatusSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.StatusSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.StockpilePrioritySystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.StockpilePrioritySystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Stockpiles" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Stockpiles.dll</HintPath></Reference>
+    <Reference Include="Timberborn.TemplateInstantiation" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.TemplateInstantiation.dll</HintPath></Reference>
+    <Reference Include="Timberborn.TemplateSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.TemplateSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Terraforming" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Terraforming.dll</HintPath></Reference>
+    <Reference Include="Timberborn.TerrainPhysics" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.TerrainPhysics.dll</HintPath></Reference>
+    <Reference Include="Timberborn.TerrainSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.TerrainSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.TickSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.TickSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.TimeSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.TimeSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.ToolButtonSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.ToolButtonSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.ToolSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.ToolSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.ToolSystemUI" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.ToolSystemUI.dll</HintPath></Reference>
+    <Reference Include="Timberborn.TutorialSettingsSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.TutorialSettingsSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.TutorialSteps" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.TutorialSteps.dll</HintPath></Reference>
+    <Reference Include="Timberborn.TutorialSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.TutorialSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.UILayoutSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.UILayoutSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.WaterBuildings" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.WaterBuildings.dll</HintPath></Reference>
+    <Reference Include="Timberborn.WaterSourceSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.WaterSourceSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.WaterSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.WaterSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.WeatherSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.WeatherSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Wellbeing" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Wellbeing.dll</HintPath></Reference>
+    <Reference Include="Timberborn.WindSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.WindSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Wonders" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Wonders.dll</HintPath></Reference>
+    <Reference Include="Timberborn.WorkSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.WorkSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.Workshops" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Workshops.dll</HintPath></Reference>
+    <Reference Include="Timberborn.WorldPersistence" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.WorldPersistence.dll</HintPath></Reference>
+    <Reference Include="Timberborn.ZiplineSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.ZiplineSystem.dll</HintPath></Reference>
+    <Reference Include="UnityEngine"><Private>false</Private><HintPath>$(GameManagedDir)\UnityEngine.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.ImageConversionModule"><Private>false</Private><HintPath>$(GameManagedDir)\UnityEngine.ImageConversionModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.CoreModule"><Private>false</Private><HintPath>$(GameManagedDir)\UnityEngine.CoreModule.dll</HintPath></Reference>
+    <Reference Include="UnityEngine.UIElementsModule"><Private>false</Private><HintPath>$(GameManagedDir)\UnityEngine.UIElementsModule.dll</HintPath></Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Everything the game loads from the mod folder besides the DLL. -->
+    <ModContent Include="**\*" Exclude="bin\**;obj\**;**\*.cs;Wardens.csproj;Directory.Build.props;manifest.json;settings.json;thumbnail.png;.gitignore;.leafcoats-import.txt" />
+  </ItemGroup>
+
+  <!-- Every build is a new version (user rule): tools/bump_version.py bumps manifest.json,
+       WardensMcpServer.Version and the <Version> below before compilation. -->
+  <Target Name="BumpVersion" BeforeTargets="BeforeBuild">
+    <Exec Command="python &quot;$(MSBuildProjectDirectory)/../tools/bump_version.py&quot;" ContinueOnError="true" />
+  </Target>
+
+  <Target Name="Deploy" AfterTargets="Build">
+    <MakeDir Directories="$(ModDir)" />
+    <Copy SourceFiles="$(OutputPath)Wardens.dll" DestinationFolder="$(ModDir)" />
+    <Copy SourceFiles="manifest.json" DestinationFolder="$(ModDir)" />
+    <Copy SourceFiles="thumbnail.png" DestinationFolder="$(ModDir)" Condition="Exists('thumbnail.png')" />
+    <!-- Timberbot + MCP settings; never overwrite the user's edited copy. -->
+    <Copy SourceFiles="settings.json" DestinationFolder="$(ModDir)" Condition="!Exists('$(ModDir)\settings.json')" />
+    <!-- Generated folders are replaced whole: a blueprint that no longer exists in src must not
+         survive in the deployed mod (a stale tutorial with missing loc keys crashes the load). -->
+    <RemoveDir Directories="$(ModDir)\Tutorials;$(ModDir)\Buildings;$(ModDir)\Collections;$(ModDir)\Recipes" />
+    <!-- RelativeDir, not RecursiveDir: the latter is relative to each glob's "**" and
+         would flatten Factions\X.json to X.json, breaking the FactionSpec.BlueprintModifiers paths. -->
+    <Copy SourceFiles="@(ModContent)" DestinationFiles="@(ModContent->'$(ModDir)\%(RelativeDir)%(Filename)%(Extension)')" />
+    <MakeDir Directories="$(ModDir)\docs" />
+    <Copy SourceFiles="..\..\docs\api-reference.md;..\..\docs\events.md;..\..\docs\websocket-protocol.md" DestinationFolder="$(ModDir)\docs" />
+    <Message Text="Deployed Wardens (with Timberbot) to $(ModDir)" Importance="high" />
+  </Target>
+
+</Project>

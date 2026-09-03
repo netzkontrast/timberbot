@@ -1,0 +1,13 @@
+{
+  "TutorialStageSpec": {
+    "Id": "Wardens.MoreBeavers.FirstBeaver",
+    "IntroLocKey": "Tutorial.Wardens.MoreBeavers.FirstBeaver"
+  },
+  "Children": {
+    "Step1": {
+      "BeaversStepSpec": {
+        "RequiredAmount": 1
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "TutorialStageSpec": {
+    "Id": "Wardens.BadwaterAndBiomass.BuildReedBed",
+    "IntroLocKey": "Tutorial.Wardens.BadwaterAndBiomass.BuildReedBed"
+  },
+  "Children": {
+    "Step1": {
+      "BuildingTutorialStepSpec": {
+        "TemplateNames": [
+          "ReedBed.Wardens"
+        ],
+        "OnlyFinishedBuildings": true,
+        "RequiredAmount": 1
+      }
+    }
+  }
+}

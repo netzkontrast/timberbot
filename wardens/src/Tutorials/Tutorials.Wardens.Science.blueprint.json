@@ -1,0 +1,15 @@
+{
+  "TutorialSpec": {
+    "Id": "Wardens.Science",
+    "NameLocKey": "Tutorial.Wardens.Science",
+    "RequiredTutorialIds": [
+      "Wardens.WorkingHours"
+    ],
+    "SkipIfTutorialFinished": "",
+    "SortOrder": 50,
+    "Stages": [
+      "Wardens.Science.BuildCruncher",
+      "Wardens.Science.SciencePoints"
+    ]
+  }
+}

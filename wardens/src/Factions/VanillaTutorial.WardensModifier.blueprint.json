@@ -1,0 +1,12 @@
+{
+  "TutorialSpec": {
+    "Id": "Wardens.NeverFinished",
+    "NameLocKey": "Tutorial.Wardens.Never",
+    "RequiredTutorialIds": [
+      "Wardens.NeverFinished"
+    ],
+    "SkipIfTutorialFinished": "",
+    "SortOrder": 9999,
+    "Stages": []
+  }
+}

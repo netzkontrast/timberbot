@@ -1,0 +1,18 @@
+{
+  "TutorialStageSpec": {
+    "Id": "Wardens.Haulers.ChangeWorkforce",
+    "IntroLocKey": "Tutorial.Wardens.Haulers.ChangeWorkforce"
+  },
+  "Children": {
+    "Step1": {
+      "IncreaseDesiredWorkersStepSpec": {
+        "TemplateName": "HaulingPost.Wardens"
+      }
+    },
+    "Step2": {
+      "DecreasePriorityStepSpec": {
+        "TemplateName": "HaulingPost.Wardens"
+      }
+    }
+  }
+}

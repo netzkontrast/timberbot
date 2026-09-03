@@ -23,3 +23,5 @@ venv-*/
 .venv/
 .venv-*/
 .pytest_cache/
+timberbot/src/Directory.Build.props
+wardens/src/Directory.Build.props

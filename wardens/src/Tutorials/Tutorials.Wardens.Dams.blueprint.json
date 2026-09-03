@@ -1,0 +1,14 @@
+{
+  "TutorialSpec": {
+    "Id": "Wardens.Dams",
+    "NameLocKey": "Tutorial.Wardens.Dams",
+    "RequiredTutorialIds": [
+      "Wardens.MissingDamTrigger"
+    ],
+    "SkipIfTutorialFinished": "",
+    "SortOrder": 100,
+    "Stages": [
+      "Wardens.Dams.BuildDam"
+    ]
+  }
+}

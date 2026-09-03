@@ -1,0 +1,26 @@
+{
+  "TutorialStageSpec": {
+    "Id": "Wardens.Science.BuildCruncher",
+    "IntroLocKey": "Tutorial.Wardens.Science.BuildCruncher"
+  },
+  "Children": {
+    "Step1": {
+      "BuildingTutorialStepSpec": {
+        "TemplateNames": [
+          "Cruncher.Wardens"
+        ],
+        "OnlyFinishedBuildings": true,
+        "RequiredAmount": 1
+      }
+    },
+    "Step2": {
+      "PoweredBuildingStepSpec": {
+        "TemplateName": "Cruncher.Wardens",
+        "RequiredAmount": 1,
+        "ShaftTemplateNames": [
+          "PowerShaft.Wardens"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "TutorialStageSpec": {
+    "Id": "Wardens.BadwaterAndBiomass.BuildChargingPost",
+    "IntroLocKey": "Tutorial.Wardens.BadwaterAndBiomass.BuildChargingPost"
+  },
+  "Children": {
+    "Step1": {
+      "BuildingTutorialStepSpec": {
+        "TemplateNames": [
+          "ChargingPost.Wardens"
+        ],
+        "OnlyFinishedBuildings": true,
+        "RequiredAmount": 1
+      }
+    },
+    "Step2": {
+      "SelectEntityStepSpec": {
+        "TemplateNames": [
+          "Bot.IronTeeth"
+        ],
+        "DescriptionLocKey": "Tutorial.Wardens.SelectWarden"
+      }
+    },
+    "Step3": {
+      "BotsChargedStepSpec": {
+        "MinEnergy": 0.5
+      }
+    }
+  }
+}

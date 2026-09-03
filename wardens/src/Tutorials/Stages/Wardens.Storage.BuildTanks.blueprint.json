@@ -1,0 +1,24 @@
+{
+  "TutorialStageSpec": {
+    "Id": "Wardens.Storage.BuildTanks",
+    "IntroLocKey": "Tutorial.Wardens.Storage.BuildTanks"
+  },
+  "Children": {
+    "Step1": {
+      "BuildingTutorialStepSpec": {
+        "TemplateNames": [
+          "SludgeTank.Wardens"
+        ],
+        "OnlyFinishedBuildings": true,
+        "RequiredAmount": 2
+      }
+    },
+    "Step2": {
+      "SelectStockpileGoodTutorialStepSpec": {
+        "TemplateName": "SludgeTank.Wardens",
+        "RequiredAmount": 2,
+        "GoodId": "Badwater"
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "GoodSpec": {
+    "Id": "Firmware",
+    "BackwardCompatibleIds": [],
+    "ConsumptionEffects": [
+      {
+        "NeedId": "Firmware",
+        "Points": 0.3
+      }
+    ],
+    "GoodType": "Box",
+    "StockpileVisualization": "Box",
+    "VisibleContainer": "Box",
+    "ContainerColor": {
+      "r": 0.2,
+      "g": 0.7,
+      "b": 0.35,
+      "a": 1.0
+    },
+    "ContainerMaterial": "",
+    "CarryingAnimation": "CarryInHands",
+    "Weight": 1,
+    "GoodGroupId": "Materials",
+    "GoodOrder": 91,
+    "Icon": "Sprites/Goods/MetalPartIcon",
+    "ForceImport": true,
+    "DisplayNameLocKey": "Good.Firmware.DisplayName",
+    "PluralDisplayNameLocKey": "Good.Firmware.PluralDisplayName"
+  }
+}

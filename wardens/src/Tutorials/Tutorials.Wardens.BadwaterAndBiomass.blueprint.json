@@ -1,0 +1,17 @@
+{
+  "TutorialSpec": {
+    "Id": "Wardens.BadwaterAndBiomass",
+    "NameLocKey": "Tutorial.Wardens.BadwaterAndBiomass",
+    "RequiredTutorialIds": [
+      "Wardens.Scrap"
+    ],
+    "SkipIfTutorialFinished": "",
+    "SortOrder": 30,
+    "Stages": [
+      "Wardens.BadwaterAndBiomass.BuildSludgePump",
+      "Wardens.BadwaterAndBiomass.BuildChargingPost",
+      "Wardens.BadwaterAndBiomass.BuildReedBed",
+      "Wardens.BadwaterAndBiomass.PlantReed"
+    ]
+  }
+}

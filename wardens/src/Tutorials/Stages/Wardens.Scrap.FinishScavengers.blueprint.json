@@ -1,0 +1,17 @@
+{
+  "TutorialStageSpec": {
+    "Id": "Wardens.Scrap.FinishScavengers",
+    "IntroLocKey": "Tutorial.Wardens.Scrap.FinishScavengers"
+  },
+  "Children": {
+    "Step1": {
+      "BuildingTutorialStepSpec": {
+        "TemplateNames": [
+          "ScavengerFlag.IronTeeth"
+        ],
+        "OnlyFinishedBuildings": true,
+        "RequiredAmount": 2
+      }
+    }
+  }
+}

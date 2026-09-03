@@ -1,0 +1,14 @@
+{
+  "TutorialSpec": {
+    "Id": "Wardens.Badtides",
+    "NameLocKey": "Tutorial.Wardens.Badtides",
+    "RequiredTutorialIds": [
+      "SurvivedFirstBadtideTrigger"
+    ],
+    "SkipIfTutorialFinished": "",
+    "SortOrder": 150,
+    "Stages": [
+      "Wardens.Badtides.Description"
+    ]
+  }
+}

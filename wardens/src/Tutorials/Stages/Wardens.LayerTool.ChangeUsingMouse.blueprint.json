@@ -1,0 +1,20 @@
+{
+  "TutorialStageSpec": {
+    "Id": "Wardens.LayerTool.ChangeUsingMouse",
+    "IntroLocKey": "Tutorial.Wardens.LayerTool.ChangeUsingMouse"
+  },
+  "Children": {
+    "Step1": {
+      "VisibleLevelChangeStepSpec": {
+        "VisibleLevelChangeType": "Decrease",
+        "ShowKeybindings": true
+      }
+    },
+    "Step2": {
+      "VisibleLevelChangeStepSpec": {
+        "VisibleLevelChangeType": "Increase",
+        "ShowKeybindings": true
+      }
+    }
+  }
+}

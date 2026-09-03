@@ -1,0 +1,24 @@
+{
+  "TutorialStageSpec": {
+    "Id": "Wardens.Storage.BuildRacks",
+    "IntroLocKey": "Tutorial.Wardens.Storage.BuildRacks"
+  },
+  "Children": {
+    "Step1": {
+      "BuildingTutorialStepSpec": {
+        "TemplateNames": [
+          "Rack.Wardens"
+        ],
+        "OnlyFinishedBuildings": true,
+        "RequiredAmount": 1
+      }
+    },
+    "Step2": {
+      "SelectStockpileGoodTutorialStepSpec": {
+        "TemplateName": "Rack.Wardens",
+        "RequiredAmount": 1,
+        "GoodId": "Biomass"
+      }
+    }
+  }
+}

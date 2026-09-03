@@ -1,0 +1,10 @@
+{
+  "GoodCollectionSpec": {
+    "CollectionId": "Wardens",
+    "Goods": [
+      "DataCore",
+      "Firmware",
+      "Biomass"
+    ]
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "FactionSpec": {
+    "Id": "Wardens",
+    "Order": 5200,
+    "Avatar": "Sprites/Avatars/WardensAdult",
+    "ChildAvatar": "Sprites/Avatars/WardensChild",
+    "BotAvatar": "Sprites/Avatars/WardensBot",
+    "ContaminatedAdultAvatar": "Sprites/Avatars/WardensContaminatedAdult",
+    "ContaminatedChildAvatar": "Sprites/Avatars/WardensContaminatedChild",
+    "Logo": "Sprites/Avatars/WardensLogo",
+    "NewGameFullAvatar": "Sprites/Avatars/WardensFullNewGame",
+    "Textures": [
+      "Materials/Beavers/Wardens/Adult/BeaverAdult1.Wardens",
+      "Materials/Beavers/Wardens/Adult/BeaverAdult2.Wardens",
+      "Materials/Beavers/Wardens/Adult/BeaverAdult3.Wardens",
+      "Materials/Beavers/Wardens/Adult/BeaverAdult4.Wardens",
+      "Materials/Beavers/Wardens/Adult/BeaverAdult5.Wardens"
+    ],
+    "ChildTextures": [
+      "Materials/Beavers/Wardens/Adult/BeaverAdult1.Wardens",
+      "Materials/Beavers/Wardens/Adult/BeaverAdult2.Wardens",
+      "Materials/Beavers/Wardens/Adult/BeaverAdult3.Wardens",
+      "Materials/Beavers/Wardens/Adult/BeaverAdult4.Wardens",
+      "Materials/Beavers/Wardens/Adult/BeaverAdult5.Wardens"
+    ],
+    "MaterialCollectionIds": [
+      "IronTeeth"
+    ],
+    "TemplateCollectionIds": [
+      "Buildings.Wardens",
+      "Characters.IronTeeth",
+      "ModularShaftParts.IronTeeth",
+      "NaturalResources.Wardens",
+      "Planes.IronTeeth"
+    ],
+    "PathMaterial": "Buildings/Paths/Path/Path.IronTeeth",
+    "BaseWoodMaterial": "Materials/UberAtlas/Materials/IronTeeth/BaseWood_Grey.IronTeeth",
+    "NeedCollectionIds": [
+      "IronTeeth",
+      "Wardens"
+    ],
+    "GoodCollectionIds": [
+      "IronTeeth",
+      "Wardens"
+    ],
+    "BlueprintModifiers": [
+      {
+        "Original": "tutorials/tutorials.badtides.blueprint",
+        "Modifier": "Factions/VanillaTutorial.WardensModifier.blueprint"
+      },
+      {
+        "Original": "tutorials/tutorials.basics.blueprint",
+        "Modifier": "Factions/VanillaTutorial.WardensModifier.blueprint"
+      },
+      {
+        "Original": "tutorials/tutorials.dams.blueprint",
+        "Modifier": "Factions/VanillaTutorial.WardensModifier.blueprint"
+      },
+      {
+        "Original": "tutorials/tutorials.droughts.blueprint",
+        "Modifier": "Factions/VanillaTutorial.WardensModifier.blueprint"
+      },
+      {
+        "Original": "tutorials/tutorials.forestry.blueprint",
+        "Modifier": "Factions/VanillaTutorial.WardensModifier.blueprint"
+      },
+      {
+        "Original": "tutorials/tutorials.haulersandworkforce.blueprint",
+        "Modifier": "Factions/VanillaTutorial.WardensModifier.blueprint"
+      },
+      {
+        "Original": "tutorials/tutorials.housing.blueprint",
+        "Modifier": "Factions/VanillaTutorial.WardensModifier.blueprint"
+      },
+      {
+        "Original": "tutorials/tutorials.layertool.blueprint",
+        "Modifier": "Factions/VanillaTutorial.WardensModifier.blueprint"
+      },
+      {
+        "Original": "tutorials/tutorials.morebeavers.blueprint",
+        "Modifier": "Factions/VanillaTutorial.WardensModifier.blueprint"
+      },
+      {
+        "Original": "tutorials/tutorials.powerandplanks.blueprint",
+        "Modifier": "Factions/VanillaTutorial.WardensModifier.blueprint"
+      },
+      {
+        "Original": "tutorials/tutorials.science.blueprint",
+        "Modifier": "Factions/VanillaTutorial.WardensModifier.blueprint"
+      },
+      {
+        "Original": "tutorials/tutorials.storage.blueprint",
+        "Modifier": "Factions/VanillaTutorial.WardensModifier.blueprint"
+      },
+      {
+        "Original": "tutorials/tutorials.tutorial.blueprint",
+        "Modifier": "Factions/VanillaTutorial.WardensModifier.blueprint"
+      },
+      {
+        "Original": "tutorials/tutorials.verticalarchitecture.blueprint",
+        "Modifier": "Factions/VanillaTutorial.WardensModifier.blueprint"
+      },
+      {
+        "Original": "tutorials/tutorials.waterandfood.blueprint",
+        "Modifier": "Factions/VanillaTutorial.WardensModifier.blueprint"
+      },
+      {
+        "Original": "tutorials/tutorials.wellbeing.blueprint",
+        "Modifier": "Factions/VanillaTutorial.WardensModifier.blueprint"
+      },
+      {
+        "Original": "tutorials/tutorials.wood.blueprint",
+        "Modifier": "Factions/VanillaTutorial.WardensModifier.blueprint"
+      },
+      {
+        "Original": "tutorials/tutorials.workinghours.blueprint",
+        "Modifier": "Factions/VanillaTutorial.WardensModifier.blueprint"
+      }
+    ],
+    "StartingBuildingId": "Core.Wardens",
+    "SoundId": "Common",
+    "DisplayNameLocKey": "Faction.Wardens.DisplayName",
+    "DescriptionLocKey": "Faction.Wardens.Description",
+    "GameOverMessageLocKey": "Faction.IronTeeth.GameOver.Message",
+    "GameOverFlavorLocKey": "Faction.IronTeeth.GameOver.Flavor"
+  },
+  "StartingFactionSpec": {},
+  "FactionWonderSpec": {
+    "WonderCompletionImage": "UI/Images/WonderCompletion/wonder-completion-ironteeth",
+    "WonderLaunchSound": "UI.Buildings.Wonder.EarthRepopulator",
+    "WonderCompletionFlavorLocKey": "Faction.Wardens.WonderCompletionFlavor",
+    "WonderCompletionMessageLocKey": "Faction.Wardens.WonderCompletionMessage"
+  }
+}

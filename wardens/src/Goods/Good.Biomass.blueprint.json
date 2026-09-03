@@ -1,0 +1,25 @@
+{
+  "GoodSpec": {
+    "Id": "Biomass",
+    "BackwardCompatibleIds": [],
+    "ConsumptionEffects": [],
+    "GoodType": "Box",
+    "StockpileVisualization": "Box",
+    "VisibleContainer": "Box",
+    "ContainerColor": {
+      "r": 0.12,
+      "g": 0.42,
+      "b": 0.38,
+      "a": 1.0
+    },
+    "ContainerMaterial": "",
+    "CarryingAnimation": "CarryInHands",
+    "Weight": 2,
+    "GoodGroupId": "Materials",
+    "GoodOrder": 3500,
+    "Icon": "Sprites/Goods/CattailRootIcon",
+    "ForceImport": false,
+    "DisplayNameLocKey": "Good.Biomass.DisplayName",
+    "PluralDisplayNameLocKey": "Good.Biomass.PluralDisplayName"
+  }
+}

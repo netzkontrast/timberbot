@@ -1,0 +1,16 @@
+{
+  "TutorialSpec": {
+    "Id": "Wardens.Reforestation",
+    "NameLocKey": "Tutorial.Wardens.Reforestation",
+    "RequiredTutorialIds": [
+      "Wardens.Power",
+      "Wardens.Science"
+    ],
+    "SkipIfTutorialFinished": "",
+    "SortOrder": 80,
+    "Stages": [
+      "Wardens.Reforestation.UnlockPlanter",
+      "Wardens.Reforestation.PlantBirches"
+    ]
+  }
+}

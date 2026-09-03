@@ -1,0 +1,20 @@
+{
+  "NeedSpec": {
+    "Id": "Telemetry",
+    "BackwardCompatibleIds": [],
+    "Order": 12,
+    "NeedGroupId": "Boosts",
+    "CharacterType": "Bot",
+    "StartingValue": 0.5,
+    "MinimumValue": 0.0,
+    "MaximumValue": 1.0,
+    "DailyDelta": -0.25,
+    "ImportanceMultiplier": 1.0,
+    "Effectiveness": 1.0,
+    "Wastable": false,
+    "HoursWarningThreshold": 4.5,
+    "DisplayNameLocKey": "Need.Telemetry.DisplayName",
+    "FavorableWellbeing": 2,
+    "UnfavorableWellbeing": -1
+  }
+}

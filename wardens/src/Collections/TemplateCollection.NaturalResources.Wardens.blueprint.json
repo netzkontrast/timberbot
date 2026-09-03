@@ -1,0 +1,8 @@
+{
+  "TemplateCollectionSpec": {
+    "CollectionId": "NaturalResources.Wardens",
+    "Blueprints": [
+      "NaturalResources/Crops/SludgeReed/SludgeReed.blueprint"
+    ]
+  }
+}

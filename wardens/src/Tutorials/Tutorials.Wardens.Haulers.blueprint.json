@@ -1,0 +1,16 @@
+{
+  "TutorialSpec": {
+    "Id": "Wardens.Haulers",
+    "NameLocKey": "Tutorial.Wardens.Haulers",
+    "RequiredTutorialIds": [
+      "Wardens.IdleWardensTrigger"
+    ],
+    "SkipIfTutorialFinished": "",
+    "SortOrder": 160,
+    "Stages": [
+      "Wardens.Haulers.BuildHaulerDock",
+      "Wardens.Haulers.ChangeWorkforce",
+      "Wardens.Haulers.PauseHaulerDock"
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "TutorialStageSpec": {
+    "Id": "Wardens.Power.PowerPods",
+    "IntroLocKey": "Tutorial.Wardens.Power.PowerPods"
+  },
+  "Children": {
+    "Step1": {
+      "PoweredBuildingStepSpec": {
+        "TemplateName": "BreedingPod.Wardens",
+        "RequiredAmount": 1,
+        "ShaftTemplateNames": [
+          "PowerShaft.Wardens"
+        ]
+      }
+    }
+  }
+}

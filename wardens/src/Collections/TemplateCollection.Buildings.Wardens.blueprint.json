@@ -1,0 +1,27 @@
+{
+  "TemplateCollectionSpec": {
+    "CollectionId": "Buildings.Wardens",
+    "Blueprints": [
+      "Buildings/DistrictManagement/Core/Core.Wardens.blueprint",
+      "Buildings/Science/ChargingPost/ChargingPost.Wardens.blueprint",
+      "Buildings/Science/Cruncher/Cruncher.Wardens.blueprint",
+      "Buildings/Power/SludgeBurner/SludgeBurner.Wardens.blueprint",
+      "Buildings/Power/PowerShaft/PowerShaft.Wardens.blueprint",
+      "Buildings/Storage/ScrapPile/ScrapPile.Wardens.blueprint",
+      "Buildings/Food/ReedBed/ReedBed.Wardens.blueprint",
+      "Buildings/Water/SludgePump/SludgePump.Wardens.blueprint",
+      "Buildings/Power/BadwaterCell/BadwaterCell.Wardens.blueprint",
+      "Buildings/Storage/SludgeTank/SludgeTank.Wardens.blueprint",
+      "Buildings/Housing/BreedingPod/BreedingPod.Wardens.blueprint",
+      "Buildings/Housing/AdvancedBreedingPod/AdvancedBreedingPod.Wardens.blueprint",
+      "Buildings/Wood/Planter/Planter.Wardens.blueprint",
+      "Buildings/Paths/Stairs/Stairs.Wardens.blueprint",
+      "Buildings/Paths/Platform/Platform.Wardens.blueprint",
+      "Buildings/Landscaping/Dam/Dam.Wardens.blueprint",
+      "Buildings/Storage/Rack/Rack.Wardens.blueprint",
+      "Buildings/DistrictManagement/HaulingPost/HaulingPost.Wardens.blueprint",
+      "Buildings/Wellbeing/Deck/Deck.Wardens.blueprint",
+      "Buildings/Metal/ScavengerFlag/ScavengerFlag.IronTeeth.blueprint"
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "TutorialSpec": {
+    "Id": "Wardens.Wellbeing",
+    "NameLocKey": "Tutorial.Wardens.Wellbeing",
+    "RequiredTutorialIds": [
+      "Wardens.Housing"
+    ],
+    "SkipIfTutorialFinished": "",
+    "SortOrder": 90,
+    "Stages": [
+      "Wardens.Wellbeing.SelectWarden",
+      "Wardens.Wellbeing.WellbeingPanel",
+      "Wardens.Wellbeing.SetWorkingHours"
+    ]
+  }
+}

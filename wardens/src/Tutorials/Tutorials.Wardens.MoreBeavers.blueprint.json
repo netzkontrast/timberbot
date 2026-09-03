@@ -1,0 +1,14 @@
+{
+  "TutorialSpec": {
+    "Id": "Wardens.MoreBeavers",
+    "NameLocKey": "Tutorial.Wardens.MoreBeavers",
+    "RequiredTutorialIds": [
+      "Wardens.Power"
+    ],
+    "SkipIfTutorialFinished": "",
+    "SortOrder": 75,
+    "Stages": [
+      "Wardens.MoreBeavers.FirstBeaver"
+    ]
+  }
+}
