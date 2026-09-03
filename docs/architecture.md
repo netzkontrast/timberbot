@@ -144,7 +144,7 @@ This is intentional. The gate is what makes the player the boss of the AI: nothi
 ### Modes
 
 - **Request mode** (default). Player types a prompt in the widget and presses Launch. The mod sets `pendingRequest`; the WS broadcaster pushes the resulting `state` frame to every connected subscriber. The connector picks up the request immediately — no polling.
-- **Autonomous mode**. Connector decides cadence using the persisted `goal`. The ready gate is still authoritative — pressing Stop instantly flips `ready=false` on every connected client.
+- **Autonomous mode**. Connector decides cadence using the persisted `goal`. The cadence is clock-driven on the connector side (`tbot watch --autonomous-interval`, default 60 s): the connector re-evaluates the last `state` frame it received when the interval elapses, so cycles continue even though the mod pushes `state` only on mutation. The ready gate is still authoritative — pressing Stop instantly flips `ready=false` on every connected client, and the next cadence check sees it.
 
 The connector advances `acked_request_id` in its WS `heartbeat` frame after each cycle so the mod can clear the single pending slot. Queueing is the connector's problem, not the mod's.
 

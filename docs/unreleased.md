@@ -1,3 +1,13 @@
+## v0.9 Autonomous mode: clock-driven connector cadence, widget mode sync
+
+Autonomous mode ("Automatik") did not run reliably. Three independent defects, all fixed:
+
+- [fix] **Autonomous cadence is clock-driven.** `tbot watch` evaluated the autonomous trigger only when the mod pushed a `state` frame. The mod pushes `state` only on mutation, so after one short cycle nothing arrived and autonomous mode went silent until something else changed. The connector now runs a dedicated dispatcher task that re-checks the last known state when `--autonomous-interval` elapses (default 60 s), so cycles keep firing until the player presses Stop or switches mode.
+- [fix] **Request-mode dispatch never fired.** The connector read `pendingRequest.goal`, but the mod publishes `pendingRequest` as `{id, prompt}` (`TimberbotAgentState.ToStateResponseJson`, `docs/websocket-protocol.md`). `prompt` is read now; `goal` is still accepted as a legacy alias.
+- [fix] **Widget mode switch was swallowed.** The in-game panel booted assuming `autonomous` while the mod defaults to `request`, and it did not update its own bookkeeping when mirroring the server mode. Selecting Autonomous therefore posted nothing (the dropdown snapped back to Request on the next poll), Launch never sent the prompt in request mode, and typed prompts were saved as the goal. The panel now follows the server mode via the new `TimberbotPure.ResolveServerMode`, whose fallback is the mod default.
+- [behaviour] **Dispatch no longer blocks the WebSocket pump.** Frames that arrive during an agent run are processed immediately (Stop takes effect at once; a `pendingRequest` that lands mid-run is dispatched right after the run). Cycles stay strictly serialized: one at a time.
+- [internal] Regression tests: `python/tests/test_watch.py` (cadence re-fires from a single frame, gate close stops it, mid-run frames are consumed, cycles never overlap, mod wire shape for `pendingRequest`), `timberbot/test/TimberbotPureTests.cs` (`ResolveServerMode`, string-typed `acked_request_id`).
+
 ## v0.9 In-mod MCP endpoint (`POST /mcp`)
 
 The mod now hosts a stateless [MCP 2026-07-28](https://modelcontextprotocol.io/specification/2026-07-28/changelog) server on the existing HTTP port. No sidecar, no session handshake. See [MCP Endpoint](mcp.md).
