@@ -7,5 +7,6 @@
   "authToken": "",
   "maxBodyBytes": 1048576,
   "mcpPort": 8090,
-  "mcpEnabled": true
+  "mcpEnabled": true,
+  "chapterGating": true
 }

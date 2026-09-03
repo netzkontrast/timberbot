@@ -194,3 +194,11 @@ Explicitly out of v0.1: breeding pods, remediation tech, field studies, the Ark,
   inside the game** (`WardensMcpServer`, port 8090) with chat, pointer, camera and Timberbot passthrough
   tools. `wardens/playtest/PLAYTEST.md` has the tool table.
 - Not yet verified in-game: this whole batch (built and deployed, awaiting a run).
+
+## Status 2026-09-03 (later): chapter gating
+
+- **Chapter unlock service shipped** (`WardensChapterService`, `wardens/src/WardensChapters.cs`): nine
+  buildings now ship padlocked (`ScienceCost: 999999`) and open in five chapters as the tutorial line
+  advances (Badwater, Signal, Pods, Power, Green); toast + chat line per chapter, MCP `chapter` tool,
+  `tools/validate.py` cross-checks the table. Details in `wardens/README.md`.
+- Not yet verified in-game.

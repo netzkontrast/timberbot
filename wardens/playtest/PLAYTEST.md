@@ -31,8 +31,9 @@ or call the MCP tool `timberbot_ready`.
 
 | Tool | Thread | What |
 |---|---|---|
-| `wardens_status` | main | faction, speed, bots/beavers + avg Energy, tutorial state, pointers, camera, ready gate |
+| `wardens_status` | main | faction, speed, bots/beavers + avg Energy, tutorial + chapter state, pointers, camera, ready gate |
 | `tutorial` | main | `status`, or `next` to force the next stage of a tutorial id |
+| `chapter` | main | `status`: every story chapter with its gating tutorial and per-building lock state; `unlock` forces `chapter_id` open |
 | `point` / `unpoint` | main | highlight + bobbing arrow + toast on a tile, optional camera pan |
 | `say` | main | message into the in-game WARDENS UPLINK panel (optional toast) |
 | `chat_read` | listener | long-poll (≤120 s) for the player's next chat message |
@@ -76,6 +77,15 @@ Every tool result may carry `chat`: player messages not yet delivered to the age
   Planter Rig (locked), Stairs (locked), Platform (locked), Dam, Crate Rack, Hauler Dock,
   Observation Deck, Scavenger Flag, Path). Placing the Cruncher next to the Core with a Power Shaft
   between them should light its illuminator (Core outputs 150 hp).
+- Chapters (`wardens/README.md`, "How the chapters work"): on a new game the padlock sits on the
+  Sludge Pump, Reed Bed, Sludge Tank, Crate Rack, Cruncher, both pods, Badwater Cell and Sludge
+  Burner; `chapter status` shows `next: Badwater`, `next_waits_for: Wardens.Scrap`. Finishing the
+  Scrap tutorial (or `tutorial next` through it) must clear the first four padlocks within a second,
+  show the "Chapter 2: Badwater." toast and put the same line in the chat panel; the Badwater and
+  Biomass tutorial then starts with its buildings buildable. Reloading the save keeps them unlocked
+  and shows no toast. To test a later building out of order use `chapter unlock chapter_id=Signal`
+  (or start with the tutorial off, which opens every chapter). `"chapterGating": false` in
+  `settings.json` does the same for every game.
 - `python wardens/tools/validate.py` must print `problems: none` before every in-game test.
 - A Charging Post next to the Core, connected by a shaft, is what keeps the bots alive; build it first.
 - The Forestry section must show plant buttons for the common trees (Planter Rig) and Sludge Reed

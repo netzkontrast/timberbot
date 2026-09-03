@@ -26,6 +26,8 @@ namespace Wardens
             Bind<WardensPointer>().AsSingleton();
             Bind<WardensChat>().AsSingleton();
             Bind<WardensColdBoot>().AsSingleton();
+            // Story chapters: unlock the padlocked buildings as the tutorial line advances.
+            Bind<WardensChapterService>().AsSingleton();
             Bind<WardensAssetDump>().AsSingleton();
             Bind<WardensMcpTools>().AsSingleton();
             Bind<WardensMcpServer>().AsSingleton();

@@ -7,6 +7,11 @@ Every crash so far came from a name the game looks up while loading: a template 
 a loc key, a stage id, a planter group with two buildings. This script resolves the same names
 against the faction's template collections (ours + the vanilla Blueprints.zip) and the loc tables,
 and prints what would throw. Exit code 1 when there are problems.
+
+Also cross-checks the chapter table in src/WardensChapters.cs against the blueprints: every
+template shipped with the chapter padlock (ScienceCost == CHAPTER_LOCK) must belong to a chapter,
+every chapter template must exist and be padlocked, the gating tutorial must exist, and each
+chapter needs its Title/Unlocked loc rows.
 """
 from __future__ import annotations
 
@@ -20,6 +25,8 @@ from pathlib import Path
 GAME = Path("F:/Steam/steamapps/common/Timberborn/Timberborn_Data/StreamingAssets/Modding")
 DEFAULT_MOD = Path.home() / "Documents/Timberborn/Mods/Wardens"
 FACTION = "Wardens"
+CHAPTERS_CS = Path(__file__).resolve().parents[1] / "src" / "WardensChapters.cs"
+CHAPTER_LOCK = 999999   # WardensChapterService.LockedCost
 # Trigger ids that vanilla or WardensTriggers.cs finish through ITutorialTriggers.AddTrigger.
 TRIGGER_IDS = {"StairsUnlockedTrigger", "SurvivedFirstDroughtTrigger", "SurvivedFirstBadtideTrigger",
                "Wardens.MissingDamTrigger", "Wardens.PlatformBuiltTrigger", "Wardens.IdleWardensTrigger"}
@@ -48,6 +55,14 @@ def load_json(raw: bytes) -> dict:
     except json.JSONDecodeError:
         # The game's parser tolerates trailing commas (some Leaf Coats blueprints have them).
         return json.loads(re.sub(r",(\s*[}\]])", lambda m: m.group(1), text))
+
+
+def read_chapters(path: Path = CHAPTERS_CS) -> list[tuple[str, str, list[str]]]:
+    """(id, gating tutorial id, template names) per `new WardensChapter(...)` entry in the C# table."""
+    text = path.read_text(encoding="utf-8")
+    text = re.sub(r"//[^\n]*", "", text)   # strip line comments; the table itself has none inside
+    entries = re.findall(r'new WardensChapter\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*new\[\]\s*\{([^}]*)\}\s*\)', text)
+    return [(cid, tutorial, re.findall(r'"([^"]+)"', names)) for cid, tutorial, names in entries]
 
 
 def main() -> int:
@@ -215,8 +230,31 @@ def main() -> int:
                 if lk:
                     check_loc(spec.get(lk, ""), where)
 
+    # chapters (src/WardensChapters.cs) vs. the padlocked blueprints and the tutorial line
+    chapters = read_chapters() if CHAPTERS_CS.exists() else []
+    if not chapters:
+        problems.append(f"no chapters parsed from {CHAPTERS_CS}")
+    padlocked = {n for n, d in templates.items() if d.get("BuildingSpec", {}).get("ScienceCost", 0) >= CHAPTER_LOCK}
+    listed: dict[str, str] = {}
+    for cid, tutorial, names in chapters:
+        if tutorial not in tutorials and tutorial not in TRIGGER_IDS:
+            problems.append(f"chapter {cid}: gating tutorial unknown: {tutorial}")
+        for key in (f"Wardens.Chapter.{cid}.Title", f"Wardens.Chapter.{cid}.Unlocked"):
+            check_loc(key, f"chapter {cid}")
+        for n in names:
+            if n in listed:
+                problems.append(f"chapter {cid}: {n} already unlocked by chapter {listed[n]}")
+            listed[n] = cid
+            if n not in templates:
+                problems.append(f"chapter {cid}: template unknown: {n}")
+            elif n not in padlocked:
+                problems.append(f"chapter {cid}: {n} is not padlocked (BuildingSpec.ScienceCost != {CHAPTER_LOCK})")
+    for n in sorted(padlocked - set(listed)):
+        problems.append(f"{n}: padlocked (ScienceCost {CHAPTER_LOCK}) but no chapter in WardensChapters.cs unlocks it")
+
     print(f"mod: {mod}")
     print(f"collections: {', '.join(active)}")
+    print(f"chapters: {len(chapters)}, padlocked templates: {len(padlocked)}")
     print(f"templates: {len(templates)} (+{len(aliases)} aliases), goods: {len(goods)}, planters: "
           + ", ".join(f"{g}: {len(planters.get(g, []))}" for g in sorted(groups)))
     print(f"tutorials: {len(tutorials)}, stages: {len(stages)}, loc keys: {len(loc)}")

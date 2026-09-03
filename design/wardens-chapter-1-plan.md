@@ -165,3 +165,16 @@ Biomass + power (advanced: + Firmware), per the user's request. §4 (chapter unl
 Badwater loop added on request: Sludge Pump (the unlocked pump, badwater only), Badwater Cell (100 hp from
 Badwater, the early power source), Sludge Tank; tutorial stage "Power" before "Cruncher". Chapter 1 bar is
 now 13 buttons. Art direction for leaving the Iron Teeth look: `wardens-art-path.md`.
+
+## Status 2026-09-03, chapter unlock service
+
+§4 is implemented as `wardens/src/WardensChapters.cs`, with two changes from the plan above. The gate is
+the tutorial line rather than the service's own goal checks (the ported tutorials already carry the
+"20 scrap in stock", "every bot charged" and "power the Cruncher" goals as steps, so a chapter opens
+when its tutorial finishes: `TutorialService`'s finished set, polled twice a second, no extra save
+state), and the chapters follow the tutorial order instead of the three-chapter table in §4.2: Badwater
+(after Scrap), Signal (after Working hours), Pods (after Storage), Power (after Housing), Green (after
+the first beaver). Padlock via `ScienceCost: 999999` as planned, `UnlockIgnoringCost` + the toolbar
+refresh Timberbot's unlock endpoint uses, toast + chat line on completion. Visible-but-locked (§4.1) is
+what ships; hiding buttons stays open. Tutorial off or `chapterGating: false` opens everything.
+Not yet verified in-game.

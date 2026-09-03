@@ -83,6 +83,7 @@ namespace Wardens
         private readonly QuickNotificationService _quickNotifications;
         private readonly TimberbotService _timberbot;
         private readonly WardensAssetDump _assetDump;
+        private readonly WardensChapterService _chapters;
 
         private readonly List<McpTool> _tools = new List<McpTool>();
         private readonly Dictionary<string, McpTool> _byName = new Dictionary<string, McpTool>();
@@ -95,7 +96,7 @@ namespace Wardens
             CharacterPopulation population, TutorialService tutorialService, TutorialSettings tutorialSettings,
             WardensPointer pointer, WardensChat chat, WardensCameraDirector director, WardensColdBoot coldBoot,
             EntitySelectionService selection, QuickNotificationService quickNotifications, TimberbotService timberbot,
-            WardensAssetDump assetDump)
+            WardensAssetDump assetDump, WardensChapterService chapters)
         {
             _factionService = factionService;
             _speedManager = speedManager;
@@ -110,6 +111,7 @@ namespace Wardens
             _quickNotifications = quickNotifications;
             _timberbot = timberbot;
             _assetDump = assetDump;
+            _chapters = chapters;
         }
 
         public void Initialize(WardensSettings settings, WardensMcpServer server)
@@ -126,7 +128,7 @@ namespace Wardens
                 "Use `point` to show the player a tile (highlight + arrow + toast). " +
                 "`timberbot` forwards to the Timberbot HTTP API compiled into this mod (GET reads, POST actions); " +
                 "call `timberbot_ready` once so the API accepts requests, and `timberbot_routes` to list routes. " +
-                "`wardens_status` and `tutorial` report the faction story/tutorial state; `camera` and `cutscene` drive the camera.";
+                "`wardens_status`, `tutorial` and `chapter` report the faction story/tutorial state; `camera` and `cutscene` drive the camera.";
         }
 
         public McpTool Find(string name) => _byName.TryGetValue(name ?? "", out var t) ? t : null;
@@ -170,7 +172,7 @@ namespace Wardens
         private void Build()
         {
             Add("wardens_status",
-                "Overview of the run: faction, speed, bot/beaver counts and average bot Energy, tutorial/story state, pointers, camera, Timberbot readiness.",
+                "Overview of the run: faction, speed, bot/beaver counts and average bot Energy, tutorial and chapter state, pointers, camera, Timberbot readiness.",
                 Schema(new JObject()),
                 a => Status());
 
@@ -191,6 +193,23 @@ namespace Wardens
                         _tutorialService.StartNextStage(id);
                     }
                     return TutorialState();
+                });
+
+            Add("chapter",
+                "Story chapters that gate the building bar (WardensChapters.cs): each chapter opens when its tutorial finishes and unlocks the padlocked buildings. action=status lists every chapter with its gate and per-building lock state; action=unlock opens chapter_id now (dev/testing).",
+                Schema(new JObject
+                {
+                    ["action"] = Prop("string", "status | unlock", "status"),
+                    ["chapter_id"] = Prop("string", "e.g. Badwater, Signal, Pods, Power, Green (for unlock)"),
+                }),
+                a =>
+                {
+                    if (Str(a, "action", "status") == "unlock")
+                    {
+                        var id = Str(a, "chapter_id") ?? throw new ArgumentException("chapter_id required");
+                        if (!_chapters.Force(id)) throw new ArgumentException("unknown chapter " + id);
+                    }
+                    return _chapters.State();
                 });
 
             Add("point",
@@ -371,6 +390,7 @@ namespace Wardens
                     ["bots_energy_avg"] = withEnergy > 0 ? (float?)(energy / withEnergy) : null,
                 },
                 ["tutorial"] = TutorialState(),
+                ["chapter"] = _chapters.Summary(),
                 ["pointers"] = _pointer.Count,
                 ["camera"] = _director.State(),
                 ["cutscene_played"] = _coldBoot.Played,

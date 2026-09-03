@@ -31,6 +31,7 @@ src/
   WardensPopulationStep.cs           BeaversStepSpec: "Beavers: (n/m)" for the first pod-born beaver
   WardensTriggers.cs                 MissingDam / PlatformBuilt / IdleWardens triggers (optional tutorials)
   WardensColdBoot.cs                 start-of-run cutscene: paused orbit around the Core
+  WardensChapters.cs                 story chapters: tutorial progress unlocks the padlocked buildings
   WardensCameraDirector.cs           keyframe camera flights (cutscene, MCP, trailer)
   WardensPointer.cs                  highlight + arrow + toast on a tile ("look here")
   WardensChat.cs                     in-game chat panel (WARDENS UPLINK) + message store
@@ -66,9 +67,41 @@ and the csproj, so the mod manager shows which build is deployed. (Uses the git-
 - `tools/validate.py` resolves every name the game looks up at load (collection blueprints, tutorial
   templates/goods/plantables, loc keys, planter groups) against the deployed mod + vanilla; run it
   after every generator change.
-- Finishing a tutorial posts `TutorialFinishedEvent`, the hook for the chapter unlock service.
+- Finishing a tutorial lands its id in `TutorialService`'s finished set (saved with the game); the chapter
+  service below polls that set.
 
-Act I only. Out of scope for now: breeding pods, remediation, the Ark, custom art, the wasteland map.
+## How the chapters work
+
+`WardensChapters.cs` is the chapter unlock service from the Chapter 1 plan (§4), driven by the tutorial
+line instead of its own goal checks. Buildings a chapter opens ship with `ScienceCost: 999999`
+(`CHAPTER_LOCK` in `tools/gen_buildings.py`), so the bar shows vanilla's padlock; when the chapter's
+tutorial is finished the service unlocks them through `BuildingUnlockingService.UnlockIgnoringCost`,
+refreshes the toolbar button the way Timberbot's `/api/science/unlock` does, and posts a toast plus a
+line in the chat panel (`Wardens.Chapter.<Id>.Title` / `.Unlocked` in `Localizations/enUS.csv`).
+
+| Chapter | Opens when | Buildings |
+|---|---|---|
+| 1 First Light | new game | Path, Scavenger Flag, Power Shaft, Charging Post, Scrap Pile (never locked) |
+| 2 Badwater | `Wardens.Scrap` finished | Sludge Pump, Reed Bed, Sludge Tank, Crate Rack |
+| 3 Signal | `Wardens.WorkingHours` finished | The Cruncher |
+| 4 Pods | `Wardens.Storage` finished | Breeding Pod |
+| 5 Power | `Wardens.Housing` finished | Badwater Cell, Sludge Burner |
+| 6 Green | `Wardens.MoreBeavers` finished | Advanced Breeding Pod |
+
+Each chapter opens right before the tutorial that asks for its buildings starts (the tutorial line's
+`RequiredTutorialIds` chain guarantees the order). Planter Rig, Stairs and Platform stay science-gated
+as in vanilla; Dam, Hauler Dock and Observation Deck are free because their tutorials fire on triggers
+(cycle count, stairs unlocked) that do not follow the chapter order.
+
+- No save state: finished tutorials and unlocked buildings are both persisted by vanilla, so a loaded
+  game reconciles on its first frame, silently. Tutorial off in the new-game panel, or
+  `"chapterGating": false` in `settings.json`, opens every chapter at load. Other factions are untouched.
+- MCP: `wardens_status` carries `chapter` (complete list, next chapter and the tutorial it waits for);
+  the `chapter` tool lists per-building lock state and `action=unlock` forces a chapter open for testing.
+- `tools/validate.py` cross-checks the C# table against the blueprints: every padlocked template has a
+  chapter, every chapter template exists and is padlocked, the gating tutorial exists, loc rows present.
+
+Act I only. Out of scope for now: remediation, the Ark, custom art, the wasteland map.
 
 ## Art (v0.2)
 
@@ -95,7 +128,8 @@ with alpha premultiplied so fully-transparent-but-black source pixels don't frin
 `tools/gen_buildings.py` re-specs Iron Teeth blueprints from the game's own `Blueprints.zip` into
 `Buildings/`, `NaturalResources/`, `Goods/Good.Biomass` and the two Wardens template collections.
 Models stay vanilla references. Everything costs Scrap Metal (the Scavenger Flag is the only source);
-science cost is 0 until the chapter unlock service exists.
+science cost is 0 for the starting bar, `CHAPTER_LOCK` for the chapter-gated buildings (see above),
+and a real science price only for Planter Rig, Stairs and Platform.
 
 | Template | From | What changed |
 |---|---|---|
@@ -107,7 +141,7 @@ science cost is 0 until the chapter unlock service exists.
 | `ReedBed.Wardens` | FarmHouse.IronTeeth | plants Sludge Reed |
 | `BreedingPod.Wardens` | BreedingPod.IronTeeth | nutrients Biomass; 100 hp power input (transputs on every tile) |
 | `AdvancedBreedingPod.Wardens` | AdvancedBreedingPod.IronTeeth | Biomass + Firmware; 150 hp; costs Scrap 20 + Data Core 5 |
-| `SludgePump.Wardens` | DeepBadwaterPump.IronTeeth | the unlocked pump: badwater from day one, Scrap 12, bots work it free |
+| `SludgePump.Wardens` | DeepBadwaterPump.IronTeeth | the badwater pump, Scrap 12, bots work it free; chapter Badwater |
 | `BadwaterCell.Wardens` | SteamEngine.IronTeeth | early generator: burns Badwater 0.4/h for 100 hp, Scrap 8, cyan light, small pollution |
 | `SludgeTank.Wardens` | SmallTank.IronTeeth | Scrap 6 |
 | `Planter.Wardens` | Forester.IronTeeth | exists because the bar must hold exactly one tree-planter building (bottom-bar rule) |
