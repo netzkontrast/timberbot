@@ -207,4 +207,6 @@ Explicitly out of v0.1: breeding pods, remediation tech, field studies, the Ark,
 - **Campaign maps researched** ([`wardens-campaign-maps.md`](wardens-campaign-maps.md), 2026-09-05): one map per
   level means a runtime installer into `Documents/Timberborn/Maps`, a `campaign.json` for continuity, and a
   transition through the new-game path once `GameSceneLoader` / `NewGameConfiguration` are confirmed in the decompile.
+  The system design is [`wardens-campaign-design.md`](wardens-campaign-design.md); the five-level concept
+  (First Light, The Sump, The Pods, Green, The Ark) is [`wardens-campaign-concept.md`](wardens-campaign-concept.md).
 - Not yet verified in-game.
