@@ -2,7 +2,8 @@
 
 Design: [`../design/faction-wardens.md`](../design/faction-wardens.md), Chapter 1 plan:
 [`../design/wardens-chapter-1-plan.md`](../design/wardens-chapter-1-plan.md), how the agent plays:
-[`../design/wardens-play.md`](../design/wardens-play.md), the map: [`../design/wardens-wasteland.md`](../design/wardens-wasteland.md).
+[`../design/wardens-play.md`](../design/wardens-play.md), the map: [`../design/wardens-wasteland.md`](../design/wardens-wasteland.md),
+maps per level (campaign research): [`../design/wardens-campaign-maps.md`](../design/wardens-campaign-maps.md).
 Playtesting with an agent: [`playtest/PLAYTEST.md`](playtest/PLAYTEST.md). Where things stand and what is
 still unverified: `../AGENTS.md`, "The Wardens: state".
 

@@ -57,3 +57,6 @@ on the surface and inside bounds, one StartingLocation on a flat pad with air ab
 - Do `RuinColumnH*` and `UndergroundRuins` still exist under those names in 1.1?
 - Is the Sump deep enough for the Sludge Pump (deep badwater pump) once filled? If not, lower its bed to 3.
 - Does the game list a `.timber` shipped inside a mod's `Maps/` folder, or only the copy in `Documents/Timberborn/Maps`?
+  Research (2026-09-05, [`wardens-campaign-maps.md`](wardens-campaign-maps.md) §1) says assume **only the copy**: the
+  official mod layout has no `Maps/` folder and mod.io maps are installed by hand; the mod should copy its maps
+  into `Documents/Timberborn/Maps` at runtime and call `MapRepository.NotifyMapRepositoryChanged()`.
