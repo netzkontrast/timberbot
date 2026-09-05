@@ -2,7 +2,9 @@
 
 > **Status:** design (2026-09-05), written on top of the research in
 > [`wardens-campaign-maps.md`](wardens-campaign-maps.md) and for the story in
-> [`wardens-campaign-concept.md`](wardens-campaign-concept.md). Nothing compiled. Every game API used here
+> [`wardens-campaign-concept.md`](wardens-campaign-concept.md) and the full arc in
+> [`wardens-campaign-arc.md`](wardens-campaign-arc.md); what still has to be found out is
+> [`wardens-campaign-research-plan.md`](wardens-campaign-research-plan.md). Nothing compiled. Every game API used here
 > is in the research doc's "verified" table unless marked **(unverified)**; the unverified ones sit behind
 > one interface (`ILevelStarter`, §4.4) so the rest of the system does not depend on how the decompile
 > answers. Story arc: [`faction-wardens.md`](faction-wardens.md); chapter mechanics:

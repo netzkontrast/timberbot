@@ -1,6 +1,7 @@
 # The Wardens campaign: initial concept
 
-> **Status:** concept (2026-09-05), first draft. The system that runs it is
+> **Status:** concept (2026-09-05), first draft; it is the *essential cut* of the full ten-level arc in
+> [`wardens-campaign-arc.md`](wardens-campaign-arc.md) (§7 there maps the two). The system that runs it is
 > [`wardens-campaign-design.md`](wardens-campaign-design.md); what the game can and cannot do about maps is
 > [`wardens-campaign-maps.md`](wardens-campaign-maps.md). The arc it follows is [`faction-wardens.md`](faction-wardens.md)
 > §1 (Cold Start → The Pods → Green → The Ark); the voice is [`wardens-play.md`](wardens-play.md). Level 01 is
