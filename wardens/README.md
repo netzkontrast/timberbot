@@ -5,7 +5,8 @@ Design: [`../design/faction-wardens.md`](../design/faction-wardens.md), Chapter 
 [`../design/wardens-play.md`](../design/wardens-play.md), the map: [`../design/wardens-wasteland.md`](../design/wardens-wasteland.md),
 the campaign: research [`../design/wardens-campaign-maps.md`](../design/wardens-campaign-maps.md), system design
 [`../design/wardens-campaign-design.md`](../design/wardens-campaign-design.md), concept [`../design/wardens-campaign-concept.md`](../design/wardens-campaign-concept.md),
-full arc [`../design/wardens-campaign-arc.md`](../design/wardens-campaign-arc.md), research plan [`../design/wardens-campaign-research-plan.md`](../design/wardens-campaign-research-plan.md).
+full arc [`../design/wardens-campaign-arc.md`](../design/wardens-campaign-arc.md), research plan [`../design/wardens-campaign-research-plan.md`](../design/wardens-campaign-research-plan.md),
+the story's text [`../design/wardens-campaign-story.md`](../design/wardens-campaign-story.md).
 Playtesting with an agent: [`playtest/PLAYTEST.md`](playtest/PLAYTEST.md). Where things stand and what is
 still unverified: `../AGENTS.md`, "The Wardens: state".
 

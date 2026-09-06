@@ -3,7 +3,8 @@
 > **Status:** brainstorm (2026-09-05), the Socratic pass and its requirements brief. The five-level
 > [`wardens-campaign-concept.md`](wardens-campaign-concept.md) is the *essential cut* of this arc (§7 maps one
 > onto the other); the system that runs either is [`wardens-campaign-design.md`](wardens-campaign-design.md); the
-> research the arc still needs is [`wardens-campaign-research-plan.md`](wardens-campaign-research-plan.md). Faction
+> research the arc still needs is [`wardens-campaign-research-plan.md`](wardens-campaign-research-plan.md); the text the
+> game shows, level by level, is [`wardens-campaign-story.md`](wardens-campaign-story.md). Faction
 > premise: [`faction-wardens.md`](faction-wardens.md). The Warden's voice: [`wardens-play.md`](wardens-play.md).
 
 ## 0. The question, reframed
