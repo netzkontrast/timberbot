@@ -1,0 +1,37 @@
+{
+  "id": "ColdBoot",
+  "on": ["new_game"],
+  "pause": true,
+  "leave_paused": true,
+  "restore_camera": false,
+  "letterbox": true,
+  "skippable": true,
+  "say": "Cold Boot. Orbiting the Core; the game is paused. Read the cards on the right.",
+  "shots": [
+    {
+      "id": "orbit",
+      "caption": "Wardens.Cutscene.ColdBoot.Orbit",
+      "seconds": 8,
+      "camera": [
+        { "t": 1.5, "anchor": "core", "v": 60, "dzoom": 0.15, "dh": 20 },
+        { "t": 8, "anchor": "core", "v": 60, "dzoom": 0.15, "dh": 120 }
+      ]
+    },
+    {
+      "id": "core",
+      "caption": "Wardens.Cutscene.ColdBoot.Core",
+      "seconds": 8,
+      "camera": [
+        { "t": 8, "anchor": "core", "v": 35, "dzoom": -0.15, "dh": 250 }
+      ]
+    },
+    {
+      "id": "settle",
+      "caption": "Wardens.Cutscene.ColdBoot.Settle",
+      "seconds": 6,
+      "camera": [
+        { "t": 6, "anchor": "start", "dh": 360, "dv": 0, "dzoom": 0 }
+      ]
+    }
+  ]
+}

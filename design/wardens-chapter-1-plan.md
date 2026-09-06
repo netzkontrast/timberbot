@@ -178,3 +178,14 @@ the first beaver). Padlock via `ScienceCost: 999999` as planned, `UnlockIgnoring
 refresh Timberbot's unlock endpoint uses, toast + chat line on completion. Visible-but-locked (§4.1) is
 what ships; hiding buttons stays open. Tutorial off or `chapterGating: false` opens everything.
 Not yet verified in-game.
+
+## Status 2026-09-06, cutscenes
+
+§5 is now data: the Cold Boot is `wardens/src/Cutscenes/ColdBoot.json`, the three shots of the mockup in
+`wardens-ui/ColdBoot.dc.html` (high orbit, push in on the Core, settle on the gameplay angle, 22 s, one
+caption each, Skip), played by the runner in `WardensCutscenes.cs` with the overlay in
+`WardensCutsceneOverlay.cs`; `WardensColdBoot.cs` is retired. The cards still come from the tutorial
+stages (`Wardens.ColdBoot.Wake` / `.Directive`), which answers §9's last question only half-way: the
+overlay exists, and whether the Wake and Directive text should move into it is for the smoke run. The
+system, the format and the open questions: [`wardens-cutscenes.md`](wardens-cutscenes.md). Not yet
+verified in-game. The Core's light coming on (shot 2) is not implemented.

@@ -33,6 +33,7 @@ namespace Wardens
         public int HttpPort = 8085;          // Timberbot's port, for loopback tools
         public string AuthToken = "";        // Timberbot's bearer token, if any
         public bool ChapterGating = true;    // WardensChapters.cs: false opens every chapter at load
+        public bool Cutscenes = true;        // WardensCutscenes.cs: false keeps the scene triggers off (MCP play still works)
 
         public static string Path =>
             System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
@@ -51,6 +52,7 @@ namespace Wardens
                     s.HttpPort = json.Value<int?>("httpPort") ?? s.HttpPort;
                     s.AuthToken = (json.Value<string>("authToken") ?? "").Trim();
                     s.ChapterGating = json.Value<bool?>("chapterGating") ?? s.ChapterGating;
+                    s.Cutscenes = json.Value<bool?>("cutscenes") ?? s.Cutscenes;
                 }
             }
             catch (Exception ex)

@@ -78,7 +78,7 @@ namespace Wardens
         private readonly WardensPointer _pointer;
         private readonly WardensChat _chat;
         private readonly WardensCameraDirector _director;
-        private readonly WardensColdBoot _coldBoot;
+        private readonly WardensCutscenes _cutscenes;
         private readonly EntitySelectionService _selection;
         private readonly QuickNotificationService _quickNotifications;
         private readonly TimberbotService _timberbot;
@@ -96,7 +96,7 @@ namespace Wardens
 
         public WardensMcpTools(FactionService factionService, SpeedManager speedManager,
             CharacterPopulation population, TutorialService tutorialService, TutorialSettings tutorialSettings,
-            WardensPointer pointer, WardensChat chat, WardensCameraDirector director, WardensColdBoot coldBoot,
+            WardensPointer pointer, WardensChat chat, WardensCameraDirector director, WardensCutscenes cutscenes,
             EntitySelectionService selection, QuickNotificationService quickNotifications, TimberbotService timberbot,
             WardensAssetDump assetDump, WardensChapterService chapters, WardensFrames frames)
         {
@@ -108,7 +108,7 @@ namespace Wardens
             _pointer = pointer;
             _chat = chat;
             _director = director;
-            _coldBoot = coldBoot;
+            _cutscenes = cutscenes;
             _selection = selection;
             _quickNotifications = quickNotifications;
             _timberbot = timberbot;
@@ -134,7 +134,8 @@ namespace Wardens
                 "`point` shows the player a tile (highlight + arrow + toast). " +
                 "`timberbot` forwards to the Timberbot HTTP API compiled into this mod (GET reads, POST actions, one mutation at a time); " +
                 "call `timberbot_ready` once so the API accepts requests, and `timberbot_routes` to list routes. " +
-                "`wardens_status`, `tutorial` and `chapter` report the story state; `camera` and `cutscene` drive the camera, only when the playbook allows.";
+                "`wardens_status`, `tutorial` and `chapter` report the story state; `camera` and `cutscene` drive the camera, only when the playbook allows. " +
+                "A playing cutscene (`cutscene.playing` in the frame, events cutscene.start / cutscene.end) owns the camera: leave it and say nothing until it ends.";
         }
 
         public McpTool Find(string name) => _byName.TryGetValue(name ?? "", out var t) ? t : null;
@@ -340,9 +341,31 @@ namespace Wardens
                 });
 
             Add("cutscene",
-                "Play the Cold Boot orbit (pauses and locks speed, orbits the district center, unlocks). seconds tunes the length.",
-                Schema(new JObject { ["seconds"] = Prop("number", "flight length", WardensColdBoot.OrbitSeconds) }),
-                a => { _coldBoot.Play(Float(a, "seconds", WardensColdBoot.OrbitSeconds)); return _director.State(); });
+                "Cutscenes: scenes from Cutscenes/*.json in the mod folder (design/wardens-cutscenes.md), the Cold Boot among them. action=status lists the loaded scenes with their triggers and the running one (shot, caption, waiting); play starts `id` now, replacing a running scene and ignoring the trigger policy; skip ends the running scene; continue releases a shot that waits for the Continue button; reload re-reads the files (edit in the mod folder, reload, play: the tuning loop). A playing scene owns the camera: leave it and say nothing until the frame reports cutscene.end.",
+                Schema(new JObject
+                {
+                    ["action"] = Prop("string", "status | list | play | skip | continue | reload", "status"),
+                    ["id"] = Prop("string", "scene id for play", WardensCutscenes.ColdBootId),
+                }),
+                a =>
+                {
+                    switch (Str(a, "action", "status"))
+                    {
+                        case "play":
+                            _cutscenes.Play(Str(a, "id", WardensCutscenes.ColdBootId));
+                            break;
+                        case "skip":
+                            _cutscenes.Skip();
+                            break;
+                        case "continue":
+                            _cutscenes.Continue();
+                            break;
+                        case "reload":
+                            _cutscenes.Reload();
+                            break;
+                    }
+                    return _cutscenes.State();
+                });
 
             Add("speed", "Set game speed: 0 = pause, 1..3 = the speed buttons.",
                 Schema(new JObject { ["value"] = Prop("integer", "0-3") }, "value"),
@@ -429,7 +452,8 @@ namespace Wardens
                 ["chapter"] = _chapters.Summary(),
                 ["pointers"] = _pointer.Count,
                 ["camera"] = _director.State(),
-                ["cutscene_played"] = _coldBoot.Played,
+                ["cutscene_played"] = _cutscenes.HasPlayed(WardensCutscenes.ColdBootId),
+                ["cutscene"] = _cutscenes.Summary(),
                 ["chat_unread"] = _chat.UndeliveredCount(),
                 ["timberbot"] = new JObject { ["http_port"] = _settings.HttpPort, ["ready"] = _timberbot.AgentState.Ready },
                 ["mcp"] = new JObject { ["port"] = _settings.McpPort, ["version"] = WardensMcpServer.Version },

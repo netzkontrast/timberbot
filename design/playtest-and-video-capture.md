@@ -87,3 +87,11 @@ The camera part exists, but inside the Wardens mod's in-game MCP server rather t
 routes: `camera` (get/set/fly keyframes `{x,y,z,h,v,zoom,t}`/stop) and `cutscene`, both backed by
 `WardensCameraDirector` (unscaled time, smoothstep, works while paused). Still missing: `/api/record`
 (Unity.Recorder at runtime), screenshots, new-game-from-API.
+
+## Status 2026-09-06
+
+`cutscene` now plays scenes from `Cutscenes/*.json` through `WardensCutscenes`
+([`wardens-cutscenes.md`](wardens-cutscenes.md)): a shot's keyframes are the same `{h, v, zoom, t}` values,
+relative to named anchors and to the pose at scene start, with a caption over a letterbox. The shot
+list above (`sump-orbit`, `numbercruncher-push-in`) is expressible as scene files, so the trailer planner
+is a folder of scenes plus the recorder that is still missing.

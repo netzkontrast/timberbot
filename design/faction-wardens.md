@@ -189,7 +189,7 @@ Explicitly out of v0.1: breeding pods, remediation tech, field studies, the Ark,
   also confirmed that `FactionSpec.BlueprintModifiers` apply to *any* blueprint path, not just buildings.
 - **Story tutorials shipped:** `Wardens.ColdBoot` (4 cards) and `Wardens.Chapter1` (4 stages), plus two
   goal steps vanilla lacks (`GoodStockStepSpec`, `BotsChargedStepSpec`). See `wardens/README.md`.
-- **Cold Boot cutscene:** paused, speed-locked 14 s orbit around the Core via `WardensCameraDirector`.
+- **Cold Boot cutscene:** `Cutscenes/ColdBoot.json` played by `WardensCutscenes` (paused, speed-locked, letterbox, three captions, 22 s, skippable); the system is [`wardens-cutscenes.md`](wardens-cutscenes.md).
 - **Timberbot is compiled into the Wardens mod** (`wardens/src/Timberbot/`), and an **MCP server runs
   inside the game** (`WardensMcpServer`, port 8090) with chat, pointer, camera and Timberbot passthrough
   tools. `wardens/playtest/PLAYTEST.md` has the tool table.

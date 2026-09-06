@@ -204,3 +204,6 @@ Wardens.Chapter.Power.Title,Chapter 5: Power.,Story chapter title
 Wardens.Chapter.Power.Unlocked,The pods are waiting. The Badwater Cell and the Sludge Burner are now available. Every hour of power is an hour of poison.,Chapter toast
 Wardens.Chapter.Green.Title,Chapter 6: Green.,Story chapter title
 Wardens.Chapter.Green.Unlocked,The first beaver is awake. The Advanced Breeding Pod is now available.,Chapter toast
+Wardens.Cutscene.ColdBoot.Orbit,"Nothing has grown here in 3,000 days.",Cold Boot cutscene caption (Cutscenes/ColdBoot.json)
+Wardens.Cutscene.ColdBoot.Core,We were not built to live here. We were built so that others could.,Cold Boot cutscene caption
+Wardens.Cutscene.ColdBoot.Settle,Chapter 1: First Light. Keep the machines charged. Find metal.,Cold Boot cutscene caption

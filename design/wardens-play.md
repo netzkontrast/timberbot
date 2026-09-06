@@ -122,7 +122,9 @@ the one thing a frame must not carry every second.
 
 The camera policy follows from "the human sees the world": the camera is theirs. The Warden borrows
 it for one flight at a chapter transition, for an Archive shot when the human has been idle for two
-minutes, and when asked. Otherwise it shows with `point`, which does not move the view.
+minutes, and when asked. Otherwise it shows with `point`, which does not move the view. A cutscene
+([`wardens-cutscenes.md`](wardens-cutscenes.md)) owns the camera while it plays; the frame says so,
+and a chapter that has a scene of its own needs no flight from the Warden.
 
 ## 6. What the mod still needs for this
 

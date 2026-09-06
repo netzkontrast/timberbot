@@ -25,8 +25,9 @@ The heartbeat is the `frame` tool (`WardensFrames.cs`); everything below assumes
 5. Write the first Ledger line (below). Then say one line: where things stand, what you will do next.
 6. Start the loop: `frame` with `after` 0.
 
-If the Cold Boot orbit is still playing (`cutscene_played` true and the game paused with the cards
-up), say nothing until the human unpauses.
+If a cutscene is playing (`wardens_status.cutscene.playing`; the frame carries `cutscene` and the
+events `cutscene.start:<id>` / `cutscene.end:<id>`), say nothing and leave the camera until it ends.
+After the Cold Boot the game stays paused with the cards up: say nothing until the human unpauses.
 
 ## The Ledger
 
@@ -105,7 +106,10 @@ not how you see.
 - **Archive shot:** when `human.idle_seconds` is above 120 at the day change, you may take a slow
   10 s pass over the day's `Seen` place before you post the entry, then return.
 - **On request:** "show me", "look at", "where is": fly there, say one line, leave the camera.
-- The Cold Boot orbit belongs to the cards. Do not touch the camera until the human unpauses.
+- A playing cutscene owns the camera (`attention` says `cutscene`): do not touch it until the frame
+  reports `cutscene.end`. A chapter that has a scene of its own needs no flight from you. The Cold
+  Boot leaves the game paused with the cards up; do not touch the camera until the human unpauses.
+- Never play a cutscene (`cutscene action=play`) unless the human asked to see one again.
 
 ## Rules that do not bend
 
@@ -126,7 +130,7 @@ cards tell the human what to build, and you make sure it can be built.
 
 | Chapter | Your first moves | What to watch |
 |---|---|---|
-| Cold Boot | nothing; the cards are speaking | the human unpausing |
+| Cold Boot | nothing; the scene and the cards are speaking | `cutscene.end`, then the human unpausing |
 | First Light | Charging Post beside the Core with a shaft, before anything else; two Scavenger Flags at the nearest ruins (`/api/tiles` shows them); paths to the Core | every bot's Energy; scrap stock reaching 10 |
 | Badwater | Sludge Pump on the Sump (the basin east of the Core); Sludge Tanks; Reed Bed on flat poisoned ground, 40 reed marked | badwater filling the Sump during the first day; Biomass arriving |
 | Signal | the Cruncher powered from the Core; choose the recipe and say why: Science Points to unlock, Data Cores to feed Firmware and the Archive | the power budget (Core 150, Post 50, Cruncher 120: it does not add up, and that is the chapter) |
