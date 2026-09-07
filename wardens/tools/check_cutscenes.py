@@ -72,7 +72,8 @@ def _is_number(v) -> bool:
 
 def _check_keyframe(k, where: str, out: list[str]) -> None:
     if not isinstance(k, dict):
-        out.append(f"{where}: not an object"); return
+        out.append(f"{where}: not an object")
+        return
     for f in sorted(set(k) - KEYFRAME_FIELDS):
         out.append(f"{where}.{f}: unknown field")
     t = k.get("t", 0)
@@ -100,7 +101,8 @@ def _check_offset(o: dict, where: str, out: list[str]) -> None:
 
 def _check_pointer(p, where: str, out: list[str]) -> None:
     if not isinstance(p, dict):
-        out.append(f"{where}: not an object"); return
+        out.append(f"{where}: not an object")
+        return
     for f in sorted(set(p) - POINTER_FIELDS):
         out.append(f"{where}.{f}: unknown field")
     anchor = p.get("anchor", "core")
@@ -119,7 +121,8 @@ def _check_pointer(p, where: str, out: list[str]) -> None:
 
 def _check_shot(s, where: str, loc: set[str], out: list[str]) -> None:
     if not isinstance(s, dict):
-        out.append(f"{where}: not an object"); return
+        out.append(f"{where}: not an object")
+        return
     for f in sorted(set(s) - SHOT_FIELDS):
         out.append(f"{where}.{f}: unknown field")
     for f in ("id", "caption", "text", "toast", "say"):

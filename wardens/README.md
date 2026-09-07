@@ -1,4 +1,4 @@
-# The Wardens (faction mod, v0.2)
+# The Wardens (faction mod, v0.3)
 
 Design: [`../design/faction-wardens.md`](../design/faction-wardens.md), Chapter 1 plan:
 [`../design/wardens-chapter-1-plan.md`](../design/wardens-chapter-1-plan.md), how the agent plays:
@@ -9,7 +9,7 @@ full arc [`../design/wardens-campaign-arc.md`](../design/wardens-campaign-arc.md
 the story's text [`../design/wardens-campaign-story.md`](../design/wardens-campaign-story.md),
 the cutscenes [`../design/wardens-cutscenes.md`](../design/wardens-cutscenes.md).
 Playtesting with an agent: [`playtest/PLAYTEST.md`](playtest/PLAYTEST.md). Where things stand and what is
-still unverified: `../AGENTS.md`, "The Wardens: state".
+still unverified: `../AGENTS.md`, "The Wardens: state". Version history: [`CHANGELOG.md`](CHANGELOG.md).
 
 The mod is one DLL plus data, and it does four jobs:
 
@@ -33,6 +33,7 @@ The mod is one DLL plus data, and it does four jobs:
 ```
 src/
   manifest.json, settings.json       mod id "Wardens"; Timberbot ports + mcpPort/mcpEnabled, chapterGating, cutscenes
+  thumbnail.png                      the Mod Manager tile (tools/gen_thumbnail.py: the bot avatar with the logo badge)
   Wardens.csproj                     deploys to Documents/Timberborn/Mods/Wardens
   Factions/Faction.Wardens…          FactionSpec + StartingFactionSpec (enables tutorials)
   Factions/*.WardensModifier…        recipe appends; VanillaTutorial… keeps the 18 vanilla tutorials off
@@ -59,12 +60,19 @@ src/
   Maps/Wardens Wasteland.timber      the shipped map (tools/gen_map.py); deploy also installs it to Documents/Timberborn/Maps
 playtest/                            smoke.py (Timberbot API), mcp_smoke.py (MCP), PLAYTEST.md
 WARDEN.md                            the Warden's playbook (deployed to the mod's docs/, served by the `manual` tool)
+CHANGELOG.md                         version history; tools/package.py builds the release ZIP
 ```
 
 Build: `dotnet build wardens/src/Wardens.csproj -c Release`; every build bumps the patch version
 (`tools/bump_version.py`, run by the BumpVersion target) in manifest.json, the MCP server constant
 and the csproj, so the mod manager shows which build is deployed. (Uses the git-ignored
 `src/Directory.Build.props` for the game path; pass `-p:GameManagedDir=… -p:ModDir=…` otherwise).
+
+Release: `python wardens/tools/package.py` zips the built DLL with the data folders, `docs/` and the map into
+`dist/Wardens-v<version>.zip`: a `Wardens/` folder for `Documents/Timberborn/Mods/`, a `Maps/` folder for
+`Documents/Timberborn/Maps/`, and a `README.txt` with the steps. `--list` prints the entries, `--dll` points at
+a DLL built elsewhere; the local-only Leaf Coats copies (`.leafcoats-import.txt`) and foreign DLLs never go
+in. `tools/bump_version.py --minor` marks a milestone; [`CHANGELOG.md`](CHANGELOG.md) records it.
 
 ## How the tutorial works
 
@@ -181,7 +189,7 @@ north-east as the only green. The build deploys it into the mod folder and into 
 file format and the choices behind them: [`../design/wardens-wasteland.md`](../design/wardens-wasteland.md).
 `gen_map.py --check <file>` runs the static checks; the generator runs them after every write.
 
-## Art (v0.2)
+## Art
 
 `Sprites/` and `Materials/` hold the faction's 2D art: avatars, logo, new-game portrait, five
 beaver skins, the bot skin, banners, carrying-model and zipline textures. They are derived from
@@ -201,7 +209,11 @@ character art (image-gen prompt in `design/wardens-art-path.md`) gets fitted to 
 `tools/install_avatar.py <source.png>`: pads to 3:4 without cropping the character, then resizes
 with alpha premultiplied so fully-transparent-but-black source pixels don't fringe the edges.
 
-## Buildings (v0.2, generated)
+`thumbnail.png` is the Mod Manager tile (512×512): the bot avatar with the logo as a badge in the corner,
+composed by `tools/gen_thumbnail.py` (pure Python, no Pillow; `--check` says whether the file is current).
+Re-run it after the sprites change.
+
+## Buildings (generated)
 
 `tools/gen_buildings.py` re-specs Iron Teeth blueprints from the game's own `Blueprints.zip` into
 `Buildings/`, `NaturalResources/`, `Goods/Good.Biomass` and the two Wardens template collections.

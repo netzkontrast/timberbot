@@ -30,8 +30,9 @@ When touching `wardens/`:
 - **Run (client side):** `tbot watch` is the long-running connector — it opens a single WebSocket to the mod. `tbot serve` is the Telegram bot mode — spawns an in-process MCP server (`127.0.0.1:8091` default) and routes agent output to Telegram (requires `TBOT_TELEGRAM_TOKEN` or `[serve.telegram].token` in `config.toml`; needs `pip install 'timberbot[serve]'`). `tbot listen` is a pure WS client for the game-event stream. `tbot <command>` and `tbot agent run` still work for one-shots. Install with `pipx install timberbot`.
 - **Tests:** Python unit tests via `python -m pytest python/tests/`; C# xUnit tests via `dotnet test timberbot/test/`.
 - **Build (Wardens):** `dotnet build wardens/src/Wardens.csproj -c Release`. Every build bumps the patch version (`wardens/tools/bump_version.py`) and deploys to `Documents/Timberborn/Mods/Wardens`, copies the API docs and `WARDEN.md` into its `docs/`, and installs `Maps/*.timber` into `Documents/Timberborn/Maps`. Uses the git-ignored `wardens/src/Directory.Build.props` for the game path, or `-p:GameManagedDir=… -p:ModDir=… -p:MapsDir=…`.
+- **Release (Wardens):** `python wardens/tools/package.py` zips a local Release build into `dist/Wardens-v<version>.zip` (the mod folder, the map for `Documents/Timberborn/Maps`, install steps; `--list` previews); `python wardens/tools/bump_version.py --minor` marks a milestone and `wardens/CHANGELOG.md` records it; `python wardens/tools/gen_thumbnail.py --check` keeps the Mod Manager tile current.
 - **Run (Wardens):** enable **The Wardens** in the Mod Manager and **disable Timberbot API** (same code, same ports). New Game → The Wardens, tutorial on, map *[Custom] Wardens Wasteland*. Claude Code connects through `.mcp.json` (`http://127.0.0.1:8090/mcp`); the agent reads `manual` and lives on `frame`. Playtest scripts: `python wardens/playtest/mcp_smoke.py`, `uv run --project python wardens/playtest/smoke.py`.
-- **Static checks (Wardens):** `python wardens/tools/validate.py` (every name the game resolves at load, the chapter table against the blueprints, the cutscene files; needs the game's `Blueprints.zip`) and `python wardens/tools/gen_map.py --check "wardens/src/Maps/Wardens Wasteland.timber"` must both print `problems: none` before an in-game test. `python wardens/tools/check_cutscenes.py wardens/src` is the cutscene part alone and needs no game files; `uv run --project python --extra dev pytest wardens/tools/test_check_cutscenes.py` tests it. No CI covers `wardens/`; GitHub Actions does not run on this fork at all.
+- **Static checks (Wardens):** `python wardens/tools/validate.py` (every name the game resolves at load, the chapter table against the blueprints, the cutscene files; needs the game's `Blueprints.zip`) and `python wardens/tools/gen_map.py --check "wardens/src/Maps/Wardens Wasteland.timber"` must both print `problems: none` before an in-game test. `python wardens/tools/check_cutscenes.py wardens/src` is the cutscene part alone and needs no game files; `uv run --project python --extra dev pytest wardens/tools` runs the tool tests (the checker, the packager). No CI covers the C# in `wardens/`; the tool tests are a step of the Python workflow, which on this fork does not run because GitHub Actions is off.
 
 ## Architecture
 
@@ -104,7 +105,8 @@ timberbot/
 │   └── beaver-developer.md      # Dev-agent prompt for working on this codebase
 ├── .mcp.json                    # Claude Code → the Wardens' in-game MCP server (127.0.0.1:8090/mcp)
 ├── wardens/                     # The Wardens faction mod (see wardens/README.md for the full file map)
-│   ├── README.md                # What it is, file map, tutorial + chapters, the map, the art
+│   ├── README.md                # What it is, file map, tutorial + chapters, cutscenes, the map, the art
+│   ├── CHANGELOG.md             # Version history (0.3.0: cutscenes, the release path)
 │   ├── WARDEN.md                # The agent's playbook (deployed to the mod's docs/, served by `manual`)
 │   ├── src/                     # Blueprints (Factions, Buildings, Tutorials, Needs, Goods, Recipes, Localizations),
 │   │   │                        #   Maps/ (the generated wasteland), Sprites/ + Materials/ (recolored art),
@@ -116,8 +118,8 @@ timberbot/
 │   │   ├── Timberbot/           # Verbatim copy of timberbot/src (paths point at Mods/Wardens)
 │   │   └── Wardens.csproj       # Build + deploy (mod folder, docs/, Maps); bumps the version every build
 │   ├── tools/                   # Generators and checks: gen_buildings.py, gen_tutorial.py, gen_map.py,
-│   │                            #   validate.py, check_cutscenes.py (+ its pytest), bump_version.py,
-│   │                            #   recolor_assets.py, import_leafcoats.py
+│   │                            #   gen_thumbnail.py, validate.py, check_cutscenes.py, package.py (+ their
+│   │                            #   pytests), bump_version.py, recolor_assets.py, import_leafcoats.py
 │   └── playtest/                # PLAYTEST.md (checklist + MCP tool table), smoke.py, mcp_smoke.py
 ├── timberbot/
 │   ├── src/                     # C# mod source
@@ -235,9 +237,9 @@ The mod currently does **not** support:
 
 See `design/automation-plan.md` for the full implementation plan with decompiled API surface from `Timberborn.Automation.dll` and `Timberborn.AutomationBuildings.dll`.
 
-### The Wardens: state on 2026-09-03
+### The Wardens: state on 2026-09-06 (v0.3.0)
 
-Built and deployed once (the v0.2 batch: faction, tutorial line, in-game MCP, art) but **not yet verified in-game**; everything after that is **not yet compiled anywhere**, because the development environment had no game install. In order of what the next local build and a twenty-minute smoke run should answer:
+Built and deployed once (the v0.2 batch: faction, tutorial line, in-game MCP, art) but **not yet verified in-game**; everything after that is **not yet compiled anywhere**, because the development environment had no game install. v0.3.0 adds the release path: a local Release build plus `python wardens/tools/package.py` produces the ZIP, and the Mod Manager shows `thumbnail.png`. In order of what the next local build and a twenty-minute smoke run should answer:
 
 1. `Wardens.dll` compiles. The only game APIs not already used elsewhere in the repo are `BuildingUnlockingService.UnlockIgnoringCost` (chapters) and `ITickableSingleton` (frames); both are named in the design docs from the 1.1.2.4 decompile.
 2. The map loads: `Wardens Wasteland.timber` claims game version 0.7.10.0 on purpose so the game's migration runs; open questions (does 1.1 migrate that layout, do `RuinColumnH*` and `UndergroundRuins` still exist, is the Sump deep enough for the Sludge Pump, does a mod's `Maps/` folder get listed) are in `design/wardens-wasteland.md`.

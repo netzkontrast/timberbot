@@ -5,7 +5,9 @@ that Claude Code connects to directly.
 
 ## One-time setup
 
-1. Build + deploy: `dotnet build wardens/src/Wardens.csproj -c Release`.
+1. Build + deploy: `dotnet build wardens/src/Wardens.csproj -c Release` (or install a packaged build:
+   `python wardens/tools/package.py` after the build writes `dist/Wardens-v<version>.zip`, whose `README.txt`
+   has the two copy steps).
 2. In Timberborn's Mod Manager enable **The Wardens** and **disable Timberbot API** (the same
    code is compiled into the Wardens; two copies fight over port 8085).
 3. New Game → faction **The Wardens**, tutorial toggle on → map **[Custom] Wardens Wasteland** (the
