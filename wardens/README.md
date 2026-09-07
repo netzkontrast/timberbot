@@ -1,4 +1,4 @@
-# The Wardens (faction mod, v0.2)
+# The Wardens (faction mod, v0.3)
 
 Design: [`../design/faction-wardens.md`](../design/faction-wardens.md), Chapter 1 plan:
 [`../design/wardens-chapter-1-plan.md`](../design/wardens-chapter-1-plan.md), how the agent plays:
@@ -6,9 +6,10 @@ Design: [`../design/faction-wardens.md`](../design/faction-wardens.md), Chapter 
 the campaign: research [`../design/wardens-campaign-maps.md`](../design/wardens-campaign-maps.md), system design
 [`../design/wardens-campaign-design.md`](../design/wardens-campaign-design.md), concept [`../design/wardens-campaign-concept.md`](../design/wardens-campaign-concept.md),
 full arc [`../design/wardens-campaign-arc.md`](../design/wardens-campaign-arc.md), research plan [`../design/wardens-campaign-research-plan.md`](../design/wardens-campaign-research-plan.md),
-the story's text [`../design/wardens-campaign-story.md`](../design/wardens-campaign-story.md).
+the story's text [`../design/wardens-campaign-story.md`](../design/wardens-campaign-story.md),
+the cutscenes [`../design/wardens-cutscenes.md`](../design/wardens-cutscenes.md).
 Playtesting with an agent: [`playtest/PLAYTEST.md`](playtest/PLAYTEST.md). Where things stand and what is
-still unverified: `../AGENTS.md`, "The Wardens: state".
+still unverified: `../AGENTS.md`, "The Wardens: state". Version history: [`CHANGELOG.md`](CHANGELOG.md).
 
 The mod is one DLL plus data, and it does four jobs:
 
@@ -20,17 +21,19 @@ The mod is one DLL plus data, and it does four jobs:
    the standalone **Timberbot API mod must be disabled** when this one is enabled.
 3. **An in-game MCP server** (`src/Wardens*.cs`): Model Context Protocol over HTTP on
    127.0.0.1:8090 so Claude Code connects straight into the running game (`.mcp.json` in
-   the repo root). Tools: chat with the player, point at tiles, camera flights, tutorial and
-   chapter state, a tick-driven `frame` heartbeat that says where to look, the playbook
+   the repo root). Tools: chat with the player, point at tiles, camera flights and cutscenes, tutorial
+   and chapter state, a tick-driven `frame` heartbeat that says where to look, the playbook
    (`WARDEN.md`, via `manual`), and a passthrough to the whole Timberbot API. How the Warden
    plays: [`../design/wardens-play.md`](../design/wardens-play.md).
 4. **The story and the land**: chapters that open the building bar as the tutorial line advances
-   (`WardensChapters.cs`, "How the chapters work" below) and the shipped wasteland map
-   (`Maps/Wardens Wasteland.timber`, "The map" below).
+   (`WardensChapters.cs`, "How the chapters work" below), cutscenes played from scene files
+   (`WardensCutscenes.cs`, `Cutscenes/*.json`, "How cutscenes work" below) and the shipped wasteland
+   map (`Maps/Wardens Wasteland.timber`, "The map" below).
 
 ```
 src/
-  manifest.json, settings.json       mod id "Wardens"; Timberbot ports + mcpPort/mcpEnabled
+  manifest.json, settings.json       mod id "Wardens"; Timberbot ports + mcpPort/mcpEnabled, chapterGating, cutscenes
+  thumbnail.png                      the Mod Manager tile (tools/gen_thumbnail.py: the bot avatar with the logo badge)
   Wardens.csproj                     deploys to Documents/Timberborn/Mods/Wardens
   Factions/Faction.Wardens…          FactionSpec + StartingFactionSpec (enables tutorials)
   Factions/*.WardensModifier…        recipe appends; VanillaTutorial… keeps the 18 vanilla tutorials off
@@ -41,10 +44,13 @@ src/
   WardensPoweredStep.cs              PoweredBuildingStepSpec: "Power: X" with our own shaft buttons
   WardensPopulationStep.cs           BeaversStepSpec: "Beavers: (n/m)" for the first pod-born beaver
   WardensTriggers.cs                 MissingDam / PlatformBuilt / IdleWardens triggers (optional tutorials)
-  WardensColdBoot.cs                 start-of-run cutscene: paused orbit around the Core
   WardensChapters.cs                 story chapters: tutorial progress unlocks the padlocked buildings
+  WardensCutscenes.cs                cutscene runner + triggers (new game, chapter opened, tutorial finished)
+  WardensCutsceneScript.cs           the scene format (Cutscenes/*.json) and its parser
+  WardensCutsceneOverlay.cs          letterbox, caption, step dots, Skip / Continue
+  Cutscenes/ColdBoot.json            the Cold Boot: three shots around the Core (design/wardens-ui/ColdBoot.dc.html)
   WardensFrames.cs                   the heartbeat: a sensor frame per N game ticks or per event, for the MCP `frame` tool
-  WardensCameraDirector.cs           keyframe camera flights (cutscene, MCP, trailer)
+  WardensCameraDirector.cs           keyframe camera flights (cutscenes, MCP, trailer)
   WardensPointer.cs                  highlight + arrow + toast on a tile ("look here")
   WardensChat.cs                     in-game chat panel (WARDENS UPLINK) + message store
   WardensMcpServer.cs                MCP Streamable HTTP server, JSON-RPC 2.0
@@ -54,12 +60,19 @@ src/
   Maps/Wardens Wasteland.timber      the shipped map (tools/gen_map.py); deploy also installs it to Documents/Timberborn/Maps
 playtest/                            smoke.py (Timberbot API), mcp_smoke.py (MCP), PLAYTEST.md
 WARDEN.md                            the Warden's playbook (deployed to the mod's docs/, served by the `manual` tool)
+CHANGELOG.md                         version history; tools/package.py builds the release ZIP
 ```
 
 Build: `dotnet build wardens/src/Wardens.csproj -c Release`; every build bumps the patch version
 (`tools/bump_version.py`, run by the BumpVersion target) in manifest.json, the MCP server constant
 and the csproj, so the mod manager shows which build is deployed. (Uses the git-ignored
 `src/Directory.Build.props` for the game path; pass `-p:GameManagedDir=… -p:ModDir=…` otherwise).
+
+Release: `python wardens/tools/package.py` zips the built DLL with the data folders, `docs/` and the map into
+`dist/Wardens-v<version>.zip`: a `Wardens/` folder for `Documents/Timberborn/Mods/`, a `Maps/` folder for
+`Documents/Timberborn/Maps/`, and a `README.txt` with the steps. `--list` prints the entries, `--dll` points at
+a DLL built elsewhere; the local-only Leaf Coats copies (`.leafcoats-import.txt`) and foreign DLLs never go
+in. `tools/bump_version.py --minor` marks a milestone; [`CHANGELOG.md`](CHANGELOG.md) records it.
 
 ## How the tutorial works
 
@@ -117,6 +130,55 @@ as in vanilla; Dam, Hauler Dock and Observation Deck are free because their tuto
 
 Act I only. Out of scope for now: remediation, the Ark, custom art.
 
+## How cutscenes work
+
+Design: [`../design/wardens-cutscenes.md`](../design/wardens-cutscenes.md). A cutscene is a file
+`Cutscenes/<Id>.json` in the mod folder (the build deploys `src/Cutscenes/`): a list of shots, each
+with a camera flight, one caption, and optionally a pointer, a toast and an Uplink line. One runner
+(`WardensCutscenes.cs`) plays them: it pauses and locks the speed, draws a letterbox with the caption
+(`WardensCutsceneOverlay.cs`, after the mockup in `design/wardens-ui/ColdBoot.dc.html`), flies the
+camera through `WardensCameraDirector` one shot at a time, and hands the game back. The player can
+Skip; the agent sees `cutscene.start` / `cutscene.end` in its frames and stays out of the way.
+
+```json
+{
+  "id": "ColdBoot",
+  "on": ["new_game"],
+  "pause": true, "leave_paused": true, "restore_camera": false, "letterbox": true, "skippable": true,
+  "say": "one Uplink line when the scene starts",
+  "shots": [
+    { "id": "orbit", "caption": "Wardens.Cutscene.ColdBoot.Orbit", "seconds": 8,
+      "camera": [ { "t": 1.5, "anchor": "core", "v": 60, "dzoom": 0.15, "dh": 20 },
+                  { "t": 8,   "anchor": "core", "v": 60, "dzoom": 0.15, "dh": 120 } ] }
+  ]
+}
+```
+
+- **Triggers** (`on`): `new_game` (a new game; loaded saves never fire it), `chapter:<Id>` (the chapter
+  service announces the chapter, forced ones included), `tutorial:<TutorialId>` (the tutorial finishes).
+  Policy for all of them, the one the Cold Boot always had: faction Wardens, tutorial on, and
+  `"cutscenes": true` in `settings.json`. No save state: a scene plays once per event and a reload
+  re-fires nothing.
+- **Shots**: `caption` is a loc row (`Wardens.Cutscene.<Scene>.<Shot>` in `Localizations/enUS.csv`;
+  `text` is a literal for prototyping); `seconds` is the shot's minimum length (unscaled, so a paused
+  game counts); `wait: continue` adds a Continue button; `point`, `toast`, `say` fire when the shot starts.
+- **Keyframes**: `t` from the shot's start (a first keyframe above 0 eases out of the current pose, one at
+  0 cuts); `anchor` is what the camera looks at (`core`, `start` = the target at scene start, `selection`,
+  `bot`, `grid` x/y/z, `world`), plus an `offset` in grid units; `h`/`v`/`zoom` are absolute, `dh`/`dv`/`dzoom`
+  relative to the pose at scene start; anything unset keeps the start value.
+- **Tuning with the game running**: edit the file in `Documents/Timberborn/Mods/Wardens/Cutscenes/`, then
+  the MCP `cutscene` tool: `reload`, `play id=ColdBoot`, `skip`, `continue`, `status`. `play` ignores the
+  trigger policy and replaces a running scene. Copy the file back to `src/Cutscenes/` when it is right.
+- **Checks**: `python wardens/tools/check_cutscenes.py wardens/src` resolves every name a scene uses
+  (captions, chapter and tutorial ids, anchors, field types, unknown fields) without the game's files;
+  `validate.py` includes it. `uv run --project python --extra dev pytest wardens/tools/test_check_cutscenes.py`
+  tests the checker and the shipped scenes.
+- **The Cold Boot** is the first scene: three shots, 22 s, a high orbit ("Nothing has grown here in 3,000
+  days."), a push in on the Core ("We were not built to live here..."), a settle back to the gameplay
+  angle ("Chapter 1: First Light..."); the game stays paused afterwards for the Clock card, as before.
+  The tutorial's Wake and Directive cards stay on the right throughout. Not yet verified in-game; the
+  zoom scale and the angles are the first thing to tune.
+
 ## The map
 
 `tools/gen_map.py` writes `Maps/Wardens Wasteland.timber`, the wasteland the faction design asks for: a badwater
@@ -127,7 +189,7 @@ north-east as the only green. The build deploys it into the mod folder and into 
 file format and the choices behind them: [`../design/wardens-wasteland.md`](../design/wardens-wasteland.md).
 `gen_map.py --check <file>` runs the static checks; the generator runs them after every write.
 
-## Art (v0.2)
+## Art
 
 `Sprites/` and `Materials/` hold the faction's 2D art: avatars, logo, new-game portrait, five
 beaver skins, the bot skin, banners, carrying-model and zipline textures. They are derived from
@@ -147,7 +209,11 @@ character art (image-gen prompt in `design/wardens-art-path.md`) gets fitted to 
 `tools/install_avatar.py <source.png>`: pads to 3:4 without cropping the character, then resizes
 with alpha premultiplied so fully-transparent-but-black source pixels don't fringe the edges.
 
-## Buildings (v0.2, generated)
+`thumbnail.png` is the Mod Manager tile (512×512): the bot avatar with the logo as a badge in the corner,
+composed by `tools/gen_thumbnail.py` (pure Python, no Pillow; `--check` says whether the file is current).
+Re-run it after the sprites change.
+
+## Buildings (generated)
 
 `tools/gen_buildings.py` re-specs Iron Teeth blueprints from the game's own `Blueprints.zip` into
 `Buildings/`, `NaturalResources/`, `Goods/Good.Biomass` and the two Wardens template collections.

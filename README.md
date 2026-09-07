@@ -92,7 +92,7 @@ tbot watch --backend claude                         # long-running agent connect
 
 ## The Wardens
 
-`wardens/` is a second mod built on the same code: a Timberborn faction in which the AI is a character. Bots are the starting population, their wellbeing is Data, a story tutorial opens the building bar chapter by chapter, the land is a generated wasteland, and an MCP server inside the game lets Claude Code play beside you: it reads a playbook, lives on a tick-driven `frame` heartbeat that tells it where to look, talks through an in-game panel, and acts through the Timberbot API compiled into the same DLL. Start at [`wardens/README.md`](wardens/README.md); the stance behind it is [`design/wardens-play.md`](design/wardens-play.md).
+`wardens/` is a second mod built on the same code: a Timberborn faction in which the AI is a character. Bots are the starting population, their wellbeing is Data, a story tutorial opens the building bar chapter by chapter with cutscenes played from scene files, the land is a generated wasteland, and an MCP server inside the game lets Claude Code play beside you: it reads a playbook, lives on a tick-driven `frame` heartbeat that tells it where to look, talks through an in-game panel, and acts through the Timberbot API compiled into the same DLL. Start at [`wardens/README.md`](wardens/README.md); the stance behind it is [`design/wardens-play.md`](design/wardens-play.md).
 
 ## Docs
 
@@ -105,7 +105,7 @@ tbot watch --backend claude                         # long-running agent connect
 - [Automation Plan](design/automation-plan.md). decompiled wiring API and `/api/automation/*` design
 - [Agent Prompts](python/src/timberbot/agent_prompts/). drop-in gameplay prompts (`timberbot`, `scout`, `wirer`, `auditor`, `connector-mode`). Materialize editable copies into your user config dir with `tbot init`. The development-agent prompt for working on this codebase lives separately at [`agents/beaver-developer.md`](agents/beaver-developer.md).
 - [Repo Guide](AGENTS.md). project layout, build commands, conventions, and the Wardens' current state
-- [The Wardens](wardens/README.md). the faction mod: chapters, the wasteland map, the in-game MCP server, the agent's playbook ([`WARDEN.md`](wardens/WARDEN.md))
+- [The Wardens](wardens/README.md). the faction mod: chapters, cutscenes, the wasteland map, the in-game MCP server, the agent's playbook ([`WARDEN.md`](wardens/WARDEN.md)), the release ZIP (`wardens/tools/package.py`), the changelog ([`CHANGELOG.md`](wardens/CHANGELOG.md))
 - [Developing](docs/developing.md). build from source, add endpoints, cutting a GitHub release
 
 ## Settings

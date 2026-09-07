@@ -9,7 +9,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>Wardens</AssemblyName>
     <RootNamespace>Wardens</RootNamespace>
-    <Version>0.2.6</Version>
+    <Version>0.3.0</Version>
     <LangVersion>9.0</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
@@ -186,8 +186,9 @@
     <!-- Timberbot + MCP settings; never overwrite the user's edited copy. -->
     <Copy SourceFiles="settings.json" DestinationFolder="$(ModDir)" Condition="!Exists('$(ModDir)\settings.json')" />
     <!-- Generated folders are replaced whole: a blueprint that no longer exists in src must not
-         survive in the deployed mod (a stale tutorial with missing loc keys crashes the load). -->
-    <RemoveDir Directories="$(ModDir)\Tutorials;$(ModDir)\Buildings;$(ModDir)\Collections;$(ModDir)\Recipes" />
+         survive in the deployed mod (a stale tutorial with missing loc keys crashes the load). The
+         same for Cutscenes: a renamed scene must not leave a twin behind that fires on the same trigger. -->
+    <RemoveDir Directories="$(ModDir)\Tutorials;$(ModDir)\Buildings;$(ModDir)\Collections;$(ModDir)\Recipes;$(ModDir)\Cutscenes" />
     <!-- RelativeDir, not RecursiveDir: the latter is relative to each glob's "**" and
          would flatten Factions\X.json to X.json, breaking the FactionSpec.BlueprintModifiers paths. -->
     <Copy SourceFiles="@(ModContent)" DestinationFiles="@(ModContent->'$(ModDir)\%(RelativeDir)%(Filename)%(Extension)')" />

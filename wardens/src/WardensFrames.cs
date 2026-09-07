@@ -3,8 +3,9 @@
 // design/wardens-play.md §6. The agent plays through the MCP `frame` tool: it long-polls here, and
 // every `every_ticks` game ticks (ITickableSingleton.Tick, so a paused game produces no frames on its
 // own) or whenever something happens (a day starts, a building finishes, a chapter opens, a beaver is
-// born, the human types) the main thread assembles a compact frame: time, population and charge,
-// the archive (Data Cores) and science, chapter and open tutorial steps, what the human has selected,
+// born, a cutscene starts or ends, the human types) the main thread assembles a compact frame: time,
+// population and charge, the archive (Data Cores) and science, chapter, cutscene and open tutorial
+// steps, what the human has selected,
 // the camera pose and how long the human has left it alone, the events since the last frame, and an
 // `attention` list: where to look first, in priority order, with world positions the `camera` and
 // `point` tools accept. The agent never polls the read API to find out whether anything changed.
@@ -62,6 +63,7 @@ namespace Wardens
         private readonly WardensCameraDirector _director;
         private readonly WardensChat _chat;
         private readonly WardensChapterService _chapters;
+        private readonly WardensCutscenes _cutscenes;
 
         private readonly object _lock = new object();
         private JObject _latest;
@@ -81,12 +83,13 @@ namespace Wardens
         private WardensCameraDirector.Keyframe _lastPose;
         private float _poseChangedAt;
         private string _lastSelection;
+        private string _lastCutscene;
 
         public WardensFrames(EventBus eventBus, IDayNightCycle dayNightCycle, GameCycleService cycles,
             WeatherService weather, SpeedManager speedManager, PopulationService populationService,
             CharacterPopulation population, DistrictCenterRegistry districts, ScienceService science,
             TutorialService tutorialService, EntitySelectionService selection, WardensCameraDirector director,
-            WardensChat chat, WardensChapterService chapters)
+            WardensChat chat, WardensChapterService chapters, WardensCutscenes cutscenes)
         {
             _eventBus = eventBus;
             _dayNightCycle = dayNightCycle;
@@ -102,6 +105,7 @@ namespace Wardens
             _director = director;
             _chat = chat;
             _chapters = chapters;
+            _cutscenes = cutscenes;
         }
 
         public long Seq { get { lock (_lock) return _seq; } }
@@ -175,6 +179,13 @@ namespace Wardens
                 var complete = ChaptersComplete();
                 if (_lastChaptersComplete >= 0 && complete > _lastChaptersComplete) Note("chapter.open");
                 _lastChaptersComplete = complete;
+                var cutscene = _cutscenes.Playing ? _cutscenes.CurrentId : null;
+                if (cutscene != _lastCutscene)
+                {
+                    if (_lastCutscene != null) Note("cutscene.end:" + _lastCutscene);
+                    if (cutscene != null) Note("cutscene.start:" + cutscene);
+                    _lastCutscene = cutscene;
+                }
                 if (!_pending) return;
                 var frame = Build();
                 lock (_lock)
@@ -287,6 +298,7 @@ namespace Wardens
 
             // story
             frame["chapter"] = _chapters.Summary();
+            frame["cutscene"] = _cutscenes.Summary();
             var open = new JArray();
             foreach (var kv in _tutorialService._activeTutorialStages)
             {
@@ -332,6 +344,8 @@ namespace Wardens
 
             // where to look, in order
             var attention = new JArray();
+            if (_cutscenes.Playing)
+                attention.Add(new JObject { ["what"] = "cutscene", ["why"] = "a scene is playing: say nothing, leave the camera" });
             if (_chat.UndeliveredCount() > 0)
                 attention.Add(new JObject { ["what"] = "chat", ["why"] = "the human spoke; answer first" });
             foreach (var b in low)

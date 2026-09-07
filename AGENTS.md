@@ -21,7 +21,7 @@ When touching `wardens/`:
 - [`wardens/README.md`](wardens/README.md) — what the faction mod is, file map, how the tutorial and the chapters work, the map, the art
 - [`design/faction-wardens.md`](design/faction-wardens.md) — the arc and the two C# spikes; [`design/wardens-chapter-1-plan.md`](design/wardens-chapter-1-plan.md) — Chapter 1 design with status notes
 - [`design/wardens-play.md`](design/wardens-play.md) — how the Warden (the agent) plays: the stance, the Ledger, frames, the camera policy; [`wardens/WARDEN.md`](wardens/WARDEN.md) — the playbook the agent follows in-game
-- [`design/wardens-wasteland.md`](design/wardens-wasteland.md) — the shipped map and the `.timber` file format; [`design/wardens-campaign-maps.md`](design/wardens-campaign-maps.md) — research: how a campaign mod installs, selects and switches maps (one per level), what is verified and what the decompile must confirm; [`design/wardens-campaign-design.md`](design/wardens-campaign-design.md) — the campaign system design (components, `campaign.json`, `ILevelStarter`, rollout); [`design/wardens-campaign-concept.md`](design/wardens-campaign-concept.md) — the five-level campaign concept (the essential cut); [`design/wardens-campaign-arc.md`](design/wardens-campaign-arc.md) — the full ten-level arc (brainstorm, storyform, requirements brief); [`design/wardens-campaign-research-plan.md`](design/wardens-campaign-research-plan.md) — the research tracks and assumption register the arc still needs; [`design/wardens-campaign-story.md`](design/wardens-campaign-story.md) — the story as the game tells it: every card, line, Archive entry and reading, level by level, in the Wardens' voice; [`wardens/playtest/PLAYTEST.md`](wardens/playtest/PLAYTEST.md) — the in-game checklist and the MCP tool table
+- [`design/wardens-wasteland.md`](design/wardens-wasteland.md) — the shipped map and the `.timber` file format; [`design/wardens-campaign-maps.md`](design/wardens-campaign-maps.md) — research: how a campaign mod installs, selects and switches maps (one per level), what is verified and what the decompile must confirm; [`design/wardens-campaign-design.md`](design/wardens-campaign-design.md) — the campaign system design (components, `campaign.json`, `ILevelStarter`, rollout); [`design/wardens-campaign-concept.md`](design/wardens-campaign-concept.md) — the five-level campaign concept (the essential cut); [`design/wardens-campaign-arc.md`](design/wardens-campaign-arc.md) — the full ten-level arc (brainstorm, storyform, requirements brief); [`design/wardens-campaign-research-plan.md`](design/wardens-campaign-research-plan.md) — the research tracks and assumption register the arc still needs; [`design/wardens-campaign-story.md`](design/wardens-campaign-story.md) — the story as the game tells it: every card, line, Archive entry and reading, level by level, in the Wardens' voice; [`wardens/playtest/PLAYTEST.md`](wardens/playtest/PLAYTEST.md) — the in-game checklist and the MCP tool table; [`design/wardens-cutscenes.md`](design/wardens-cutscenes.md) — the cutscene system: the scene format (`Cutscenes/*.json`), the runner, the overlay, the triggers, the checker, and what the first run must answer
 
 ## Quick Reference
 
@@ -30,8 +30,9 @@ When touching `wardens/`:
 - **Run (client side):** `tbot watch` is the long-running connector — it opens a single WebSocket to the mod. `tbot serve` is the Telegram bot mode — spawns an in-process MCP server (`127.0.0.1:8091` default) and routes agent output to Telegram (requires `TBOT_TELEGRAM_TOKEN` or `[serve.telegram].token` in `config.toml`; needs `pip install 'timberbot[serve]'`). `tbot listen` is a pure WS client for the game-event stream. `tbot <command>` and `tbot agent run` still work for one-shots. Install with `pipx install timberbot`.
 - **Tests:** Python unit tests via `python -m pytest python/tests/`; C# xUnit tests via `dotnet test timberbot/test/`.
 - **Build (Wardens):** `dotnet build wardens/src/Wardens.csproj -c Release`. Every build bumps the patch version (`wardens/tools/bump_version.py`) and deploys to `Documents/Timberborn/Mods/Wardens`, copies the API docs and `WARDEN.md` into its `docs/`, and installs `Maps/*.timber` into `Documents/Timberborn/Maps`. Uses the git-ignored `wardens/src/Directory.Build.props` for the game path, or `-p:GameManagedDir=… -p:ModDir=… -p:MapsDir=…`.
+- **Release (Wardens):** `python wardens/tools/package.py` zips a local Release build into `dist/Wardens-v<version>.zip` (the mod folder, the map for `Documents/Timberborn/Maps`, install steps; `--list` previews); `python wardens/tools/bump_version.py --minor` marks a milestone and `wardens/CHANGELOG.md` records it; `python wardens/tools/gen_thumbnail.py --check` keeps the Mod Manager tile current.
 - **Run (Wardens):** enable **The Wardens** in the Mod Manager and **disable Timberbot API** (same code, same ports). New Game → The Wardens, tutorial on, map *[Custom] Wardens Wasteland*. Claude Code connects through `.mcp.json` (`http://127.0.0.1:8090/mcp`); the agent reads `manual` and lives on `frame`. Playtest scripts: `python wardens/playtest/mcp_smoke.py`, `uv run --project python wardens/playtest/smoke.py`.
-- **Static checks (Wardens):** `python wardens/tools/validate.py` (every name the game resolves at load, the chapter table against the blueprints; needs the game's `Blueprints.zip`) and `python wardens/tools/gen_map.py --check "wardens/src/Maps/Wardens Wasteland.timber"` must both print `problems: none` before an in-game test. No CI covers `wardens/`; GitHub Actions does not run on this fork at all.
+- **Static checks (Wardens):** `python wardens/tools/validate.py` (every name the game resolves at load, the chapter table against the blueprints, the cutscene files; needs the game's `Blueprints.zip`) and `python wardens/tools/gen_map.py --check "wardens/src/Maps/Wardens Wasteland.timber"` must both print `problems: none` before an in-game test. `python wardens/tools/check_cutscenes.py wardens/src` is the cutscene part alone and needs no game files; `uv run --project python --extra dev pytest wardens/tools` runs the tool tests (the checker, the packager). No CI covers the C# in `wardens/`; the tool tests are a step of the Python workflow, which on this fork does not run because GitHub Actions is off.
 
 ## Architecture
 
@@ -104,17 +105,21 @@ timberbot/
 │   └── beaver-developer.md      # Dev-agent prompt for working on this codebase
 ├── .mcp.json                    # Claude Code → the Wardens' in-game MCP server (127.0.0.1:8090/mcp)
 ├── wardens/                     # The Wardens faction mod (see wardens/README.md for the full file map)
-│   ├── README.md                # What it is, file map, tutorial + chapters, the map, the art
+│   ├── README.md                # What it is, file map, tutorial + chapters, cutscenes, the map, the art
+│   ├── CHANGELOG.md             # Version history (0.3.0: cutscenes, the release path)
 │   ├── WARDEN.md                # The agent's playbook (deployed to the mod's docs/, served by `manual`)
 │   ├── src/                     # Blueprints (Factions, Buildings, Tutorials, Needs, Goods, Recipes, Localizations),
 │   │   │                        #   Maps/ (the generated wasteland), Sprites/ + Materials/ (recolored art),
-│   │   ├── Wardens*.cs          # Configurator, StartingPopulation, ColdBoot, CameraDirector, Pointer, Chat,
-│   │   │                        #   McpServer + McpTools, Chapters, Frames, Triggers, tutorial steps, AssetDump
+│   │   │                        #   Cutscenes/ (scene files, the Cold Boot among them)
+│   │   ├── Wardens*.cs          # Configurator, StartingPopulation, CameraDirector, Pointer, Chat,
+│   │   │                        #   Cutscenes (+Script, +Overlay), McpServer + McpTools, Chapters, Frames,
+│   │   │                        #   Triggers, tutorial steps, AssetDump
 │   │   ├── PollutingBuilding.cs # Spike B stub (building-side contamination; water route planned)
 │   │   ├── Timberbot/           # Verbatim copy of timberbot/src (paths point at Mods/Wardens)
 │   │   └── Wardens.csproj       # Build + deploy (mod folder, docs/, Maps); bumps the version every build
 │   ├── tools/                   # Generators and checks: gen_buildings.py, gen_tutorial.py, gen_map.py,
-│   │                            #   validate.py, bump_version.py, recolor_assets.py, import_leafcoats.py
+│   │                            #   gen_thumbnail.py, validate.py, check_cutscenes.py, package.py (+ their
+│   │                            #   pytests), bump_version.py, recolor_assets.py, import_leafcoats.py
 │   └── playtest/                # PLAYTEST.md (checklist + MCP tool table), smoke.py, mcp_smoke.py
 ├── timberbot/
 │   ├── src/                     # C# mod source
@@ -175,7 +180,8 @@ timberbot/
 - **Every name the game resolves at load is a crash risk.** Template names in tutorial steps, loc keys, stage ids, planter groups, illumination colors. Run `validate.py` after any blueprint or generator change; every crash so far was a name.
 - **Game-context singletons only.** `WardensConfigurator` is `[Context("Game")]`; faction-specific behaviour checks `FactionService.Current?.Id == "Wardens"` at runtime, the MCP server, chat, pointer, camera and frames load for every faction. Prefer APIs already used somewhere in `wardens/src` or `timberbot/src`: nothing here is compiled in CI, so an unproven signature is found only by the next local build.
 - **Threading in the MCP server.** Tools touching game state are queued to the main thread; `OffThread` tools must be pure I/O. Long-polls (`chat_read`, `frame`) wait on a lock the main thread pulses; never block the main thread.
-- **The agent's contract.** The server's initialize `instructions`, `WARDEN.md` and `design/wardens-play.md` must agree: the agent reads `manual`, lives on `frame`, answers `chat` first, follows `attention` in order, borrows the camera only as the playbook allows, and keeps the Ledger. Change one, change all three.
+- **The agent's contract.** The server's initialize `instructions`, `WARDEN.md` and `design/wardens-play.md` must agree: the agent reads `manual`, lives on `frame`, answers `chat` first, follows `attention` in order, borrows the camera only as the playbook allows (never while a cutscene plays), and keeps the Ledger. Change one, change all three.
+- **Cutscenes are data.** A scene is `src/Cutscenes/<Id>.json` (`design/wardens-cutscenes.md` §3 is the format; `WardensCutsceneScript.cs` parses it, `WardensCutscenes.cs` plays it); its captions are `Wardens.Cutscene.<Scene>.<Shot>` rows in `Localizations/enUS.csv` (both generators keep rows they do not own). Never add a second runner or pause/lock the speed for a scene elsewhere; a new story moment is a new file plus its loc rows, checked by `check_cutscenes.py`. Tune with the game running (`cutscene reload` / `play`) and copy the file back.
 - **The Timberbot copy.** `wardens/src/Timberbot/` is a verbatim copy of `timberbot/src/`; fix Timberbot bugs upstream and re-copy, do not fork them in the copy.
 
 ### Documentation
@@ -231,14 +237,15 @@ The mod currently does **not** support:
 
 See `design/automation-plan.md` for the full implementation plan with decompiled API surface from `Timberborn.Automation.dll` and `Timberborn.AutomationBuildings.dll`.
 
-### The Wardens: state on 2026-09-03
+### The Wardens: state on 2026-09-06 (v0.3.0)
 
-Built and deployed once (the v0.2 batch: faction, tutorial line, in-game MCP, art) but **not yet verified in-game**; everything after that is **not yet compiled anywhere**, because the development environment had no game install. In order of what the next local build and a twenty-minute smoke run should answer:
+Built and deployed once (the v0.2 batch: faction, tutorial line, in-game MCP, art) but **not yet verified in-game**; everything after that is **not yet compiled anywhere**, because the development environment had no game install. v0.3.0 adds the release path: a local Release build plus `python wardens/tools/package.py` produces the ZIP, and the Mod Manager shows `thumbnail.png`. In order of what the next local build and a twenty-minute smoke run should answer:
 
 1. `Wardens.dll` compiles. The only game APIs not already used elsewhere in the repo are `BuildingUnlockingService.UnlockIgnoringCost` (chapters) and `ITickableSingleton` (frames); both are named in the design docs from the 1.1.2.4 decompile.
 2. The map loads: `Wardens Wasteland.timber` claims game version 0.7.10.0 on purpose so the game's migration runs; open questions (does 1.1 migrate that layout, do `RuinColumnH*` and `UndergroundRuins` still exist, is the Sump deep enough for the Sludge Pump, does a mod's `Maps/` folder get listed) are in `design/wardens-wasteland.md`.
 3. Chapter gating: padlocks on a new game, the Badwater toast after the Scrap tutorial, no toast on reload.
 4. Frames: `frame` returns within `every_ticks` ticks while unpaused, at once on chat, and carries `attention`.
+5. Cutscenes (2026-09-06, not compiled anywhere): the Cold Boot plays as `Cutscenes/ColdBoot.json` through the new runner (letterbox, three captions, Skip); `design/wardens-cutscenes.md` §12 lists what the run must answer (the zoom scale, the letterbox against the tutorial panel, the `text--centered` class). No game API in it is new to the repo; `Length.Percent` is the one UI Toolkit style not used before.
 
 Stubs and planned work, in the order `design/wardens-play.md` argues for: a native `ledger` tool (soil contamination counts), the Archive persisted in the save (`ISaveableSingleton`), frames on the Timberbot WebSocket for out-of-process agents, a new game from the API (`design/playtest-and-video-capture.md`), a screenshot tool, and Spike B (`PollutingBuilding`, water route). Out of scope for now: remediation tech, the Ark, custom 3D art.
 

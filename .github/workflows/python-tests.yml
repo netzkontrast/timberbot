@@ -19,6 +19,7 @@ jobs:
           filters: |
             relevant:
               - 'python/**'
+              - 'wardens/tools/**'
               - '.github/workflows/python-tests.yml'
 
   test:
@@ -47,6 +48,11 @@ jobs:
       - name: Test (pytest)
         working-directory: python
         run: pytest -q
+
+      # The Wardens' tool tests (cutscene checker, release packaging) are plain pytest files that
+      # need no game assemblies; they live next to the tools they test.
+      - name: Test (Wardens tools)
+        run: pytest -q wardens/tools
 
   # Build a wheel + sdist on every PR/push that touches the Python package and
   # upload as a workflow artifact. Reviewers can grab it from the PR's "Checks"

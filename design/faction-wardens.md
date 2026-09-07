@@ -1,6 +1,6 @@
 # The Wardens — a science faction whose win condition is the other two factions
 
-> **Status:** the arc, and two feasibility spikes against Timberborn **1.1.2.4** (decompiled 2026-09-03). The mod in [`../wardens/`](../wardens/README.md) is at v0.2: faction, bot start (Spike A), the 18-tutorial story line, chapter gating, the generated wasteland map, the in-game MCP server with the `frame` heartbeat and the agent's playbook ([`wardens-play.md`](wardens-play.md)); Spike B is still a stub. Built and deployed once, **not yet verified in-game**; the status notes at the end of this file and `../AGENTS.md` ("The Wardens: state") say what the first run must answer. Playtest/video harness requirements: [`playtest-and-video-capture.md`](playtest-and-video-capture.md). Chapter 1 detail (identity, starting buildings, goal gating, cutscene, art, UI): [`wardens-chapter-1-plan.md`](wardens-chapter-1-plan.md); available art: [`model-catalog.md`](model-catalog.md).
+> **Status:** the arc, and two feasibility spikes against Timberborn **1.1.2.4** (decompiled 2026-09-03). The mod in [`../wardens/`](../wardens/README.md) is at v0.3: faction, bot start (Spike A), the 18-tutorial story line, chapter gating, the generated wasteland map, the in-game MCP server with the `frame` heartbeat and the agent's playbook ([`wardens-play.md`](wardens-play.md)), and cutscenes as data with the Cold Boot as the first scene ([`wardens-cutscenes.md`](wardens-cutscenes.md)); Spike B is still a stub. Version history: [`../wardens/CHANGELOG.md`](../wardens/CHANGELOG.md). Built and deployed once, **not yet verified in-game**; the status notes at the end of this file and `../AGENTS.md` ("The Wardens: state") say what the first run must answer. Playtest/video harness requirements: [`playtest-and-video-capture.md`](playtest-and-video-capture.md). Chapter 1 detail (identity, starting buildings, goal gating, cutscene, art, UI): [`wardens-chapter-1-plan.md`](wardens-chapter-1-plan.md); available art: [`model-catalog.md`](model-catalog.md).
 
 You don't play the survivors. You play the machines that made survival possible.
 
@@ -189,7 +189,7 @@ Explicitly out of v0.1: breeding pods, remediation tech, field studies, the Ark,
   also confirmed that `FactionSpec.BlueprintModifiers` apply to *any* blueprint path, not just buildings.
 - **Story tutorials shipped:** `Wardens.ColdBoot` (4 cards) and `Wardens.Chapter1` (4 stages), plus two
   goal steps vanilla lacks (`GoodStockStepSpec`, `BotsChargedStepSpec`). See `wardens/README.md`.
-- **Cold Boot cutscene:** paused, speed-locked 14 s orbit around the Core via `WardensCameraDirector`.
+- **Cold Boot cutscene:** `Cutscenes/ColdBoot.json` played by `WardensCutscenes` (paused, speed-locked, letterbox, three captions, 22 s, skippable); the system is [`wardens-cutscenes.md`](wardens-cutscenes.md).
 - **Timberbot is compiled into the Wardens mod** (`wardens/src/Timberbot/`), and an **MCP server runs
   inside the game** (`WardensMcpServer`, port 8090) with chat, pointer, camera and Timberbot passthrough
   tools. `wardens/playtest/PLAYTEST.md` has the tool table.

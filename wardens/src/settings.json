@@ -8,5 +8,6 @@
   "maxBodyBytes": 1048576,
   "mcpPort": 8090,
   "mcpEnabled": true,
-  "chapterGating": true
+  "chapterGating": true,
+  "cutscenes": true
 }

@@ -8,7 +8,8 @@
 // this service polls that set twice a second, and when a chapter's tutorial is in it the chapter's
 // buildings are unlocked through BuildingUnlockingService.UnlockIgnoringCost, the toolbar button is
 // refreshed the way Timberbot's /api/science/unlock does it (ToolUnlockingService.UnlockInternal),
-// and the player gets a toast plus a line in the WARDENS UPLINK panel.
+// the player gets a toast plus a line in the WARDENS UPLINK panel, and ChapterOpened is raised for
+// the cutscene runner (WardensCutscenes.cs plays the chapter:<Id> scenes from it).
 //
 // No save state of its own: finished tutorials and unlocked buildings are both persisted by vanilla,
 // so a loaded game reconciles itself on the first poll, silently (no toasts for old news). With the
@@ -117,6 +118,10 @@ namespace Wardens
         public bool Enabled => _enabled;
         public bool Gating => _gating;
 
+        /// Raised when a chapter is announced (a real opening, or a forced one through `chapter unlock`),
+        /// never on the silent reconcile after a load.
+        public event Action<WardensChapter> ChapterOpened;
+
         public void Load()
         {
             _enabled = _factionService.Current?.Id == WardensStartingPopulation.FactionId;
@@ -203,6 +208,8 @@ namespace Wardens
             catch (Exception ex) { Debug.LogWarning("[Wardens] chapter toast: " + ex.Message); }
             try { _chat.SystemSays(title + " " + text); }
             catch (Exception ex) { Debug.LogWarning("[Wardens] chapter chat: " + ex.Message); }
+            try { ChapterOpened?.Invoke(chapter); }
+            catch (Exception ex) { Debug.LogWarning("[Wardens] chapter opened handlers: " + ex.Message); }
         }
 
         // Returns true when the template was locked and is now unlocked. The toolbar route is the
