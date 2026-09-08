@@ -9,9 +9,14 @@
 // read only published snapshots or explicit thread-safe game services, while POST
 // endpoints call live game services on the main thread.
 //
-// All responses are JSON. The server serializes whatever object TimberbotService
-// returns using Newtonsoft.Json. TOON format is handled by TimberbotService returning
-// pre-built strings for endpoints that support it.
+// All responses are JSON. Most endpoints return pre-serialised strings built with
+// TimberbotJw; anonymous objects (debug endpoint) fall back to Newtonsoft.Json.
+// `format=toon` selects a flatter JSON shape, not a different encoding.
+//
+// POST /mcp is the stateless MCP 2026-07-28 endpoint (docs/spec/mcp-endpoint.md).
+// The protocol core lives in TimberbotMcp.cs (Unity-free). Read tools run here on the
+// listener thread from published snapshots; write tools become ordinary write jobs
+// and their JSON-RPC envelope is produced when the job completes (RespondQueued).
 
 using System;
 using System.Collections.Concurrent;
@@ -48,8 +53,15 @@ namespace Timberbot
         // Shared-secret bearer token. Empty = no enforcement (only safe for
         // loopback binds; TimberbotService.Load enforces the invariant).
         private readonly string _authToken;
-        // separate JW for HTTP-layer errors (thread-safe: not shared with read/write paths)
-        private readonly TimberbotJw _jw = new TimberbotJw(512);
+        // HTTP-layer error writer. One instance per thread: ListenLoop (listener thread),
+        // DrainRequests/ProcessWriteJobs (main thread) and write-job lambdas all build
+        // error bodies, and a shared StringBuilder across those threads was a race.
+        [ThreadStatic] private static TimberbotJw _jwTls;
+        private static TimberbotJw Jw => _jwTls ?? (_jwTls = new TimberbotJw(512));
+        private readonly bool _mcpEnabled;
+        private readonly McpServer _mcp;
+        private static readonly string ModVersion =
+            System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "unknown";
 
         class PostRouteDescriptor
         {
@@ -78,9 +90,35 @@ namespace Timberbot
             public int QueuedAtFrame;            // main-thread queue admission frame
             public long RequestId;               // correlated request lifecycle logging
             public PostRouteDescriptor PostRoute;
+            public McpDeferredWrite Mcp;         // non-null when this write was issued through POST /mcp
         }
 
-        public TimberbotHttpServer(int port, TimberbotService service, bool debugEnabled = false, string listenAddress = "localhost", string corsOrigin = null, int maxBodyBytes = 1048576, string authToken = "")
+        // IMcpHost adapter: exposes exactly what the protocol core needs.
+        sealed class McpHost : IMcpHost
+        {
+            private readonly TimberbotHttpServer _s;
+            public McpHost(TimberbotHttpServer s) { _s = s; }
+            public bool GameReady => _s._service.AgentState.Ready;
+            public string ModVersion => TimberbotHttpServer.ModVersion;
+            public bool HasWriteRoute(string route) => _s._postRoutes.ContainsKey(route);
+
+            // Listener thread. Same code path as GET /api/*: snapshots and thread-safe services only.
+            public string ExecuteRead(string route, IDictionary<string, string> query)
+            {
+                string Get(string k) => query.TryGetValue(k, out var v) ? v : null;
+                int I(string k, int d = 0) => int.TryParse(Get(k), out var v) ? v : d;
+                var format = Get("format") ?? "json";
+                object data;
+                if (route == "/api/tiles")
+                    data = _s._service.ReadV2.CollectTiles(format, I("x1"), I("y1"), I("x2"), I("y2"));
+                else
+                    data = _s.RouteReadRequest(route, format, Get("detail") ?? "basic", I("id"),
+                        query.ContainsKey("limit") ? I("limit") : 100, I("offset"), Get("name"), I("x"), I("y"), I("radius"));
+                return data is string str ? str : JsonConvert.SerializeObject(data);
+            }
+        }
+
+        public TimberbotHttpServer(int port, TimberbotService service, bool debugEnabled = false, string listenAddress = "localhost", string corsOrigin = null, int maxBodyBytes = 1048576, string authToken = "", bool mcpEnabled = true)
         {
             _service = service;
             _debugEnabled = debugEnabled;
@@ -99,6 +137,9 @@ namespace Timberbot
                 _corsOrigin = corsOrigin;
             else
                 _corsOrigin = $"http://localhost:{port}";
+
+            _mcpEnabled = mcpEnabled;
+            _mcp = new McpServer(new McpHost(this), null, null, _corsOrigin);
 
             if (wantWildcard)
             {
@@ -149,7 +190,7 @@ namespace Timberbot
                     if (req.PostRoute == null)
                     {
                         TimberbotLog.Info($"req.unknown id={req.RequestId} route={req.Route}");
-                        RespondAsync(req.Context, 200, UnknownEndpoint(), req.RequestId, req.Route);
+                        RespondQueued(req, 200, UnknownEndpoint());
                     }
                     else
                     {
@@ -161,7 +202,7 @@ namespace Timberbot
                 catch (Exception ex)
                 {
                     TimberbotLog.Error("route.post", ex);
-                    RespondAsync(req.Context, 500, _jw.Error("internal_error: " + ex.Message.Replace("\"", "'").Replace("\r", "").Replace("\n", " | ")), req.RequestId, req.Route);
+                    RespondQueued(req, 500, Jw.Error("internal_error: " + ex.Message.Replace("\"", "'").Replace("\r", "").Replace("\n", " | ")));
                 }
             }
         }
@@ -182,7 +223,7 @@ namespace Timberbot
                     if (_activeWriteJob == null)
                     {
                         TimberbotLog.Info($"req.start.null id={_activeWriteRequest.RequestId} route={_activeWriteRequest.Route}");
-                        RespondAsync(_activeWriteRequest.Context, 200, UnknownEndpoint(), _activeWriteRequest.RequestId, _activeWriteRequest.Route);
+                        RespondQueued(_activeWriteRequest, 200, UnknownEndpoint());
                         _activeWriteRequest = null;
                     }
                     else
@@ -194,7 +235,7 @@ namespace Timberbot
                 {
                     TimberbotLog.Error("write.admit", ex);
                     TimberbotLog.Info($"req.start.fail id={_activeWriteRequest.RequestId} route={_activeWriteRequest.Route} ex={ex.GetType().Name}:{ex.Message}");
-                    RespondAsync(_activeWriteRequest.Context, 500, _jw.Error("internal_error: " + ex.Message.Replace("\"", "'").Replace("\r", "").Replace("\n", " | ")), _activeWriteRequest.RequestId, _activeWriteRequest.Route);
+                    RespondQueued(_activeWriteRequest, 500, Jw.Error("internal_error: " + ex.Message.Replace("\"", "'").Replace("\r", "").Replace("\n", " | ")));
                     _activeWriteRequest = null;
                     _activeWriteJob = null;
                 }
@@ -208,7 +249,7 @@ namespace Timberbot
                 if (_activeWriteJob.IsCompleted)
                 {
                     LogRequest("req.done", _activeWriteRequest, $"job={_activeWriteJob.Name} status={_activeWriteJob.StatusCode}");
-                    RespondAsync(_activeWriteRequest.Context, _activeWriteJob.StatusCode, _activeWriteJob.Result, _activeWriteRequest.RequestId, _activeWriteRequest.Route);
+                    RespondQueued(_activeWriteRequest, _activeWriteJob.StatusCode, _activeWriteJob.Result);
                     _activeWriteRequest = null;
                     _activeWriteJob = null;
                 }
@@ -217,7 +258,7 @@ namespace Timberbot
             {
                 TimberbotLog.Error("write.step", ex);
                 TimberbotLog.Info($"req.step.fail id={_activeWriteRequest.RequestId} route={_activeWriteRequest.Route} job={_activeWriteJob?.Name ?? "null"} ex={ex.GetType().Name}:{ex.Message}");
-                RespondAsync(_activeWriteRequest.Context, 500, _jw.Error("internal_error: " + ex.Message.Replace("\"", "'").Replace("\r", "").Replace("\n", " | ")), _activeWriteRequest.RequestId, _activeWriteRequest.Route);
+                RespondQueued(_activeWriteRequest, 500, Jw.Error("internal_error: " + ex.Message.Replace("\"", "'").Replace("\r", "").Replace("\n", " | ")));
                 _activeWriteRequest = null;
                 _activeWriteJob = null;
             }
@@ -256,7 +297,8 @@ namespace Timberbot
                 // it to probe liveness + openapi version BEFORE they can know
                 // they need an auth token. Everything else under /api/* is gated
                 // when authToken is configured.
-                if (!string.IsNullOrEmpty(_authToken) && path != "/api/ping" && path.StartsWith("/api/", StringComparison.Ordinal))
+                bool isMcp = path == "/mcp";
+                if (!string.IsNullOrEmpty(_authToken) && path != "/api/ping" && (path.StartsWith("/api/", StringComparison.Ordinal) || isMcp))
                 {
                     var authHeader = ctx.Request.Headers["Authorization"];
                     var presented = TimberbotPure.ExtractBearerToken(authHeader);
@@ -267,15 +309,26 @@ namespace Timberbot
                         // stays generic — never echo the presented token nor
                         // distinguish "missing" from "wrong" beyond the log.
                         ctx.Response.Headers["WWW-Authenticate"] = "Bearer realm=\"timberbot\"";
-                        Respond(ctx, 401, _jw.Error("unauthorized: missing or invalid bearer token"));
+                        Respond(ctx, 401, Jw.Error("unauthorized: missing or invalid bearer token"));
                         continue;
                     }
                 }
 
+                // MCP endpoint. Not ready-gated here: server/discover and tools/list
+                // must work before Launch; tools/call checks the gate itself and
+                // returns a GAME_NOT_READY tool error (docs/spec/mcp-endpoint.md R17).
+                if (isMcp)
+                {
+                    if (!_mcpEnabled)
+                        Respond(ctx, 404, "{\"jsonrpc\":\"2.0\",\"id\":null,\"error\":{\"code\":-32601,\"message\":\"MCP endpoint disabled (mcpEnabled=false in settings.json)\"}}");
+                    else
+                        HandleMcp(ctx, method);
+                    continue;
+                }
+
                 // Ready-gate middleware. Refuses all /api/* reads AND writes
                 // while ready=false except the carve-out whitelist
-                // (/api/ping, /api/ready, /api/agent/*, /api/tbot/*).
-                // Webhook delivery is unaffected (outbound, separate channel).
+                // (/api/ping, /api/ready, /api/agent/*).
                 if (path.StartsWith("/api/", StringComparison.Ordinal)
                     && !TimberbotAgentState.IsGateExempt(path)
                     && !_service.AgentState.Ready)
@@ -335,7 +388,7 @@ namespace Timberbot
                     catch (Exception ex)
                     {
                         TimberbotLog.Error("route.get", ex);
-                        Respond(ctx, 500, _jw.Error("internal_error: " + ex.Message.Replace("\"", "'").Replace("\r", "").Replace("\n", " | ")));
+                        Respond(ctx, 500, Jw.Error("internal_error: " + ex.Message.Replace("\"", "'").Replace("\r", "").Replace("\n", " | ")));
                     }
                     continue;
                 }
@@ -362,7 +415,7 @@ namespace Timberbot
                                     totalRead += read;
                                 if (totalRead > _maxBodyBytes)
                                 {
-                                    Respond(ctx, 413, _jw.Error($"body_too_large: max {_maxBodyBytes} bytes. set maxBodyBytes in settings.json to increase"));
+                                    Respond(ctx, 413, Jw.Error($"body_too_large: max {_maxBodyBytes} bytes. set maxBodyBytes in settings.json to increase"));
                                     continue;
                                 }
                                 raw = new string(buf, 0, totalRead);
@@ -377,7 +430,7 @@ namespace Timberbot
                     }
                     catch
                     {
-                        Respond(ctx, 400, _jw.Error("invalid_body: POST body must be valid JSON, e.g. {\"id\":1}. check your request Content-Type is application/json"));
+                        Respond(ctx, 400, Jw.Error("invalid_body: POST body must be valid JSON, e.g. {\"id\":1}. check your request Content-Type is application/json"));
                         continue;
                     }
                 }
@@ -480,7 +533,7 @@ namespace Timberbot
 
         private object UnknownEndpoint()
         {
-            return _jw.Error("unknown_endpoint: check spelling and use the correct HTTP method", ("get_endpoints", new[] {
+            return Jw.Error("unknown_endpoint: check spelling and use the correct HTTP method", ("get_endpoints", new[] {
                 "/api/ping", "/api/summary", "/api/alerts", "/api/buildings", "/api/trees", "/api/crops",
                 "/api/gatherables", "/api/beavers", "/api/resources", "/api/population", "/api/districts",
                 "/api/weather", "/api/time", "/api/speed", "/api/prefabs", "/api/power", "/api/tiles",
@@ -532,7 +585,7 @@ namespace Timberbot
                 Queued("/api/crop/demolish", req => new LambdaWriteJob(req.Route, () => _service.Placement.DemolishCrop(req.Body?.Value<int>("id") ?? 0))),
                 Queued("/api/debug", req => new LambdaWriteJob(req.Route, () =>
                 {
-                    if (!_debugEnabled) return _jw.Error("disabled: debug endpoint");
+                    if (!_debugEnabled) return Jw.Error("disabled: debug endpoint");
                     var debugArgs = new Dictionary<string, string>();
                     if (req.Body != null)
                         foreach (var prop in req.Body.Properties())
@@ -541,7 +594,7 @@ namespace Timberbot
                 }, 0)),
                 Queued("/api/benchmark", req =>
                 {
-                    if (!_debugEnabled) return new LambdaWriteJob(req.Route, () => _jw.Error("disabled: benchmark endpoint"), 0);
+                    if (!_debugEnabled) return new LambdaWriteJob(req.Route, () => Jw.Error("disabled: benchmark endpoint"), 0);
                     return _service.DebugTool.CreateBenchmarkJob(req.Body?.Value<int>("iterations") ?? 100);
                 }),
                 Queued("/api/path/place", req => _service.Placement.CreateRoutePathJob(req.Body?.Value<int>("x1") ?? 0, req.Body?.Value<int>("y1") ?? 0, req.Body?.Value<int>("x2") ?? 0, req.Body?.Value<int>("y2") ?? 0, req.Body?.Value<string>("style") ?? "direct", req.Body?.Value<int>("sections") ?? 0, req.Body?.Value<bool?>("timings") ?? false, req.QueuedAtTicks, req.QueuedAtFrame)),
@@ -574,6 +627,21 @@ namespace Timberbot
                 Queued("/api/agent/request", req => new LambdaWriteJob(req.Route, () => HandleAgentRequest(req))),
                 Queued("/api/agent/message", req => new LambdaWriteJob(req.Route, () => HandleAgentMessage(req))),
                 Queued("/api/ready", req => new LambdaWriteJob(req.Route, () => HandleReady(req))),
+
+                // --- MCP-only routes (not reachable over HTTP paths: no leading slash) ---
+                // timberborn_wait_frames: let N frames pass on the main thread, then answer.
+                Queued(McpCatalog.WaitRoute, req =>
+                {
+                    int frames = req.Body?.Value<int?>("frames") ?? 1;
+                    if (frames < 1) frames = 1;
+                    if (frames > 600) frames = 600;
+                    int startFrame = UnityEngine.Time.frameCount;
+                    return new LambdaWriteJob(McpCatalog.WaitRoute,
+                        () => "{\"waitedFrames\":" + frames + ",\"startFrame\":" + startFrame + ",\"endFrame\":" + (startFrame + frames) + "}",
+                        frames);
+                }),
+                // timberborn_get_prefabs: CollectPrefabs walks live BuildingService state, so it must run on the main thread.
+                Queued(McpCatalog.PrefabsRoute, req => new LambdaWriteJob(McpCatalog.PrefabsRoute, () => _service.Placement.CollectPrefabs(), 0)),
             };
 
             var result = new Dictionary<string, PostRouteDescriptor>(System.StringComparer.Ordinal);
@@ -597,7 +665,7 @@ namespace Timberbot
             string newGoal = goalProvided ? req.Body.Value<string>("goal") : null;
 
             if (modeProvided && !state.SetMode(newMode))
-                return _jw.Error("invalid_mode: must be 'autonomous' or 'request'");
+                return Jw.Error("invalid_mode: must be 'autonomous' or 'request'");
 
             if (goalProvided)
                 state.SetGoal(newGoal);
@@ -612,7 +680,7 @@ namespace Timberbot
         {
             var prompt = req.Body?.Value<string>("prompt") ?? "";
             if (string.IsNullOrEmpty(prompt))
-                return _jw.Error("invalid_prompt: prompt is required");
+                return Jw.Error("invalid_prompt: prompt is required");
 
             var state = _service.AgentState;
             // EnqueueRequest fires the Changed event; the WS broadcaster
@@ -620,7 +688,7 @@ namespace Timberbot
             // there's no longer a separate HTTP webhook fast-path.
             int id = state.EnqueueRequest(prompt);
 
-            return _jw.Reset().OpenObj()
+            return Jw.Reset().OpenObj()
                 .Key("pendingRequest").OpenObj().Prop("id", id).Prop("prompt", prompt).CloseObj()
                 .CloseObj().ToString();
         }
@@ -629,38 +697,124 @@ namespace Timberbot
         {
             var message = req.Body?.Value<string>("message") ?? "";
             if (string.IsNullOrEmpty(message))
-                return _jw.Error("invalid_message: 'message' is required");
+                return Jw.Error("invalid_message: 'message' is required");
             _service.PostAgentFeedback(message);
-            return _jw.Reset().OpenObj().Prop("ok", true).CloseObj().ToString();
+            return Jw.Reset().OpenObj().Prop("ok", true).CloseObj().ToString();
         }
 
         private object HandleReady(PendingRequest req)
         {
             var readyToken = req.Body?["ready"];
             if (readyToken == null)
-                return _jw.Error("invalid_ready: 'ready' boolean is required");
+                return Jw.Error("invalid_ready: 'ready' boolean is required");
             bool ready = req.Body.Value<bool>("ready");
             _service.AgentState.SetReady(ready);
-            return _jw.Reset().OpenObj().Prop("ready", ready).CloseObj().ToString();
+            return Jw.Reset().OpenObj().Prop("ready", ready).CloseObj().ToString();
         }
 
         private void FailOutstanding(string error)
         {
-            var payload = _jw.Error(error.Replace("\"", "'"));
+            var payload = Jw.Error(error.Replace("\"", "'"));
             while (_pending.TryDequeue(out var req))
-                RespondAsync(req.Context, 500, payload, req.RequestId, req.Route);
+                RespondQueued(req, 500, payload);
             while (_writeQueue.Count > 0)
             {
                 var req = _writeQueue.Dequeue();
-                RespondAsync(req.Context, 500, payload, req.RequestId, req.Route);
+                RespondQueued(req, 500, payload);
             }
             if (_activeWriteJob != null && _activeWriteRequest != null)
             {
                 _activeWriteJob.Cancel(error);
-                RespondAsync(_activeWriteRequest.Context, _activeWriteJob.StatusCode, _activeWriteJob.Result, _activeWriteRequest.RequestId, _activeWriteRequest.Route);
+                RespondQueued(_activeWriteRequest, _activeWriteJob.StatusCode, _activeWriteJob.Result);
                 _activeWriteJob = null;
                 _activeWriteRequest = null;
             }
+        }
+
+        // Completion path for queued requests. MCP-issued writes get their JSON-RPC
+        // envelope here (main thread, before the response hops to the ThreadPool);
+        // plain REST requests pass through unchanged.
+        private void RespondQueued(PendingRequest req, int statusCode, object data)
+        {
+            if (req.Mcp != null)
+            {
+                data = _mcp.WrapToolResult(req.Mcp, statusCode, data);
+                statusCode = 200;
+            }
+            RespondAsync(req.Context, statusCode, data, req.RequestId, req.Route);
+        }
+
+        // POST /mcp on the listener thread. Reads the body under the same cap as
+        // /api/*, hands it to the protocol core, and either answers inline (discover,
+        // tools/list, read tools, errors) or turns a write tool into a PendingRequest
+        // on the existing route table so it runs on the main thread like any POST.
+        private void HandleMcp(HttpListenerContext ctx, string method)
+        {
+            var req = new McpHttpRequest { Method = method };
+            foreach (string h in ctx.Request.Headers.AllKeys)
+                req.Headers[h] = ctx.Request.Headers[h];
+            if (method == "POST" && ctx.Request.HasEntityBody)
+            {
+                using (var reader = new StreamReader(ctx.Request.InputStream, ctx.Request.ContentEncoding))
+                {
+                    if (_maxBodyBytes > 0)
+                    {
+                        var buf = new char[_maxBodyBytes + 1];
+                        int totalRead = 0, read;
+                        while (totalRead <= _maxBodyBytes && (read = reader.Read(buf, totalRead, buf.Length - totalRead)) > 0)
+                            totalRead += read;
+                        if (totalRead > _maxBodyBytes)
+                        {
+                            Respond(ctx, 413, "{\"jsonrpc\":\"2.0\",\"id\":null,\"error\":{\"code\":-32600,\"message\":\"body too large: max " + _maxBodyBytes + " bytes\"}}");
+                            return;
+                        }
+                        req.Body = new string(buf, 0, totalRead);
+                    }
+                    else
+                    {
+                        req.Body = reader.ReadToEnd();
+                    }
+                }
+            }
+
+            McpHttpResponse res;
+            try { res = _mcp.Handle(req); }
+            catch (Exception ex)
+            {
+                TimberbotLog.Error("mcp.handle", ex);
+                Respond(ctx, 500, "{\"jsonrpc\":\"2.0\",\"id\":null,\"error\":{\"code\":-32603,\"message\":\"internal error\"}}");
+                return;
+            }
+
+            if (!res.IsDeferred)
+            {
+                if (res.Status == 405) ctx.Response.Headers["Allow"] = "POST";
+                Respond(ctx, res.Status, res.Body);
+                return;
+            }
+
+            var d = res.Deferred;
+            if (!_postRoutes.TryGetValue(d.Route, out var route) || route == null)
+            {
+                Respond(ctx, 200, _mcp.WrapToolFailure(d, "write route not registered: " + d.Route));
+                return;
+            }
+            var pending = new PendingRequest
+            {
+                Context = ctx,
+                Route = d.Route,
+                Method = "POST",
+                Body = d.Body,
+                Format = "json",
+                Detail = "basic",
+                Limit = 100,
+                QueuedAtTicks = System.Diagnostics.Stopwatch.GetTimestamp(),
+                RequestId = System.Threading.Interlocked.Increment(ref _nextRequestId),
+                PostRoute = route,
+                Mcp = d,
+            };
+            LogRequest("req.admit", pending, $"mcp={d.Tool.Name} pending={_pending.Count}");
+            _pending.Enqueue(pending);
         }
 
         private void RespondAsync(HttpListenerContext ctx, int statusCode, object data, long requestId = 0, string route = null)
@@ -700,7 +854,7 @@ namespace Timberbot
         {
             response.Headers.Add("Access-Control-Allow-Origin", _corsOrigin);
             response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-            response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, Authorization, MCP-Protocol-Version, Mcp-Method, Mcp-Name");
         }
 
         private static string ThreadPoolState()

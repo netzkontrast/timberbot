@@ -11,7 +11,7 @@ Architecture (post-WS rework — see parent issue #27 and sub-issue #30)::
     │   └──────┬─────────┘                                                   │
     │          │ frames {type, payload}                                      │
     │          ▼                                                             │
-    │   ┌────────────────┐    state → update view → maybe dispatch           │
+    │   ┌────────────────┐    state → record last_state → wake dispatcher    │
     │   │ message pump   │    event → log (consumed by tbot listen too)      │
     │   └──────┬─────────┘                                                   │
     │          │                                                             │
@@ -19,15 +19,23 @@ Architecture (post-WS rework — see parent issue #27 and sub-issue #30)::
     │   │ heartbeat tick │────►  send_message("heartbeat", {...})            │
     │   └──────┬─────────┘                                                   │
     │          │                                                             │
-    │   ┌──────┴─────────┐    triggers: pendingRequest | autonomous cadence  │
-    │   │ dispatch       │────►  run_agent(goal=...) → advance ack           │
-    │   └────────────────┘                                                   │
+    │   ┌──────┴─────────┐    triggers: pendingRequest | autonomous clock    │
+    │   │ dispatcher     │────►  run_agent(goal=...) → advance ack           │
+    │   └────────────────┘    one cycle at a time; re-arms on frame or timer │
     └────────────────────────────────────────────────────────────────────────┘
 
 The HTTP polling loop, the `/api/tbot/heartbeat` and `/api/tbot/register`
 calls, and the embedded webhook listener are all gone. Events arrive over the
 same WebSocket as state pushes, so `tbot watch` no longer needs to host its
 own HTTP receiver.
+
+Dispatch is decoupled from the message pump. The pump only records the latest
+`state` payload and wakes the dispatcher task; the dispatcher runs one agent
+cycle at a time and re-evaluates the last known state (a) after every cycle,
+(b) whenever a new frame arrives, and (c) when the autonomous cadence is due.
+The mod only pushes `state` frames on mutation (`TimberbotAgentState.Changed`),
+so autonomous mode MUST be clock-driven here — waiting for the next frame would
+stall after the first short cycle.
 
 The WS client is `timberbot.api.wsclient.TimberbotWsClient` (lands in
 Unit 2 / sub-issue #29). Until that module is importable, `_default_ws_client`
@@ -248,9 +256,11 @@ class WatchLoop:
         self.last_state: dict[str, Any] | None = None
         self.triggers_fired = 0
         self.agent_status = "idle"
-        # `_stop` is bound in `run()` once we're sure an event loop is running.
-        # `stop()` is a no-op before then (e.g. if a test forgets to await run).
+        # `_stop` / `_wake` are bound in `run()` once we're sure an event loop
+        # is running. `stop()` is a no-op before then (e.g. if a test forgets
+        # to await run). `_wake` nudges the dispatcher when a frame arrives.
         self._stop: asyncio.Event | None = None
+        self._wake: asyncio.Event | None = None
         self._should_exit = False  # flips when --once and a cycle ran
 
     # ------------------------------------------------------------------
@@ -274,27 +284,33 @@ class WatchLoop:
 
         Priorities:
 
-          1. `state.pendingRequest` — explicit request mode. De-duped by id so
-             a re-push of the same pending slot doesn't re-fire.
+          1. `state.pendingRequest` — explicit request mode. The mod publishes
+             the slot as `{id, prompt}` (`TimberbotAgentState.ToStateResponseJson`,
+             `docs/websocket-protocol.md`); `goal` is accepted as a legacy alias.
+             De-duped by id so a re-push of the same pending slot doesn't re-fire.
           2. Autonomous cadence — `mode == "autonomous"` and `ready == True`,
              gated by `autonomous_interval` elapsed since the last fire.
 
-        Returns None if neither condition fires; that just means the message
-        pump goes back to awaiting the next frame.
+        Returns None if neither condition fires; the dispatcher then sleeps
+        until the next frame or until `next_autonomous_delay` elapses.
         """
         if not isinstance(state, dict):
             return None
 
         pending = state.get("pendingRequest")
-        if isinstance(pending, dict) and pending.get("goal"):
-            pid = str(pending.get("id")) if pending.get("id") is not None else None
-            if pid != self.last_pending_id:
-                self.last_pending_id = pid
-                return Trigger(
-                    source="pending",
-                    goal=str(pending["goal"]),
-                    request_id=pid,
-                )
+        if isinstance(pending, dict):
+            prompt = pending.get("prompt")
+            if prompt is None:
+                prompt = pending.get("goal")  # legacy alias, pre-WS connector builds
+            if prompt:
+                pid = str(pending.get("id")) if pending.get("id") is not None else None
+                if pid != self.last_pending_id:
+                    self.last_pending_id = pid
+                    return Trigger(
+                        source="pending",
+                        goal=str(prompt),
+                        request_id=pid,
+                    )
 
         mode = state.get("mode")
         ready = bool(state.get("ready"))
@@ -307,6 +323,23 @@ class WatchLoop:
                 return Trigger(source="autonomous", goal=goal, request_id=None)
 
         return None
+
+    def next_autonomous_delay(self, state: dict[str, Any] | None) -> float | None:
+        """Seconds until the autonomous cadence is next due for `state`.
+
+        Returns None when no clock-driven wake is needed: request mode, gate
+        closed, or no state seen yet. The dispatcher sleeps at most this long
+        before re-running `pick_trigger` on the last known state, so autonomous
+        mode keeps firing even when the mod has nothing new to push.
+        """
+        if not isinstance(state, dict):
+            return None
+        if state.get("mode") != "autonomous" or not state.get("ready"):
+            return None
+        if self.last_autonomous_run < 0:
+            return 0.0
+        remaining = self.cfg.autonomous_interval - (self._now() - self.last_autonomous_run)
+        return max(remaining, 0.0)
 
     def note_dispatch(self, trigger: Trigger) -> None:
         """Bookkeeping after a dispatch returns. Always called even on crash."""
@@ -333,22 +366,53 @@ class WatchLoop:
                 await asyncio.wait_for(self._stop.wait(), timeout=self.cfg.heartbeat_interval)
 
     async def _on_state(self, payload: dict[str, Any]) -> None:
-        """Handle one `state` frame: update local view, maybe dispatch."""
+        """Handle one `state` frame: record it and wake the dispatcher.
+
+        Never blocks on a running agent cycle — frames keep flowing while the
+        dispatcher is busy, and the newest snapshot wins.
+        """
         self.last_state = payload
-        trigger = self.pick_trigger(payload)
-        if trigger is None:
-            return
+        if self._wake is not None:
+            self._wake.set()
+
+    async def _dispatch(self, trigger: Trigger) -> None:
+        """Run one agent cycle off the event loop and do the bookkeeping."""
         log.info("watch: trigger source=%s goal=%r", trigger.source, trigger.goal)
         self.agent_status = "busy"
         loop = asyncio.get_running_loop()
         try:
             rc = await loop.run_in_executor(None, self.dispatch_fn, trigger.goal)
             log.info("watch: cycle done rc=%d", rc)
-        except Exception as exc:  # noqa: BLE001 - never let dispatch take down the pump
+        except Exception as exc:  # noqa: BLE001 - never let dispatch take down the loop
             log.exception("watch: dispatch crashed (%s)", exc)
         finally:
             self.agent_status = "idle"
             self.note_dispatch(trigger)
+
+    async def _dispatch_task(self) -> None:
+        """Serialize agent cycles; re-arm on state frames and on the autonomous clock.
+
+        One cycle at a time, so two triggers can never overlap. After every
+        cycle the last known state is re-evaluated immediately (a
+        `pendingRequest` may have landed mid-run). Otherwise the task sleeps
+        until the pump wakes it or `next_autonomous_delay` elapses.
+        """
+        assert self._stop is not None and self._wake is not None
+        while not self._stop.is_set():
+            # Clear before reading so a frame that lands during evaluation or
+            # dispatch is never lost: it re-sets the event and the next wait
+            # returns immediately.
+            self._wake.clear()
+            state = self.last_state
+            trigger = self.pick_trigger(state) if isinstance(state, dict) else None
+            if trigger is not None:
+                await self._dispatch(trigger)
+                if self._should_exit:
+                    self._stop.set()
+                continue
+            timeout = self.next_autonomous_delay(state)
+            with contextlib.suppress(asyncio.TimeoutError):
+                await asyncio.wait_for(self._wake.wait(), timeout=timeout)
 
     async def _message_pump(self) -> None:
         """Drain `ws.messages()` until the connection ends or `_stop` fires."""
@@ -377,6 +441,7 @@ class WatchLoop:
     async def run(self) -> int:
         """Connect, then run the heartbeat and message-pump tasks concurrently."""
         self._stop = asyncio.Event()
+        self._wake = asyncio.Event()
         try:
             await self.ws.connect()
         except Exception as exc:  # noqa: BLE001
@@ -385,9 +450,10 @@ class WatchLoop:
 
         hb_task = asyncio.create_task(self._heartbeat_task(), name="watch-heartbeat")
         pump_task = asyncio.create_task(self._message_pump(), name="watch-pump")
+        dispatch_task = asyncio.create_task(self._dispatch_task(), name="watch-dispatch")
         try:
             done, pending = await asyncio.wait(
-                {hb_task, pump_task}, return_when=asyncio.FIRST_COMPLETED,
+                {hb_task, pump_task, dispatch_task}, return_when=asyncio.FIRST_COMPLETED,
             )
             for t in pending:
                 t.cancel()
@@ -415,6 +481,8 @@ class WatchLoop:
         """
         if self._stop is not None:
             self._stop.set()
+        if self._wake is not None:
+            self._wake.set()  # unblock a dispatcher parked on an indefinite wait
 
 
 # ---------------------------------------------------------------------------

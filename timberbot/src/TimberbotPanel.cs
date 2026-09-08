@@ -68,7 +68,11 @@ namespace Timberbot
         private NineSliceButton _modalLaunchBtn;
         private string _lastTextareaSavedValue;
         private float _goalDirtyTime = -1f;
-        private string _currentMode = ModeAutonomous;
+        // Boot assumption until the first /api/agent/state poll lands. Must be
+        // the mod default (request): the dropdown callback ignores a flip to
+        // whatever this holds (`mode == _currentMode`), so a wrong guess here
+        // used to swallow the player's switch to Autonomous.
+        private string _currentMode = TimberbotAgentState.DefaultMode;
         // Request-mode draft survives a mode flip-flop. Cleared only on
         // Launch (the prompt has been sent) so the player never loses a
         // typed prompt by accidentally toggling the dropdown.
@@ -329,12 +333,18 @@ namespace Timberbot
             // gate prevents the poll-loop from clobbering uncommitted edits.
             if (state != null && _modeField != null && _goalDirtyTime < 0f)
             {
-                var serverMode = state.Value<string>("mode") ?? ModeAutonomous;
+                var serverMode = TimberbotPure.ResolveServerMode(state);
                 if (serverMode != _modeField.value)
                 {
                     _modeField.SetValueWithoutNotify(serverMode);
                     SyncTextareaForMode(serverMode, state);
                 }
+                // Keep the bookkeeping in step with the mirrored dropdown. The
+                // mode callback, Launch (request → /api/agent/request) and the
+                // debounced goal save all branch on _currentMode; leaving it at
+                // the boot value made Launch a no-op in request mode and saved
+                // typed prompts as the goal.
+                _currentMode = serverMode;
                 if (serverMode == ModeAutonomous)
                 {
                     var serverGoal = state.Value<string>("goal") ?? "";
@@ -571,7 +581,7 @@ namespace Timberbot
                 "Backend / model / effort moved to ~/.config/timberbot/config.toml. " +
                 "Use the Launch button to flip the ready gate; the connector handles spawning the agent."));
 
-            _modeField = MakeTextField(ModeAutonomous);
+            _modeField = MakeTextField(_currentMode);
             _modeField.RegisterValueChangedCallback(evt =>
             {
                 var mode = NormalizeMode(evt.newValue);
@@ -584,7 +594,11 @@ namespace Timberbot
             _modePresetBtn = MakePresetButton("v", () => TogglePresetMenu(_modePresetBtn, _modeField, ModeChoices));
             _agentSettingsContainer.Add(MakePresetFieldRow("Mode:", _modeField, _modePresetBtn));
 
-            _textareaField = MakeTextField(savedGoal);
+            // The textarea is mode-bound: goal in autonomous mode, prompt draft
+            // in request mode. Seed it for the boot-time mode; the state poll
+            // re-syncs it once the server reports its actual mode.
+            var initialText = _currentMode == ModeAutonomous ? savedGoal : _requestDraft;
+            _textareaField = MakeTextField(initialText);
             _textareaField.multiline = true;
             _textareaField.style.height = 100;
             _textareaField.style.flexShrink = 1;
@@ -600,7 +614,7 @@ namespace Timberbot
                 else
                     _goalDirtyTime = Time.realtimeSinceStartup;
             });
-            _lastTextareaSavedValue = savedGoal;
+            _lastTextareaSavedValue = initialText;
             _agentSettingsContainer.Add(MakeFieldRow("Goal / Prompt:", _textareaField));
 
             var agentActionRow = new VisualElement();

@@ -13,6 +13,7 @@ Async tests don't depend on `pytest-asyncio` — they wrap the body in
 from __future__ import annotations
 
 import asyncio
+import time
 from collections.abc import AsyncIterator
 
 import pytest
@@ -167,16 +168,50 @@ def test_pick_trigger_pending_request():
     loop, _, _ = _make_loop()
     trigger = loop.pick_trigger({
         "mode": "request", "ready": True,
-        "pendingRequest": {"id": "req-1", "goal": "plant carrots"},
+        "pendingRequest": {"id": "req-1", "prompt": "plant carrots"},
     })
     assert trigger == Trigger(source="pending", goal="plant carrots", request_id="req-1")
+
+
+def test_pick_trigger_pending_request_matches_mod_wire_shape():
+    """Mirror of `TimberbotAgentState.ToStateResponseJson`: integer `id`, `prompt` key.
+
+    Regression: the connector used to read `pendingRequest.goal`, which the mod
+    never sends, so request-mode prompts were never dispatched.
+    """
+    loop, _, _ = _make_loop()
+    state = {
+        "mode": "request", "goal": "", "ready": True, "agentStatus": "idle", "lastError": None,
+        "pendingRequest": {"id": 17, "prompt": "place 3 farms near the river"},
+    }
+    assert loop.pick_trigger(state) == Trigger(
+        source="pending", goal="place 3 farms near the river", request_id="17",
+    )
+
+
+def test_pick_trigger_pending_request_accepts_legacy_goal_key():
+    loop, _, _ = _make_loop()
+    trigger = loop.pick_trigger({
+        "mode": "request", "ready": True,
+        "pendingRequest": {"id": 3, "goal": "plant carrots"},
+    })
+    assert trigger == Trigger(source="pending", goal="plant carrots", request_id="3")
+
+
+def test_pick_trigger_ignores_empty_pending_prompt():
+    loop, _, _ = _make_loop()
+    assert loop.pick_trigger({
+        "mode": "request", "ready": True,
+        "pendingRequest": {"id": 4, "prompt": ""},
+    }) is None
+    assert loop.pick_trigger({"mode": "request", "ready": True, "pendingRequest": None}) is None
 
 
 def test_pick_trigger_de_dupes_same_pending_id():
     loop, _, _ = _make_loop()
     state = {
         "mode": "request", "ready": True,
-        "pendingRequest": {"id": "req-1", "goal": "plant carrots"},
+        "pendingRequest": {"id": "req-1", "prompt": "plant carrots"},
     }
     assert loop.pick_trigger(state) is not None
     # Same pending push — should NOT fire again.
@@ -217,6 +252,26 @@ def test_pick_trigger_no_pending_no_autonomous():
 def test_pick_trigger_handles_garbage_state():
     loop, _, _ = _make_loop()
     assert loop.pick_trigger("not a dict") is None  # type: ignore[arg-type]
+
+
+def test_next_autonomous_delay_only_ticks_in_open_autonomous_mode():
+    now = [100.0]
+    loop, _, _ = _make_loop(
+        WatchConfig(heartbeat_interval=30.0, autonomous_interval=10.0), now=now,
+    )
+    assert loop.next_autonomous_delay(None) is None
+    assert loop.next_autonomous_delay({"mode": "request", "ready": True}) is None
+    assert loop.next_autonomous_delay({"mode": "autonomous", "ready": False}) is None
+
+    auto = {"mode": "autonomous", "ready": True, "goal": "stockpile food"}
+    # Nothing has run yet → due now.
+    assert loop.next_autonomous_delay(auto) == 0.0
+    assert loop.pick_trigger(auto) is not None  # fires, stamps last_autonomous_run=100
+    now[0] = 104.0
+    assert loop.next_autonomous_delay(auto) == pytest.approx(6.0)
+    now[0] = 120.0
+    assert loop.next_autonomous_delay(auto) == 0.0
+    assert loop.pick_trigger(auto) is not None
 
 
 # ---------------------------------------------------------------------------
@@ -270,7 +325,7 @@ def test_state_push_dispatches_and_acks_via_heartbeat():
         ))
         ws.push("state", {
             "mode": "request", "ready": True,
-            "pendingRequest": {"id": "req-7", "goal": "build a sawmill"},
+            "pendingRequest": {"id": "req-7", "prompt": "build a sawmill"},
         })
         # Schedule end-of-stream after the pump processes the state frame.
         async def _ender() -> None:
@@ -317,6 +372,175 @@ def test_autonomous_state_push_dispatches():
     asyncio.run(asyncio.wait_for(scenario(), timeout=5))
 
 
+def _make_real_clock_loop(
+    cfg: WatchConfig, dispatch_fn,
+) -> tuple[WatchLoop, FakeWsClient]:
+    """WatchLoop on the real monotonic clock, for cadence tests that need time to pass."""
+    ws = FakeWsClient()
+    client = TimberbotClient(host="127.0.0.1", port=8085, json_mode=True)
+    return WatchLoop(client, cfg, ws, dispatch_fn=dispatch_fn), ws
+
+
+def test_autonomous_cadence_refires_without_new_state_frames():
+    """Regression: autonomous mode used to be evaluated only on `state` frames.
+
+    The mod pushes `state` only on mutation, so after one short cycle nothing
+    arrived and the connector went silent. The dispatcher must re-fire on its
+    own clock from a single frame.
+    """
+
+    async def scenario() -> None:
+        dispatched: list[str] = []
+
+        def dispatch_fn(goal: str) -> int:
+            dispatched.append(goal)
+            return 0
+
+        loop, ws = _make_real_clock_loop(
+            WatchConfig(heartbeat_interval=10.0, autonomous_interval=0.05), dispatch_fn,
+        )
+        ws.push("state", {"mode": "autonomous", "ready": True, "goal": "stockpile food"})
+
+        async def _ender() -> None:
+            await asyncio.sleep(0.4)
+            ws.end_stream()
+            loop.stop()
+
+        ender = asyncio.create_task(_ender())
+        rc = await loop.run()
+        await ender
+        assert rc == 0
+        assert len(dispatched) >= 3, f"expected repeated autonomous cycles, got {dispatched}"
+        assert set(dispatched) == {"stockpile food"}
+        assert loop.acked_request_id is None  # autonomous cycles never ack
+
+    asyncio.run(asyncio.wait_for(scenario(), timeout=5))
+
+
+def test_autonomous_cadence_stops_when_gate_closes():
+    async def scenario() -> None:
+        dispatched: list[str] = []
+
+        def dispatch_fn(goal: str) -> int:
+            dispatched.append(goal)
+            return 0
+
+        loop, ws = _make_real_clock_loop(
+            WatchConfig(heartbeat_interval=10.0, autonomous_interval=0.05), dispatch_fn,
+        )
+        ws.push("state", {"mode": "autonomous", "ready": True, "goal": "stockpile food"})
+
+        async def _driver() -> None:
+            await asyncio.sleep(0.15)
+            ws.push("state", {"mode": "autonomous", "ready": False, "goal": "stockpile food"})
+            await asyncio.sleep(0.1)  # let an in-flight evaluation settle
+            seen = len(dispatched)
+            await asyncio.sleep(0.25)
+            assert len(dispatched) == seen, "cycles kept firing after Stop"
+            ws.end_stream()
+            loop.stop()
+
+        driver = asyncio.create_task(_driver())
+        rc = await loop.run()
+        await driver
+        assert rc == 0
+        assert dispatched, "expected at least one cycle before Stop"
+
+    asyncio.run(asyncio.wait_for(scenario(), timeout=5))
+
+
+def test_frames_during_a_cycle_are_processed_and_cycles_stay_serialized():
+    """The pump must not block on a running cycle, and cycles never overlap.
+
+    A `pendingRequest` that lands mid-run is dispatched right after the run.
+    """
+
+    async def scenario() -> None:
+        dispatched: list[str] = []
+        active = 0
+        max_active = 0
+
+        def dispatch_fn(goal: str) -> int:
+            nonlocal active, max_active
+            active += 1
+            max_active = max(max_active, active)
+            time.sleep(0.1)  # executor thread; simulates an agent run
+            dispatched.append(goal)
+            active -= 1
+            return 0
+
+        loop, ws = _make_real_clock_loop(
+            WatchConfig(heartbeat_interval=10.0, autonomous_interval=60.0), dispatch_fn,
+        )
+        ws.push("state", {"mode": "autonomous", "ready": True, "goal": "stockpile food"})
+
+        async def _driver() -> None:
+            # Wait until the first cycle is actually running, then deliver a
+            # request mid-run. The old pump would have parked this frame until
+            # the cycle returned.
+            for _ in range(200):
+                if active:
+                    break
+                await asyncio.sleep(0.005)
+            assert active == 1, "first cycle never started"
+            ws.push("state", {
+                "mode": "autonomous", "ready": True, "goal": "stockpile food",
+                "pendingRequest": {"id": 5, "prompt": "build a sawmill"},
+            })
+            await asyncio.sleep(0.02)
+            # Consumed while the cycle is still in flight.
+            assert loop.last_state is not None and loop.last_state.get("pendingRequest") is not None
+            await asyncio.sleep(0.4)
+            ws.end_stream()
+            loop.stop()
+
+        driver = asyncio.create_task(_driver())
+        rc = await loop.run()
+        await driver
+        assert rc == 0
+        assert dispatched == ["stockpile food", "build a sawmill"]
+        assert max_active == 1
+        assert loop.acked_request_id == "5"
+
+    asyncio.run(asyncio.wait_for(scenario(), timeout=5))
+
+
+def test_pre_queued_frames_collapse_to_the_latest_snapshot():
+    """Each `state` frame is the authoritative snapshot (docs/websocket-protocol.md).
+
+    The mod's pending slot is single-slot and overwrites, so when two frames are
+    already waiting when the dispatcher looks, only the newest request is run —
+    the older one no longer exists on the mod.
+    """
+
+    async def scenario() -> None:
+        loop, ws, dispatched = _make_loop(WatchConfig(
+            heartbeat_interval=10.0, autonomous_interval=60.0,
+        ))
+        ws.push("state", {
+            "mode": "request", "ready": True,
+            "pendingRequest": {"id": 1, "prompt": "stale, already overwritten on the mod"},
+        })
+        ws.push("state", {
+            "mode": "request", "ready": True,
+            "pendingRequest": {"id": 2, "prompt": "current request"},
+        })
+
+        async def _ender() -> None:
+            await asyncio.sleep(0.2)
+            ws.end_stream()
+            loop.stop()
+
+        ender = asyncio.create_task(_ender())
+        rc = await loop.run()
+        await ender
+        assert rc == 0
+        assert dispatched == ["current request"]
+        assert loop.acked_request_id == "2"
+
+    asyncio.run(asyncio.wait_for(scenario(), timeout=5))
+
+
 def test_dispatch_crash_does_not_kill_pump():
     """A throwing dispatch_fn is logged but the pump keeps going."""
 
@@ -331,7 +555,7 @@ def test_dispatch_crash_does_not_kill_pump():
 
         ws.push("state", {
             "mode": "request", "ready": True,
-            "pendingRequest": {"id": "req-x", "goal": "explode"},
+            "pendingRequest": {"id": "req-x", "prompt": "explode"},
         })
 
         async def _ender() -> None:
@@ -440,24 +664,30 @@ def test_once_flag_exits_after_first_dispatch():
         ))
         ws.push("state", {
             "mode": "request", "ready": True,
-            "pendingRequest": {"id": "req-once", "goal": "do it"},
-        })
-        # Push another state that *would* fire if we were still alive.
-        ws.push("state", {
-            "mode": "request", "ready": True,
-            "pendingRequest": {"id": "req-second", "goal": "should not fire"},
+            "pendingRequest": {"id": "req-once", "prompt": "do it"},
         })
 
-        async def _ender() -> None:
+        async def _driver() -> None:
+            # Once the first cycle has run, offer a second request that *would*
+            # fire if the loop were still alive.
+            for _ in range(200):
+                if dispatched:
+                    break
+                await asyncio.sleep(0.005)
+            ws.push("state", {
+                "mode": "request", "ready": True,
+                "pendingRequest": {"id": "req-second", "prompt": "should not fire"},
+            })
             await asyncio.sleep(1.0)  # Backstop; once should trip first.
             ws.end_stream()
             loop.stop()
 
-        ender = asyncio.create_task(_ender())
+        driver = asyncio.create_task(_driver())
         rc = await loop.run()
-        ender.cancel()
+        driver.cancel()
         assert rc == 0
         assert dispatched == ["do it"]
+        assert loop.acked_request_id == "req-once"
 
     asyncio.run(asyncio.wait_for(scenario(), timeout=5))
 
