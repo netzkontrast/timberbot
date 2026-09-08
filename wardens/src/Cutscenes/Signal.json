@@ -1,0 +1,46 @@
+{
+  "id": "Signal",
+  "on": [
+    "chapter:Signal"
+  ],
+  "pause": true,
+  "leave_paused": false,
+  "restore_camera": true,
+  "letterbox": true,
+  "skippable": true,
+  "shots": [
+    {
+      "id": "shifts",
+      "caption": "Wardens.Cutscene.Signal.Shifts",
+      "seconds": 6,
+      "camera": [
+        {
+          "t": 6,
+          "anchor": "bot",
+          "v": 40,
+          "dh": 30,
+          "dzoom": -0.15
+        }
+      ]
+    },
+    {
+      "id": "cruncher",
+      "caption": "Wardens.Cutscene.Signal.Cruncher",
+      "seconds": 6,
+      "wait": "continue",
+      "highlight": {
+        "anchor": "core",
+        "seconds": 6
+      },
+      "camera": [
+        {
+          "t": 6,
+          "anchor": "core",
+          "v": 50,
+          "dh": 90,
+          "dzoom": 0
+        }
+      ]
+    }
+  ]
+}

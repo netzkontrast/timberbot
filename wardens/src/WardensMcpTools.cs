@@ -341,11 +341,12 @@ namespace Wardens
                 });
 
             Add("cutscene",
-                "Cutscenes: scenes from Cutscenes/*.json in the mod folder (design/wardens-cutscenes.md), the Cold Boot among them. action=status lists the loaded scenes with their triggers and the running one (shot, caption, waiting); play starts `id` now, replacing a running scene and ignoring the trigger policy; skip ends the running scene; continue releases a shot that waits for the Continue button; reload re-reads the files (edit in the mod folder, reload, play: the tuning loop). A playing scene owns the camera: leave it and say nothing until the frame reports cutscene.end.",
+                "Cutscenes: scenes from Cutscenes/*.json in the mod folder (design/wardens-cutscenes.md): the Cold Boot, one per chapter, the level's end card, the Archive reading. action=status lists the loaded scenes with their triggers, the running one (shot, caption, waiting: flight | time | continue | choice, the open choices) and the story record (choices, marks); play starts `id` now, replacing a running scene and ignoring the trigger policy (`Archive` reads the Ledger back when the human asks); skip ends the running scene; continue releases a shot that waits for the Continue button; choose answers an open choice card with `choice` (only when the human said which, in chat: a choice is purpose); reload re-reads the files (edit in the mod folder, reload, play: the tuning loop); reset clears the story record (dev). A playing scene owns the camera: leave it and say nothing until the frame reports cutscene.end.",
                 Schema(new JObject
                 {
-                    ["action"] = Prop("string", "status | list | play | skip | continue | reload", "status"),
+                    ["action"] = Prop("string", "status | list | play | skip | continue | choose | reload | reset", "status"),
                     ["id"] = Prop("string", "scene id for play", WardensCutscenes.ColdBootId),
+                    ["choice"] = Prop("string", "choice id for choose (the open card's ids are in status.choices)"),
                 }),
                 a =>
                 {
@@ -360,8 +361,14 @@ namespace Wardens
                         case "continue":
                             _cutscenes.Continue();
                             break;
+                        case "choose":
+                            _cutscenes.Choose(Str(a, "choice") ?? throw new ArgumentException("choice required"));
+                            break;
                         case "reload":
                             _cutscenes.Reload();
+                            break;
+                        case "reset":
+                            _cutscenes.ResetStory();
                             break;
                     }
                     return _cutscenes.State();

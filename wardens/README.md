@@ -160,8 +160,16 @@ Skip; the agent sees `cutscene.start` / `cutscene.end` in its frames and stays o
   `"cutscenes": true` in `settings.json`. No save state: a scene plays once per event and a reload
   re-fires nothing.
 - **Shots**: `caption` is a loc row (`Wardens.Cutscene.<Scene>.<Shot>` in `Localizations/enUS.csv`;
-  `text` is a literal for prototyping); `seconds` is the shot's minimum length (unscaled, so a paused
-  game counts); `wait: continue` adds a Continue button; `point`, `toast`, `say` fire when the shot starts.
+  `text` is a literal for prototyping); `args` fill its `{0}`.. from the game when the shot starts (`day`,
+  `cycle`, `cycle_day`, `bots`, `beavers`, `archive`, `science`, `good:<Id>`, `choice:<key>`, `mark:<name>`);
+  `seconds` is the shot's minimum length (unscaled, so a paused game counts); `wait: continue` adds a
+  Continue button; `choices` puts a choice card up (`[{ "id", "caption" }]`; the pick is recorded under
+  `choice_key`, default `<Scene>.<shot>`) and `when: { "choice": "<key>", "is": "<id>" }` plays a shot
+  only for one answer; `mark` records the day under a name; `point`, `highlight` (the tint without the
+  arrow), `toast`, `say` fire when the shot starts.
+- **The story record**: choices and marks live in `story.json` next to `settings.json` (`WardensStoryState.cs`),
+  outside any save, one file per mod folder; the `cutscene` tool shows it under `story` and `reset` archives it.
+- **Keys**: Escape skips, Return or Space continue; a choice card has buttons only.
 - **Keyframes**: `t` from the shot's start (a first keyframe above 0 eases out of the current pose, one at
   0 cuts); `anchor` is what the camera looks at (`core`, `start` = the target at scene start, `selection`,
   `bot`, `grid` x/y/z, `world`), plus an `offset` in grid units; `h`/`v`/`zoom` are absolute, `dh`/`dv`/`dzoom`
@@ -173,11 +181,15 @@ Skip; the agent sees `cutscene.start` / `cutscene.end` in its frames and stays o
   (captions, chapter and tutorial ids, anchors, field types, unknown fields) without the game's files;
   `validate.py` includes it. `uv run --project python --extra dev pytest wardens/tools/test_check_cutscenes.py`
   tests the checker and the shipped scenes.
-- **The Cold Boot** is the first scene: three shots, 22 s, a high orbit ("Nothing has grown here in 3,000
-  days."), a push in on the Core ("We were not built to live here..."), a settle back to the gameplay
-  angle ("Chapter 1: First Light..."); the game stays paused afterwards for the Clock card, as before.
-  The tutorial's Wake and Directive cards stay on the right throughout. Not yet verified in-game; the
-  zoom scale and the angles are the first thing to tune.
+- **The scenes** (`Cutscenes/`, captions in `design/wardens-campaign-story.md` §3): `ColdBoot` on a new
+  game (three shots, 22 s: a high orbit, a push in on the Core with its light coming on, a settle back
+  to the gameplay angle; the game stays paused afterwards for the Clock card); `Badwater`, `Signal`,
+  `Pods`, `Power`, `Green` when their chapter opens (two shots each, the first with the day's numbers,
+  the second waiting for Continue, the camera restored afterwards; Green anchors on the first beaver
+  and marks `birthday`); `LevelEnd` right after Green (the level's end card: *Continue to Level 02* or
+  *Stay*, recorded under `LevelEnd.end`, one of two closing shots); `Archive` on request only
+  (`cutscene play id=Archive`: five cards reading the Ledger back with today's numbers). Not yet
+  verified in-game; the zoom scale and the angles are the first thing to tune.
 
 ## The map
 

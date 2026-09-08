@@ -5,7 +5,8 @@
 // hands out immediate-mode mesh drawers for tiles and arrows, QuickNotificationService shows a
 // toast, CameraService can pan. A pointer = highlight the object on the tile + a bobbing arrow
 // above it + optional toast + optional camera pan, for N seconds (unscaled, so paused games
-// still show it). Pointers are re-drawn every frame from UpdateSingleton (Graphics.DrawMesh
+// still show it); a cutscene highlight is the same thing without the arrow (arrow: false).
+// Pointers are re-drawn every frame from UpdateSingleton (Graphics.DrawMesh
 // is per-frame), which is why this is an IUpdatableSingleton and not a one-shot call.
 
 using System.Collections.Generic;
@@ -33,6 +34,7 @@ namespace Wardens
             public float ExpiresAt;
             public BaseComponent Target;
             public string Label;
+            public bool Arrow = true;   // false: the tint and the tile only (a cutscene highlight)
         }
 
         private readonly BlockService _blockService;
@@ -63,7 +65,7 @@ namespace Wardens
             _arrowDrawer = _markerDrawerFactory.CreateArrowMarkerDrawer();
         }
 
-        public JObject Point(Vector3Int coords, string message, float seconds, string colorName, bool focus)
+        public JObject Point(Vector3Int coords, string message, float seconds, string colorName, bool focus, bool arrow = true)
         {
             var color = ParseColor(colorName);
             BaseComponent target = null;
@@ -87,6 +89,7 @@ namespace Wardens
                 ExpiresAt = Time.unscaledTime + Mathf.Max(1f, seconds),
                 Target = target,
                 Label = message,
+                Arrow = arrow,
             });
 
             if (focus) _cameraService.MoveTargetTo(CoordinateSystem.GridToWorldCentered(coords));
@@ -129,8 +132,9 @@ namespace Wardens
                 float bob = 0.25f * Mathf.Sin(now * 4f);
                 var basePos = CoordinateSystem.GridToWorldCentered(p.Coords);
                 _tileDrawer.DrawAtCoordinates(p.Coords, 0.03f, p.Color);
-                _arrowDrawer.DrawAtPosition(basePos + new Vector3(0f, 1.6f + bob, 0f),
-                    Quaternion.Euler(90f, now * 60f, 0f), p.Color);
+                if (p.Arrow)
+                    _arrowDrawer.DrawAtPosition(basePos + new Vector3(0f, 1.6f + bob, 0f),
+                        Quaternion.Euler(90f, now * 60f, 0f), p.Color);
             }
         }
 

@@ -1,0 +1,49 @@
+{
+  "id": "Badwater",
+  "on": [
+    "chapter:Badwater"
+  ],
+  "pause": true,
+  "leave_paused": false,
+  "restore_camera": true,
+  "letterbox": true,
+  "skippable": true,
+  "shots": [
+    {
+      "id": "scrap",
+      "caption": "Wardens.Cutscene.Badwater.Scrap",
+      "args": [
+        "good:ScrapMetal"
+      ],
+      "seconds": 6,
+      "highlight": {
+        "anchor": "core",
+        "seconds": 12
+      },
+      "camera": [
+        {
+          "t": 6,
+          "anchor": "core",
+          "v": 50,
+          "dh": 40,
+          "dzoom": -0.1
+        }
+      ]
+    },
+    {
+      "id": "sump",
+      "caption": "Wardens.Cutscene.Badwater.Sump",
+      "seconds": 6,
+      "wait": "continue",
+      "camera": [
+        {
+          "t": 6,
+          "anchor": "core",
+          "v": 45,
+          "dh": 100,
+          "dzoom": 0.05
+        }
+      ]
+    }
+  ]
+}

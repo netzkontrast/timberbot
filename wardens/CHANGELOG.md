@@ -14,15 +14,30 @@ verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first 
   (new `ChapterOpened` event on the chapter service), a tutorial finishing; `"cutscenes": true` in
   `settings.json` keeps them on. Skip button; Continue button for shots that wait.
 - **The Cold Boot is the first scene** (`Cutscenes/ColdBoot.json`): the three shots of the mockup in
-  `design/wardens-ui/ColdBoot.dc.html` (a high orbit around the Core, a push in, a settle back on the
-  gameplay angle; 22 s, one caption each). `WardensColdBoot.cs` and its 14 s orbit are gone.
-- **MCP:** the `cutscene` tool is `status | list | play id | skip | continue | reload` (edit the file in the
-  mod folder, reload, play). `wardens_status` gains a `cutscene` block; frames carry `cutscene`, the
-  events `cutscene.start:<id>` / `cutscene.end:<id>`, and put `cutscene` first in `attention` while a
-  scene plays. `WARDEN.md`: a playing scene owns the camera and the Warden's silence.
-- **Checks:** `tools/check_cutscenes.py` resolves every name a scene uses (captions, chapter and tutorial
-  ids, anchors, field types, unknown fields) without the game's files; `validate.py` includes it; the
-  tool tests (`tools/test_*.py`) run in the repository's Python workflow.
+  `design/wardens-ui/ColdBoot.dc.html` (a high orbit around the Core, a push in with the Core's
+  highlight coming on, a settle back on the gameplay angle; 22 s, one caption each).
+  `WardensColdBoot.cs` and its 14 s orbit are gone.
+- **Captions with the day's numbers, choice cards, marks, conditions, highlights, keys.** A shot's
+  `args` fill its caption's `{0}`.. from the game (day, cycle, bots, beavers, Data Cores, science,
+  any good's stock, a recorded choice or mark); `choices` put a card up and record the pick in the
+  story record; `when` plays a shot for one answer only; `mark` records the day; `highlight` tints
+  an object without the arrow; the `beaver` anchor; Escape skips, Return or Space continue.
+- **The story record** (`WardensStoryState.cs`, `story.json` next to `settings.json`): choices and
+  marks, outside any save, one file per mod folder; `cutscene reset` archives it.
+- **Prototype content**, eight scenes: one per chapter (`Badwater`, `Signal`, `Pods`, `Power`,
+  `Green`, two shots each, the camera restored afterwards), the level's end card (`LevelEnd`:
+  *Continue to Level 02* or *Stay*, recorded), and the Archive reading (`Archive`, on request:
+  five cards reading the Ledger back). The captions are fixed text in
+  `design/wardens-campaign-story.md` §3.
+- **MCP:** the `cutscene` tool is `status | list | play id | skip | continue | choose choice | reload |
+  reset` (edit the file in the mod folder, reload, play). `wardens_status` gains a `cutscene` block;
+  frames carry `cutscene`, the events `cutscene.start:<id>` / `cutscene.end:<id>`, and put `cutscene`
+  first in `attention` while a scene plays (a choice card is the human's to answer). `WARDEN.md`: a
+  playing scene owns the camera and the Warden's silence; the Archive plays on request.
+- **Checks:** `tools/check_cutscenes.py` resolves every name a scene uses (captions and their
+  placeholder counts against `args`, chapter and tutorial ids, anchors, choice ids, `when` keys across
+  scenes, field types, unknown fields) without the game's files; `validate.py` includes it; the tool
+  tests (`tools/test_*.py`) run in the repository's Python workflow.
 - **Release path:** `tools/package.py` zips a local Release build into `dist/Wardens-v<version>.zip` (the
   mod folder, the map for `Documents/Timberborn/Maps`, install steps); `thumbnail.png` for the Mod
   Manager (`tools/gen_thumbnail.py`, the bot avatar with the logo badge); the deploy replaces the
