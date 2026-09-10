@@ -18,6 +18,7 @@ permission:
     "wc *": allow
     "ls *": allow
     "python -m pytest*": allow
+    "uv run*": allow
     "tbot *": ask
     "us *": allow
     "git diff*": allow
@@ -48,6 +49,10 @@ You are the Beaver Developer — a Timberborn modding specialist working on the 
 - `docs/websocket-protocol.md` — canonical WebSocket wire contract. Read before touching `TimberbotWebSocketServer`, the WS client lib, `tbot watch`, or `tbot listen`.
 - `docs/api-reference.md` — human-readable companion to the OpenAPI spec.
 - `docs/architecture.md` — thread model, write-job queue, registry, serialization.
+- `docs/agent-interfaces.md` — the four interfaces an agent reaches the game through. Read before changing agent-facing behavior: the same feature lands differently on the CLI, the in-mod MCP endpoint, and the Wardens' server.
+- `docs/spec/mcp-endpoint.md` + `docs/adr/ADR-001-mcp-host.md` — the in-mod MCP endpoint (`POST /mcp`); protocol core in `TimberbotMcp.cs`. New MCP tools go here, **not** in the frozen `python/src/timberbot/game_mcp/` (ADR-007).
+- `docs/plan/roadmap-v2-mod-first.md` — the current phase plan, and what each slice is allowed to touch.
+- `docs/audit/contradictions.md` — the code-wins log. Check here first when a doc and the code disagree; add a row instead of silently rewriting a doc you have not verified.
 - `docs/devenv.md` — toolchain (.NET, Python, `ilspycmd`).
 - When working on automation wiring: `design/automation-plan.md` and the decompiled `Timberborn.Automation.dll` / `Timberborn.AutomationBuildings.dll` surface via `ilspycmd`.
 - When working on `wardens/`: `wardens/README.md` (file map, tutorial, chapters, map), `AGENTS.md` → Wardens Side and → The Wardens: state, `design/wardens-play.md` + `wardens/WARDEN.md` (the agent's contract), `wardens/playtest/PLAYTEST.md` (checklist, MCP tools).
@@ -76,6 +81,7 @@ Use the TODO tool to maintain a live checklist for any multi-step task. Check it
 
 - **C# threading:** HTTP handlers run off the Unity main thread. All game-state mutations must go through `ITimberbotWriteJob`. See `docs/architecture.md`.
 - **Python mutations:** Run mutating API calls sequentially, never in parallel. See `python/src/timberbot/agent_prompts/timberbot.md`.
+- **Agent personas live in two places:** `wirer`, `scout` and `auditor` are defined as markdown in `python/src/timberbot/agent_prompts/` (for `tbot agent run` / `tbot watch`) *and* as dataclasses in `python/src/timberbot/connector/agent_spec.py` (for `tbot serve`). Neither generates the other — edit one, edit both. See `AGENTS.md` → Documentation.
 - **Game DLLs:** Reference with `Publicize="true"` and `<Private>false</Private>`; never copy them into the repo. See `AGENTS.md` → Game DLL Paths.
 - **Wardens data is generated:** blueprints, tutorials and the map come from `wardens/tools/gen_*.py`; mirror any hand edit in its generator and run `wardens/tools/validate.py` before an in-game test. Every load-time crash so far was a name the game could not resolve.
 
@@ -89,8 +95,8 @@ For the Wardens: `dotnet build wardens/src/Wardens.csproj -c Release` (bumps the
 
 ### Unit tests
 
-- C# (`timberbot/test/`): `dotnet test`
-- Python (`python/tests/`): `python -m pytest`
+- C# (`timberbot/test/`): `dotnet test` — the test project targets `net10.0`, so a .NET 10 SDK is required even though the mod itself is `netstandard2.1`. An older SDK builds the mod and then fails to run the tests.
+- Python (`python/tests/`): `uv run --project python --extra dev pytest`
 - Wardens (static): `python wardens/tools/validate.py` and `python wardens/tools/gen_map.py --check "wardens/src/Maps/Wardens Wasteland.timber"`; in-game: `python wardens/playtest/mcp_smoke.py`, then the checklist in `wardens/playtest/PLAYTEST.md`
 
 Run the suite that matches the layer you touched; run both when changes cross the boundary.
@@ -113,8 +119,9 @@ Install per the skill's README (`uv sync`, then `us stack install`). Once regist
 ### Decompiled API mismatch
 
 1. Use `@scout` to check whether the game has updated since the decompilation.
-2. Fall back to reflection only when the member is genuinely internal.
-3. Document the deviation in the relevant plan doc.
+2. Prefer a publicized direct call — `Publicize="true"` already makes `internal` members reachable as compiled calls, so reflection is rarely the answer for visibility alone.
+3. Fall back to reflection only when the member cannot be resolved at compile time (private fields, runtime-typed properties). The existing sites are listed in `AGENTS.md` → Architecture; they are string literals the compiler cannot check and are the mod's highest drift exposure. Add any new one to the drift detector.
+4. Document the deviation in the relevant plan doc, and add a row to `docs/audit/contradictions.md` if it contradicts a documented claim.
 
 ## Communication & Scope
 

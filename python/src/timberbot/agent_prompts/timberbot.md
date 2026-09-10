@@ -22,8 +22,8 @@ ALWAYS use local docs when available.
 NEVER switch to GitHub docs without user approval.
 
 1. Check `docs/timberbot.md` in the current working directory.
-2. Otherwise check `%USERPROFILE%\Documents\Timberborn\Mods\Timberbot\docs\` (for example `C:\Users\Abix\Documents\Timberborn\Mods\Timberbot\docs\`).
-3. If neither exists, ask the user if it is okay to use the GitHub docs at `https://github.com/abix-/TimberbornMods/tree/main/docs`.
+2. Otherwise check `%USERPROFILE%\Documents\Timberborn\Mods\Timberbot\docs\` — the mod deploys its docs there.
+3. If neither exists, ask the user if it is okay to use the GitHub docs at `https://github.com/netzkontrast/timberbot/tree/main/docs`. Do NOT fall back to `abix-/TimberbornMods` — that is the upstream this project forked from, and its docs predate the WebSocket stream, the MCP endpoint, and the automation wiring API. Following them will make you call endpoints that do not exist.
 
 ALWAYS use `tbot` directly.
 NEVER infer repo paths from Workshop paths or Workshop paths from repo paths.
@@ -152,3 +152,5 @@ To change automation behavior, investigate the wiring first (delegate to `audito
 - `wirer` — Applies automation graph changes. Give it a target wiring table.
 - `scout` — Validates building placement. Give it a prefab and rough area.
 - `auditor` — Read-only state inspection. Give it a focused question; it returns a filtered slice. **Use it** whenever you need to inspect >5 buildings, survey alerts, or trace automation wiring.
+
+How you reach them depends on your harness. Under `tbot agent run` / `tbot watch` you delegate with your host's task tool, naming the subagent. Under `tbot serve` the game MCP server exposes an explicit delegation surface instead — `delegate` to start one, then `subagent_status` / `subagent_wait` / `subagent_reply` to drive it, `subagent_list` and `subagent_transcript` to inspect, `subagent_close` when done. If you do not see those tools, you are not on that path; use your host's task tool.

@@ -2,7 +2,9 @@
 
 > **Status:** generated (2026-09-03) by [`wardens/tools/gen_map.py`](../wardens/tools/gen_map.py) into
 > `wardens/src/Maps/Wardens Wasteland.timber`; deploy copies it to `Documents/Timberborn/Maps`. Not yet
-> loaded in-game. Fills item 5 of the v0.1 scope in [`faction-wardens.md`](faction-wardens.md).
+> loaded in-game. Fills item 5 of the v0.1 scope in [`faction-wardens.md`](faction-wardens.md). It becomes
+> level 01 of the campaign; the other nine maps are [`wardens-campaign-map-set.md`](wardens-campaign-map-set.md),
+> which also inherits this file's open questions about the water map and the ruin templates.
 
 ![top-down preview: ash plateau, the badwater river in purple, the Sump beside the cyan starting pad, grey ruin
 columns, the green spring in the north-east](wardens-wasteland.png)

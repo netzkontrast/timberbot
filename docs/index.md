@@ -30,9 +30,17 @@ Timberbot gives Claude, Codex, ChatGPT, or your own scripts complete access to a
 
     Every HTTP endpoint with request/response examples.
 
+- **[Agent Interfaces](agent-interfaces.md)**
+
+    Four ways an agent reaches the game. Read this first to find the doc that governs yours.
+
 - **[Timberbot Guide](timberbot.md)**
 
-    Full operating guide for AI agents playing Timberborn.
+    Full operating guide for AI agents playing Timberborn through the `tbot` CLI.
+
+- **[MCP Endpoint](mcp.md)**
+
+    The in-mod MCP server on `POST /mcp` — tools, ready gate, error contract.
 
 - **[Features](features.md)**
 
