@@ -144,12 +144,24 @@ namespace Wardens
                 HttpListenerContext ctx;
                 try { ctx = _listener.GetContext(); }
                 catch { if (!_running) break; continue; }
-                try { Handle(ctx); }
-                catch (Exception ex)
-                {
-                    Debug.LogWarning("[Wardens] MCP request failed: " + ex.Message);
-                    TryWrite(ctx, 200, JsonRpcError(null, -32603, ex.Message));
-                }
+                // One request per pool thread. `frame` and `chat_read` are OffThread tools that
+                // long-poll inside Handle for up to 120 s; while one of them waited on this thread,
+                // every other request (a `say`, a client's `ping`, a reconnecting client's
+                // `initialize`) sat in the socket backlog, and a client with a request timeout saw a
+                // dead server. That is what "the MCP connection dropped and did not recover" was in
+                // the 2026-09-10 playtest. Main-thread tools still go through _pending (a
+                // ConcurrentQueue) and UpdateSingleton; the chat and frame stores take their own locks.
+                ThreadPool.QueueUserWorkItem(_ => HandleSafely(ctx));
+            }
+        }
+
+        private void HandleSafely(HttpListenerContext ctx)
+        {
+            try { Handle(ctx); }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Wardens] MCP request failed: " + ex.Message);
+                TryWrite(ctx, 200, JsonRpcError(null, -32603, ex.Message));
             }
         }
 

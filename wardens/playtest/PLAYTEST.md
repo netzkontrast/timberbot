@@ -25,6 +25,7 @@ context and stops on exit to the main menu).
 
 ```bash
 python wardens/playtest/mcp_smoke.py --say "hello from the smoke test"   # MCP: initialize, tools, status, chat
+python wardens/playtest/mcp_concurrency.py                              # MCP: a ping answers while a frame long-poll waits
 uv run --project python wardens/playtest/smoke.py                       # Timberbot API: faction/bots/needs
 ```
 
@@ -157,6 +158,13 @@ A session run entirely through the MCP loop (`manual` → `wardens_status` → `
 Cold Boot, 13 Wardens, 0 beavers, unpaused on player request. Placed a Scavenger Flag on the one
 nearby Scrap Pile, got 20 ScrapMetal, placed a Charging Post beside the Core, set worker counts —
 then the MCP/Timberbot connection dropped partway through night 1 and did not recover.
+
+**The dropped connection** (traced by reading on 2026-09-10 and fixed the same day, iteration 04 WP2;
+in-game confirmation pending): the MCP listener handled every request inline on its one thread, so a
+pending `frame` or `chat_read` long-poll (up to 120 s) blocked every other call, the client's own `ping`
+included, and a client request timeout then read as a dead server. Each request now runs on a pool
+thread (`WardensMcpServer.ListenLoop`); `python wardens/playtest/mcp_concurrency.py` proves a `ping`
+answers while a 20 s `frame` waits.
 
 **Blocking bug — flooded spawn:** the ground around the Core carried a uniform ~0.1 water depth
 (ambient/rain, not a real puddle), which was enough to flag both the **Core** and the nearby

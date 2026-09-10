@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Timberbot;
@@ -86,6 +87,8 @@ namespace Wardens
         private readonly WardensChapterService _chapters;
         private readonly WardensFrames _frames;
         private readonly WardensCampaignService _campaign;
+        // The last frame seq handed out. The `frame` tool is OffThread and WardensMcpServer runs each
+        // request on a pool thread, so this is read and advanced with Interlocked, never assigned.
         private long _lastFrameSeq;
 
         private readonly List<McpTool> _tools = new List<McpTool>();
@@ -386,11 +389,16 @@ namespace Wardens
                 a =>
                 {
                     if (a["every_ticks"] != null && a["every_ticks"].Type != JTokenType.Null) _frames.SetEveryTicks(Int(a, "every_ticks", WardensFrames.DefaultEveryTicks));
-                    long after = a["after"] != null && a["after"].Type != JTokenType.Null ? (long)a["after"] : _lastFrameSeq;
+                    long after = a["after"] != null && a["after"].Type != JTokenType.Null ? (long)a["after"] : Interlocked.Read(ref _lastFrameSeq);
                     int wait = Mathf.Clamp(Int(a, "wait_seconds", 30), 0, 120);
                     var frame = _frames.Wait(after, wait * 1000);
                     var seq = frame["seq"] != null ? (long)frame["seq"] : 0L;
-                    if (seq > _lastFrameSeq) _lastFrameSeq = seq;
+                    long seen;
+                    do
+                    {
+                        seen = Interlocked.Read(ref _lastFrameSeq);
+                        if (seq <= seen) break;
+                    } while (Interlocked.CompareExchange(ref _lastFrameSeq, seq, seen) != seen);
                     return frame;
                 }, offThread: true);
 
