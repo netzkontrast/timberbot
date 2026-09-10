@@ -86,6 +86,7 @@ namespace Wardens
         private readonly WardensChapterService _chapters;
         private readonly WardensFrames _frames;
         private readonly WardensCampaignService _campaign;
+        private readonly WardensLevelTransitionService _transition;
         private long _lastFrameSeq;
 
         private readonly List<McpTool> _tools = new List<McpTool>();
@@ -108,7 +109,7 @@ namespace Wardens
             WardensPointer pointer, WardensChat chat, WardensCameraDirector director, WardensCutscenes cutscenes,
             EntitySelectionService selection, QuickNotificationService quickNotifications, TimberbotService timberbot,
             WardensAssetDump assetDump, WardensChapterService chapters, WardensFrames frames,
-            WardensCampaignService campaign)
+            WardensCampaignService campaign, WardensLevelTransitionService transition)
         {
             _factionService = factionService;
             _speedManager = speedManager;
@@ -126,6 +127,7 @@ namespace Wardens
             _chapters = chapters;
             _frames = frames;
             _campaign = campaign;
+            _transition = transition;
         }
 
         public void Initialize(WardensSettings settings, WardensMcpServer server)
@@ -313,6 +315,39 @@ namespace Wardens
             };
         }
 
+        /// campaign action=next. Loading the next level's map from inside the running game.
+        ///
+        /// Refused while the level is unfinished unless force=true, because "the next level" is a
+        /// new colony: this one ends. The playbook rule is the same as the camera's — the Warden
+        /// asks for this only after the player said so in chat.
+        private JObject NextLevel(string levelId, bool force)
+        {
+            var current = _campaign.Level;
+            var target = !string.IsNullOrEmpty(levelId)
+                ? WardensCampaignService.ById(levelId)
+                : (current?.Next != null ? WardensCampaignService.ById(current.Next) : null);
+
+            if (target == null)
+                throw new ArgumentException(current == null
+                    ? "this map is not a campaign level, so there is no next one; pass level_id to start a specific level"
+                    : "level " + current.Id + " has no next level in the table");
+
+            if (!force && current != null && !_campaign.Completed)
+                throw new ArgumentException("level " + current.Id + " is not finished (" +
+                    (string.IsNullOrEmpty(current.EndsWithTutorial) ? "no ending tutorial is set for it" :
+                     "it ends with " + current.EndsWithTutorial) +
+                    "). Starting the next level ends this colony. Pass force=true if the player asked for it anyway.");
+
+            var result = _transition.Start(target, new CampaignMode());
+            var json = result.ToJson();
+            json["level"] = target.Id;
+            json["map"] = target.MapName;
+            json["title"] = target.Title;
+            json["shipped"] = target.Shipped;
+            json["campaign"] = _campaign.State();
+            return json;
+        }
+
         private static string ManualText()
         {
             var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(WardensSettings.Path) ?? "", "docs", "WARDEN.md");
@@ -427,14 +462,16 @@ namespace Wardens
                 "and what survives a map change lives in campaign.json beside the mod. action=status returns the level table, which level this " +
                 "map is, whether it is complete and which map comes next; action=ledger returns the last `limit` Ledger entries written on any " +
                 "level; action=record appends one Ledger entry (`entry`, any JSON object: the daily poisoned/healed/green/archive/born line from " +
-                "WARDEN.md is what belongs here) and is the only memory you have that outlives this map; action=complete marks a level done and " +
-                "action=reset wipes the record (both dev/testing).",
+                "WARDEN.md is what belongs here) and is the only memory you have that outlives this map; action=next loads the next level's map " +
+                "(only after the player has said in chat that they want to move on \u2014 the transition is offered, never forced, and it ends this " +
+                "colony); action=complete marks a level done and action=reset wipes the record (both dev/testing).",
                 Schema(new JObject
                 {
-                    ["action"] = Prop("string", "status | ledger | record | complete | reset", "status"),
+                    ["action"] = Prop("string", "status | ledger | record | next | complete | reset", "status"),
                     ["entry"] = new JObject { ["type"] = "object", ["description"] = "for record: the Ledger entry, e.g. {\"day\":12,\"poisoned\":214,\"healed\":0,\"green\":31,\"archive\":9,\"born\":0,\"seen\":\"...\"}" },
                     ["limit"] = Prop("integer", "for ledger: how many entries", 20),
-                    ["level_id"] = Prop("string", "for complete: the level, e.g. 01; defaults to the current one"),
+                    ["level_id"] = Prop("string", "for complete and next: the level, e.g. 02; next defaults to this level's successor"),
+                    ["force"] = Prop("boolean", "for next: start it even though this level is not finished", false),
                 }),
                 a =>
                 {
@@ -445,6 +482,8 @@ namespace Wardens
                         case "record":
                             if (!(a["entry"] is JObject entry)) throw new ArgumentException("entry required (an object)");
                             return new JObject { ["recorded"] = _campaign.Record_Ledger(entry), ["entries"] = _campaign.Record.Ledger.Count };
+                        case "next":
+                            return NextLevel(Str(a, "level_id"), Bool(a, "force", false));
                         case "complete":
                             _campaign.MarkCompleted(Str(a, "level_id") ?? _campaign.Level?.Id
                                 ?? throw new ArgumentException("level_id required: this map is not a campaign level"));

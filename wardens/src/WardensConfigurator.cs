@@ -31,6 +31,10 @@ namespace Wardens
             // that crosses maps (campaign.json). The maps themselves are installed at the main
             // menu by WardensMapInstaller (WardensMainMenuConfigurator.cs).
             Bind<WardensCampaignService>().AsSingleton();
+            // Loading the next level's map from inside a running game. Binds nothing of the game's
+            // own: every unverified API it needs is reached by reflection and reported by name when
+            // it is absent (WardensLevelTransition.cs, WardensServiceLocator.cs).
+            Bind<WardensLevelTransitionService>().AsSingleton();
             // Cutscenes: Cutscenes/*.json played by one runner (the Cold Boot is the first scene);
             // the overlay draws the letterbox, the captions and the choice cards; the story record
             // (story.json) keeps the choices and marks. design/wardens-cutscenes.md.

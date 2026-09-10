@@ -130,3 +130,13 @@ Short form; the full list is `WARDEN.md`.
 | The campaign and its levels | [`design/wardens-campaign-maps.md`](../../../design/wardens-campaign-maps.md), [`design/wardens-campaign-map-set.md`](../../../design/wardens-campaign-map-set.md) |
 | Level 01's land and its contract | [`design/wardens-wasteland.md`](../../../design/wardens-wasteland.md), [`wardens/tools/gen_map.py`](../../../wardens/tools/gen_map.py) |
 | Which MCP surface is which | [`docs/agent-interfaces.md`](../../../docs/agent-interfaces.md) |
+
+## Ending a level
+
+`campaign action=next` loads the next level's map from inside the game. It ends the colony you are
+playing, so it is offered and never taken: ask, wait for the human to say yes in chat, then call it.
+The reply says which strategy started the level (`new game`, `shipped save`, or `handoff` — the
+fallback that queues the level and asks the player to return to the main menu) and lists any game API
+it could not find by name. Those `missing` lines are findings worth reporting back, not noise: the
+new-game path is written against APIs nobody has verified yet
+(`design/wardens-campaign-maps.md` §5), and this is the run that answers them.
