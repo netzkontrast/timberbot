@@ -1,0 +1,235 @@
+# Wardens level 02, "The Pods" — the second map the campaign plan asks for
+# (design/wardens-campaign-maps.md §6.5: "clean water within reach, contaminated core").
+#
+#   python wardens/tools/mapsmith preview wardens/maps/wardens-02-the-pods.map.toml --step 2
+#   python wardens/tools/mapsmith build   wardens/maps/wardens-02-the-pods.map.toml
+#
+# The design inverts level 1. There the colony had badwater everywhere and one distant spring;
+# here two clean streams run down the eastern ridge past the landing site, and the poison sits in
+# the middle of the map, in a contaminated crater the colony has to work around before it can work
+# on it. Scrap is scarcer and further out: the level is about water, not salvage.
+#
+# This spec exists as much to prove the vocabulary as to ship a level: it is a different map built
+# from the same eleven ops, with no new Python.
+#
+# NUMBERING IS UNRESOLVED, and this file does not settle it. Two design docs disagree:
+# `wardens-campaign-maps.md` §6.5 calls the second map "The Pods" (clean water within reach,
+# contaminated core), which is the brief this map is built to; `wardens-campaign-arc.md` §levels
+# puts "The Sump" (river gorge, one clean spring upstream) at 02 and "The Pods" (lake with poisoned
+# shores, a green island) at 03. The land here follows the maps doc. Rename the file and the `name`
+# once someone decides which doc wins — the map name is what the campaign service keys levels on
+# (`MapNameService.Name`), so it is worth getting right before anything reads it.
+name = "Wardens 02 The Pods"
+size = 96
+seed = 2200
+game_version = "0.7.10.0"
+description = "Wardens, level 2. Two clean streams off the eastern ridge, a contaminated crater in the middle, the pods scattered across the flats."
+
+# --- the land ------------------------------------------------------------------------------------
+
+[[terrain]]
+op = "base"
+height = 7
+
+[[terrain]]
+op = "noise"
+amplitude = 4.0
+contrast = 1.7
+octaves = [6, 14, 28]
+weights = [1.0, 0.45, 0.2]
+
+[[terrain]]                        # the eastern ridge the clean water comes off
+op = "hill"
+at = [80, 48]
+radius = 26
+height = 9
+exponent = 1.2
+name = "ridge"
+
+[[terrain]]
+op = "rim"
+width = 8
+height = 4
+
+[[terrain]]                        # the poisoned crater: the plot, in the middle of the map
+op = "hill"
+at = [46, 44]
+radius = 16
+height = 3
+exponent = 0.8
+name = "core"
+
+[[terrain]]
+op = "basin"
+at = "core"
+radii = [7, 6]
+bed = 5
+shore = 8
+tag = "badwater"
+name = "pit"
+
+[[terrain]]                        # its overflow creeps south-west across the flats
+op = "river"
+points = [[44, 50], [38, 62], [30, 74], [22, 92]]
+bed = 5
+width = 1.4
+valley = [[3.5, 8]]
+tag = "badwater"
+
+[[terrain]]                        # the north stream off the ridge — clean, and close
+op = "river"
+points = [[86, 26], [70, 30], [56, 28], [42, 24], [26, 22], [6, 20]]
+bed = 5
+width = 1.3
+valley = [[4.0, 8], [2.5, 7]]
+tag = "clean"
+name = "north stream"
+
+[[terrain]]                        # the south stream — further, deeper, worth a dam
+op = "river"
+points = [[88, 66], [74, 70], [58, 72], [40, 76], [18, 80]]
+bed = 4
+width = 1.6
+valley = [[4.5, 8], [3.0, 7]]
+tag = "clean"
+name = "south stream"
+
+[[terrain]]                        # the landing site, on a shelf between the north stream and the pit
+op = "pad"
+at = [58, 34]
+size = 8
+height = 9
+name = "start"
+reserve = 3
+
+[[terrain]]
+op = "smooth"
+passes = 1
+strength = 0.35
+
+[[terrain]]
+op = "clamp"
+min = 3
+max = 20
+
+# --- water ---------------------------------------------------------------------------------------
+
+[[place]]
+template = "WaterSource"
+along = "north stream"             # the head of the north stream, at the ridge's east face
+segment = [0.0, 0.03]
+count = 2
+strength = 1.5
+orientation = "Cw0"
+
+[[place]]
+template = "BadwaterSource"
+at = "pit"
+strength = 3.0
+orientation = "Cw0"
+
+[[place]]
+template = "StartingLocation"
+at = "start"
+dx = -2
+dy = -2
+orientation = "Cw0"
+
+# --- salvage: scarcer than level 1, and further out --------------------------------------------------
+
+[[scatter]]
+name = "the pods"                  # small wrecks near the landing site: the level's opening scrap
+templates = ["RuinColumnH1", "RuinColumnH2"]
+weights = [3, 2]
+levels = [1, 2]
+around = "start"
+radius = [6, 15]
+count = 8
+spacing = 3
+height_range = [6, 12]
+variants = ["A", "B", "C"]
+orientation = "Cw0"
+away_from = { badwater = 5.0, clean = 3.0 }
+yield = { good = "ScrapMetal", amount_per_level = 15 }
+
+[[scatter]]
+name = "the ridge wrecks"
+templates = ["RuinColumnH2", "RuinColumnH3", "RuinColumnH5"]
+weights = [2, 3, 1]
+levels = [2, 3, 5]
+around = "ridge"
+radius = [8, 22]
+count = 10
+spacing = 3
+height_range = [8, 18]
+variants = ["A", "B", "C"]
+orientation = "Cw0"
+away_from = { clean = 3.0 }
+yield = { good = "ScrapMetal", amount_per_level = 15 }
+
+[[scatter]]
+name = "the rim of the pit"        # rich, and standing in the contamination
+templates = ["RuinColumnH3", "RuinColumnH5"]
+weights = [1, 1]
+levels = [3, 5]
+around = "pit"
+radius = [9, 15]
+count = 8
+spacing = 2
+height_range = [6, 14]
+variants = ["A", "B", "C"]
+orientation = "Cw0"
+yield = { good = "ScrapMetal", amount_per_level = 15 }
+
+[[scatter]]
+name = "underground ruins"
+template = "UndergroundRuins"
+around = [48, 48]
+radius = [12, 40]
+count = 8
+spacing = 4
+height_range = [8, 16]
+buried = 3
+margin = 4
+orientation = "Cw0"
+
+# --- green: more than level 1, because the water is here ----------------------------------------------
+
+[[scatter]]
+name = "north stream banks"
+templates = ["Birch", "Pine", "BlueberryBush"]
+weights = [45, 35, 20]
+around = [50, 24]
+radius = [2, 26]
+count = 90
+spacing = 1
+margin = 2
+growth = [0.6, 1.0]
+away_from = { badwater = 10.0, start = 7.0 }
+
+[[scatter]]
+name = "south stream banks"
+templates = ["Pine", "Birch", "BlueberryBush"]
+weights = [40, 40, 20]
+around = [56, 73]
+radius = [2, 26]
+count = 70
+spacing = 1
+margin = 2
+growth = [0.6, 1.0]
+away_from = { badwater = 10.0 }
+
+# --- soil ----------------------------------------------------------------------------------------
+
+[soil]
+contamination = { from = "badwater", offset = 1.5, reach = 9.0 }
+moisture = { from = "clean", offset = 0.0, reach = 7.0, peak = 0.8 }
+
+# --- what the checker must be able to prove ---------------------------------------------------------
+
+[checks]
+require = ["StartingLocation", "WaterSource", "BadwaterSource"]
+require_at_least = { RuinColumnH1 = 2 }
+min_reachable = 1200
+# The pods are the level's opening scrap: if they are cut off, the level does not start.
+reachable_scatter = ["the pods"]
