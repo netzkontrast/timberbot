@@ -4,6 +4,46 @@ The patch number moves with every local build (`tools/bump_version.py`, run by t
 version marks a milestone (`bump_version.py --minor`) and gets an entry here. Nothing below has been
 verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first run must answer.
 
+## Unreleased (0.3.5): the campaign's first level
+
+- **Level 01 is a campaign level.** `Maps/Wardens Wasteland.timber` is now
+  `Maps/Wardens 01 First Light.timber`. `world.json`, `version.txt` and the thumbnail are byte-identical
+  to the file that shipped under the old name; only the description in `map_metadata.json` changed, and
+  only to name the level. The seed (3000) and the size (96) are pinned in the level class and will not
+  change again: the same map name with a different seed is a different map, and level 10 regenerates
+  this exact heightfield.
+- **`gen_map.py` is a level registry, not one map.** `Terrain` holds the shared toolkit and the file
+  plumbing; `FirstLight` composes level 01 out of it. `--level`, `--all`, `--list`. Each level declares
+  its own name, seed, size, layer count and **contract** — the properties its play depends on, checked
+  by `--check` alongside the format checks: scrap within reach of the starting pad, the river crossing
+  the map, the Sump deep enough for the Sludge Pump, exactly one clean spring far from the badwater,
+  contamination a band rather than a flood.
+- **The maps install themselves** (`WardensMapInstaller.cs`, `[Context("MainMenu")]`). The game lists
+  custom maps from `MapRepository.UserMapsDirectory` and nowhere else — a mod's own `Maps/` folder is
+  not a map source (confirmed by decompiling `Timberborn.MapRepositorySystem` from 1.1.2.4). The mod
+  copies its maps there at the main menu, calls `NotifyMapRepositoryChanged()` so the list refreshes
+  without a restart, and removes a map it used to ship under a retired name. `"installMaps": false` in
+  `settings.json` turns it off.
+- **The campaign remembers across maps** (`WardensCampaign.cs`, `campaign.json` beside `settings.json`).
+  A level is a map plus the chapter line that runs on it; the level table is keyed by map name, because
+  `MapNameService.Name` is how a running game says which map it is on. Entering a level records it;
+  finishing the level's ending tutorial (level 01: `Wardens.MoreBeavers`, the first pod-born beaver)
+  completes it, toasts, and names the next map. A map not in the table means "not a campaign level" and
+  the service stays quiet. `validate.py` cross-checks the table against the shipped `.timber` files.
+- **A `campaign` MCP tool**: `status` (the level table and where this run is), `ledger` / `record` (the
+  cross-level memory — the only thing that survives a map change), `complete` / `reset` for testing.
+- **Stronger prompt injection.** The `initialize` reply's `instructions` are rebuilt from live state on
+  the main thread each tick (faction, level, bots, speed, ready gate, unread chat) instead of being a
+  fixed paragraph, and the server now answers `prompts/list` / `prompts/get`: `warden_boot` returns the
+  whole playbook plus that state, `warden_level` the campaign record and the Ledger.
+- **The plan is a skill.** `.claude/skills/warden-play/SKILL.md`: the boot sequence, the frame loop, the
+  chapter-by-chapter act list for level 01, the daily Ledger routine and the failure table.
+
+Verified in-game on 2026-09-10 (v0.3.5): the mod loads, the map installer runs at the main menu, the
+MCP server answers `initialize` with the live-state instructions, `prompts/list` and `prompts/get`
+work, and the `campaign` tool correctly reports "not a campaign level" on a vanilla map. **Not yet
+verified: a new game on `Wardens 01 First Light`** — level detection, completion and the toast.
+
 ## 0.3.0 (2026-09-06): cutscenes, a release path
 
 - **Cutscenes as data** (`design/wardens-cutscenes.md`). A scene is `Cutscenes/<Id>.json`: shots with a

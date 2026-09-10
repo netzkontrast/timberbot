@@ -27,6 +27,10 @@ namespace Wardens
             Bind<WardensChat>().AsSingleton();
             // Story chapters: unlock the padlocked buildings as the tutorial line advances.
             Bind<WardensChapterService>().AsSingleton();
+            // The campaign: which level this map is, what the run has completed, and the Ledger
+            // that crosses maps (campaign.json). The maps themselves are installed at the main
+            // menu by WardensMapInstaller (WardensMainMenuConfigurator.cs).
+            Bind<WardensCampaignService>().AsSingleton();
             // Cutscenes: Cutscenes/*.json played by one runner (the Cold Boot is the first scene);
             // the overlay draws the letterbox, the captions and the choice cards; the story record
             // (story.json) keeps the choices and marks. design/wardens-cutscenes.md.

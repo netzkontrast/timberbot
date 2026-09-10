@@ -1,6 +1,8 @@
 # The Wardens campaign: the map set
 
-> **Status:** concept (2026-09-10), nothing generated beyond level 01. This is the *what* — the land each
+> **Status:** concept (2026-09-10); **build-order steps 1 and 2 are done** (level 01 renamed and pinned, the
+> generator refactored to `Terrain` + a level registry with byte-identical output). Nothing generated beyond
+> level 01. This is the *what* — the land each
 > level needs and what the generator must learn to build it. The *how* of getting a map onto the player's
 > machine and starting level N on it is [`wardens-campaign-maps.md`](wardens-campaign-maps.md); the levels
 > themselves are [`wardens-campaign-concept.md`](wardens-campaign-concept.md) (the five-level essential cut)
@@ -30,7 +32,7 @@ not care (`wardens-campaign-maps.md` §2 A).
 
 | # | Map name | Level | Size | Cut | Reuses | New work |
 |---|---|---|---|---|---|---|
-| 01 | `Wardens 01 First Light` | First Light | 96 | ✅ | — | **exists** (rename only) |
+| 01 | `Wardens 01 First Light` | First Light | 96 | ✅ | — | **done** (renamed, pinned, contract checked) |
 | 02 | `Wardens 02 The Sump` | The Sump | 96 | ✅ | river, spring, ruins | gorge, confluence |
 | 03 | `Wardens 03 The Pods` | The Pods | 96 | ✅ | river, ruins | lake basin, island |
 | 04 | `Wardens 04 The Delta` | The Delta | 112 | — | river, lake | braided channels, floodplain |
@@ -265,10 +267,13 @@ the `.timber`.
 
 Each step is testable before the next begins.
 
-1. **Rename level 01** to `Wardens 01 First Light` and pin its seed. Nothing else changes. Proves the installer
-   and the level-detection-by-map-name path (`wardens-campaign-maps.md` §2 A) against a real file.
-2. **Refactor the generator** to `Terrain` + level registry, with level 01 as the only entry. No output change
-   — the file must stay byte-identical, which is the test.
+1. ~~**Rename level 01** to `Wardens 01 First Light` and pin its seed.~~ **Done 2026-09-10.** The installer
+   (`WardensMapInstaller.cs`) and the level-detection-by-map-name path (`WardensCampaign.cs`) are built against
+   it; neither has been loaded in-game yet.
+2. ~~**Refactor the generator** to `Terrain` + level registry, with level 01 as the only entry.~~ **Done
+   2026-09-10.** `world.json`, `version.txt` and the thumbnail are byte-identical to the pre-refactor file;
+   only `map_metadata.json` changed, and only because the description now names the level. Level 01's contract
+   (§2) is implemented as `FirstLight.contract` and runs on every `--check`.
 3. **Level 10 (`Home`)** next, not level 02. It is the regeneration pass over level 01: no new primitives, and
    it proves the registry, per-level contracts and the per-level `BadwaterSource` rule for the cost of a flag.
 4. **Answer the water question** (§5). Timeboxed. Everything after this depends on the answer.

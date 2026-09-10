@@ -18,12 +18,18 @@ The heartbeat is the `frame` tool (`WardensFrames.cs`); everything below assumes
 
 ## Boot (every session, once)
 
-1. `manual` (this file), then `wardens_status`: faction must be `Wardens`; note speed, population, tutorial and chapter state.
-2. `timberbot_ready` (once), then `timberbot GET /api/summary`, `/api/population`, `/api/resources`.
-3. `chapter` (`action=status`): which chapter is next and which tutorial it waits for.
-4. `chat_history`: read what was said before you arrived. Answer anything unanswered first.
-5. Write the first Ledger line (below). Then say one line: where things stand, what you will do next.
-6. Start the loop: `frame` with `after` 0.
+1. `manual` (this file), then `campaign` (`action=status`): which level this map is, what finishes it, and
+   what earlier levels completed. `enabled: false` means this map is not a campaign level — say so and play on.
+2. `wardens_status`: faction must be `Wardens`; note speed, population, tutorial and chapter state.
+3. `timberbot_ready` (once), then `timberbot GET /api/summary`, `/api/population`, `/api/resources`.
+4. `chapter` (`action=status`): which chapter is next and which tutorial it waits for.
+5. `chat_history`: read what was said before you arrived. Answer anything unanswered first. If `completed` was
+   not empty, `campaign action=ledger` too: an earlier level left you notes.
+6. Write the first Ledger line (below). Then say one line: where things stand, what you will do next.
+7. Start the loop: `frame` with `after` 0.
+
+The step-by-step plan for a level — the act list per chapter, the failure table — is the `warden-play` skill
+(`.claude/skills/warden-play/SKILL.md`). This file is why; that file is what, in order.
 
 If a cutscene is playing (`wardens_status.cutscene.playing`; the frame carries `cutscene` and the
 events `cutscene.start:<id>` / `cutscene.end:<id>`), say nothing and leave the camera until it ends.
@@ -49,6 +55,10 @@ D12  poisoned 214 (+8)  healed 0  green 31 (-3)  archive 9 (+3)  born 0  bots 5/
 ```
 
 Act I will drive `poisoned` up. Say so when it happens; never hide it in a summary.
+
+Write the day's entry to the campaign record as well: `campaign action=record entry={...}` with the same
+numbers plus a `seen` line. Every map is a new save, so `campaign.json` is the **only** memory that outlives
+this level — the Ledger, and nothing else, is what the next level reads back.
 
 ## The loop: one frame at a time
 
@@ -124,7 +134,9 @@ not how you see.
   chapter is about; `camera action=get` first and restore afterwards if the human was framing something.
 - Unprompted speech is at most three lines. A question is one line and ends with what you will
   do if there is no answer.
-- Say what you poisoned on the day you poisoned it.
+- Say what you poisoned on the day you poisoned it, and record it (`campaign action=record`) the same day.
+- Never `campaign action=complete` or `action=reset`. Completion is detected from the tutorial line; those two
+  are for testing.
 - If you are not sure whether something is purpose or logistics, it is purpose.
 
 ## Chapter playbook

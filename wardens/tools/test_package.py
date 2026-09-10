@@ -21,7 +21,7 @@ def src(tmp_path: Path) -> Path:
     (s / "Cutscenes").mkdir()
     (s / "Cutscenes" / "ColdBoot.json").write_text("{}", encoding="utf-8")
     (s / "Maps").mkdir()
-    (s / "Maps" / "Wardens Wasteland.timber").write_bytes(b"map")
+    (s / "Maps" / "Wardens 01 First Light.timber").write_bytes(b"map")
     (s / "Localizations").mkdir()
     (s / "Localizations" / "enUS.csv").write_text("ID,Text,Comment\n", encoding="utf-8")
     (s / "manifest.json").write_text(json.dumps({"Version": "0.3.0", "Id": "Wardens"}), encoding="utf-8")
@@ -47,17 +47,20 @@ def src(tmp_path: Path) -> Path:
 
 
 def test_mod_files_apply_the_csproj_rules(src: Path) -> None:
-    names = [arc for _, arc in pk.mod_files(src)]
-    assert names == [
+    # Compared as a sorted set: what ships is the point, and `mod_files` orders by `Path.__lt__`,
+    # which is case-insensitive on Windows and case-sensitive elsewhere ("Maps" sorts either side
+    # of "manifest.json" depending on the platform).
+    names = sorted(arc for _, arc in pk.mod_files(src))
+    assert names == sorted([
         "Wardens/Buildings/Core/Core.Wardens.blueprint.json",
         "Wardens/Cutscenes/ColdBoot.json",
         "Wardens/Factions/Faction.Wardens.blueprint.json",
         "Wardens/Localizations/enUS.csv",
-        "Wardens/Maps/Wardens Wasteland.timber",
+        "Wardens/Maps/Wardens 01 First Light.timber",
         "Wardens/manifest.json",
         "Wardens/settings.json",
         "Wardens/thumbnail.png",
-    ]
+    ])
 
 
 def test_zip_layout(src: Path, tmp_path: Path) -> None:
@@ -69,7 +72,7 @@ def test_zip_layout(src: Path, tmp_path: Path) -> None:
     names = pk.build_zip(dll, out, src=src, docs=[doc, tmp_path / "missing.md"])
     assert names[0] == "Wardens/Wardens.dll"
     assert "Wardens/docs/WARDEN.md" in names
-    assert "Maps/Wardens Wasteland.timber" in names
+    assert "Maps/Wardens 01 First Light.timber" in names
     assert names[-1] == "README.txt"
     assert not any(n.endswith(".cs") or "/bin/" in n or "/obj/" in n or "Harmony" in n or "LeafCoats" in n for n in names)
     with zipfile.ZipFile(out) as zf:
@@ -93,7 +96,7 @@ def test_shipped_source_tree_has_the_expected_shape() -> None:
     assert "Wardens/settings.json" in names
     assert "Wardens/thumbnail.png" in names
     assert "Wardens/Cutscenes/ColdBoot.json" in names
-    assert "Wardens/Maps/Wardens Wasteland.timber" in names
+    assert "Wardens/Maps/Wardens 01 First Light.timber" in names
     assert not any(n.endswith((".cs", ".dll", ".csproj")) for n in names)
     assert pk.read_version() == json.loads((pk.SRC / "manifest.json").read_text(encoding="utf-8"))["Version"]
 
