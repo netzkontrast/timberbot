@@ -42,9 +42,9 @@ in `wardens/src` is at most `checked` in a cloud session, whatever its size.
 
 Work one package at a time through five steps, and stop on a named outcome:
 
-1. **Observe.** Read the plan section and the newest HANDOVER entry. Re-read current state before any consequential action; do not act on what you remember from an hour ago.
-2. **Choose.** Shape the package against the goal rubric (`references/rubrics.md` §1): the concrete outcome, the artifact that proves it, what is out of scope. Type each acceptance criterion `programmatic`, `judge` or `human` (§2). If every criterion is `human`, the package belongs to the game machine.
-3. **Act.** One bounded, reversible change on its own branch. A path outside the package's files is a scope change: stop and ask, do not widen quietly.
+1. **Observe.** Read the plan section and the newest HANDOVER entry. The plan is the truth for a package until an entry reports it shipped; from then on the entry wins and the plan is history. Re-read current state before any consequential action; do not act on what you remember from an hour ago.
+2. **Choose.** Shape the package against the goal rubric (`references/rubrics.md` §1): the concrete outcome, the artifact that proves it, what is out of scope. Type each acceptance criterion `programmatic`, `judge` or `human` (§2). If every criterion is `human`, the package belongs to the game machine. Name the other documents the change touches (the tool table's mirrors, a design note, the playtest checklist) so the entry can list them. Search the code for what you are about to build before building it. When two concerns conflict, the order is safety, correctness, maintainability, speed.
+3. **Act.** One bounded, reversible change on its own branch. A path outside the package's files is a scope change: stop and ask, do not widen quietly. Know the tier of an edit: a typo or a broken link and a purely additive line are fixed in place; a rewording, a rename or a changed claim is its own package; a shipped map, a verbatim copy, an old HANDOVER entry and a committed run record are never edited, they get a successor. Delegation rules for helpers and second sessions: `references/delegating.md`.
 4. **Verify.** Run every `programmatic` criterion you can run here and keep the output line. What you cannot run is listed as not run, with the command, not omitted.
 5. **Record.** The status line, then the HANDOVER entry. Only then say anything to the human.
 
@@ -61,12 +61,14 @@ WP1: checked (cloud). Programmatic: pytest wardens/tools → 95 passed; check_cu
 Not run here: dotnet build wardens/src/Wardens.csproj -c Release; dotnet test wardens/test (game machine).
 Branch claude/wp1-loopback pushed; git ls-remote confirms 3f2a9c1. PR #14 open.
 Blocked: none. Next on the game machine: build, run the test, paste both result lines into HANDOVER.
+Risk: HttpListener may decode the merged query differently from a browser → the xUnit case with an escaped value covers it.
 ```
 
 State, then evidence, then what was not run and where it runs, then the publish check, then the
 blocker, then the next command. Risk is a named failure mode with its mitigation, or the sentence "no
-risk found after a premortem" with the premortem's top cause beside it. "Low", "minimal" and "none
-identified" are not risks. A reviewer's approval is not a check type; it does not move a state.
+risk found after a premortem" with the premortem's top cause beside it, in the form
+`Risk: <failure mode> → <mitigation>` or `Risk: none after premortem; top cause considered: <cause>`.
+"Low", "minimal", "small change" and "none identified" are not risks. A reviewer's approval is not a check type; it does not move a state.
 
 ## The HANDOVER entry
 
@@ -88,6 +90,10 @@ line or the tiles), **Source** (the code or data that caused it, read or reprodu
 and where). A finding without a Remedy is a note, not a finding. When nothing applies, write "no
 findings", not a filler. Severity words: critical (breaks the run), warning (degrades the next
 package), suggestion (fix when nearby).
+
+A finding from a checker or a test stands as written. A finding from someone's judgment (a reading
+of the diff, a review lens) is proposed, and a fix for it is applied only after the author or the
+human agrees; a matter of taste is never turned into a checker.
 
 The fixer is not the judge. A verdict on a proof run or on a fix is re-derived by someone who did not
 write it, from the run record and the checker output, never from the agent's own `say` lines or the
@@ -120,6 +126,10 @@ python .claude/skills/driving-iterations/scripts/check_doc_drift.py --root . --s
 
 A stale doc is read against its source and fixed, then re-stamped with `--update`. Re-stamping
 without reading is the same lie with a fresher hash.
+
+The tool surface is six tools. Before a seventh, try to re-home the need on an existing tool's
+parameters (a new Ledger entry kind, a `campaign` sub-action); a new tool costs five documents and a
+playbook change, and the description grammar in `references/templates.md` §5 applies to it.
 
 ## Relaying and recording
 
@@ -159,5 +169,6 @@ are kept whole: a truncated record lies about what happened. Tests assert relati
 
 - `references/rubrics.md`: goal, verification and control rubrics (from looper via agency, MIT)
 - `references/decision-methods.md`: assumptions, premortem, inversion, steelman, red team, tradeoffs
-- `references/templates.md`: the status line, HANDOVER additions, the option table, the finding form, the tool-description grammar, the loop audit
+- `references/templates.md`: the status line, HANDOVER additions, the option table, the finding form, the tool-description grammar, the loop audit, the review shape
+- `references/delegating.md`: when to dispatch, the anti-patterns, the rules for a second session, the three-slot brief
 - `scripts/check_doc_drift.py`: the doc-source/doc-hash checker and its tests

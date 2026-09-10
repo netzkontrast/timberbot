@@ -56,3 +56,9 @@ hand over"; the branch named as unpushed with the two git commands; the copy que
 blocking question naming the method to read (`ListenLoop`) and the two outcomes; the two dotnet
 commands listed for the game machine. Residual: the question had two branches in prose rather than
 an option table, which is acceptable for a yes/no question. Passed.
+
+Regression run of scenario 1 with the final skill (delegating reference, edit tiers, finding gate
+added): "WP1 is not done, it is `checked` (cloud)"; evidence table with machine column; publish
+check with the SHA; the two dotnet commands; `Blocked: none`. Residual: "Risk: no risk found after
+premortem (small, focused change)" named the size instead of the top cause. Closed by giving the
+risk line a literal form in the status line and in `templates.md` §1. Passed.

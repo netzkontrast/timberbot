@@ -11,6 +11,64 @@ is and how each part works), `wardens/CHANGELOG.md` (what each version added), `
 
 ---
 
+## 2026-09-10, night: the `driving-iterations` skill (iteration 04, no package worked)
+
+**Plan:** [`iteration-04-first-light-verified.md`](iteration-04-first-light-verified.md), unchanged
+except its header. **Goal:** give every later session, cloud or game, one discipline for reporting a
+package's state and writing this file, distilled from `netzkontrast/agency`, before any package is worked.
+
+### What I did
+
+Cloud container: Linux, Python 3.11, `uv`, no `dotnet`, no Timberborn. Read the agency repo (its
+remote-agent doctrine, the looper loop rubrics, the steward handover template, the drift tooling, the
+skills directory, the ADRs and plans), partly through subagents whose reports are summarised in the
+skill's references. Wrote `.claude/skills/driving-iterations/` (SKILL.md, five references, a stdlib
+doc-drift checker with six tests), pointed `AGENTS.md` and the plan header at it, and pressure-tested
+the skill three times with a small model in a clean context (`references/pressure-scenarios.md`).
+No C#, no generator, no map, no cutscene touched. Evidence:
+
+| Command | Result line |
+|---|---|
+| `uv run --project python --extra dev pytest -q .claude/skills/driving-iterations/scripts wardens/tools` | `101 passed in 2.16s` |
+| `python wardens/tools/check_cutscenes.py wardens/src` | `problems: none` |
+| `python wardens/tools/mapsmith check wardens/maps/wardens-wasteland.map.toml` | `problems: none` |
+| `python .claude/skills/driving-iterations/scripts/check_doc_drift.py --root . wardens/WARDEN.md .claude/skills/warden-play/SKILL.md design/wardens-play.md` | three `UNMARKED`, `problems: none` (WP5 stamps them) |
+| `dotnet build wardens/src/Wardens.csproj -c Release` | not run here (game machine); nothing under `wardens/src` changed |
+
+Branch `claude/superclaude-skills-next-steps-e3u3ya`, PR #14.
+
+### What I found (read, not reproduced)
+
+1. The agency repo's `ralph-skill` no longer exists (history rewritten; its successor `loop` needs the agency MCP server). What it taught survives as the rubrics and the control guards in the skill's `references/rubrics.md`.
+2. A small model asked "is WP1 done?" under time pressure, without the skill, answered "ready to hand off, code complete, push to main, risks none identified" for an uncompiled C# change. With the skill it answered `checked (cloud)` with the evidence lines and the two `dotnet` commands as not run here. The two loopholes found on the way (handing over an unpushed branch; deciding an unknown by inventing a fact) are closed and recorded.
+3. The five documents of the agent contract carry no drift markers yet; the checker reports them `UNMARKED` until WP5 stamps them.
+
+### Where the mod stands
+
+Unchanged from the entry below: version 0.3.6, level 01 never started in the game, WP1 to WP9 open. Source: that entry and `AGENTS.md`, state section.
+
+### What you should do, in this order
+
+Disposition of the previous entry's items: WP1, WP2, WP7, WP5, WP8 (cloud) deferred, this session built the discipline instead of a package; WP3, WP4, WP6 (game) blocked on the game machine as before; "five bots or thirteen" still open, a worked example of how to decide it is in `references/decision-methods.md`.
+
+**If you are in a cloud container:** invoke `driving-iterations`, then the previous entry's order: WP1, WP2, WP7, WP5, WP8, each its own branch and PR, each reported in the state words with its evidence table. In WP5, stamp the mirrors with `doc-source`/`doc-hash` markers and add the checker to the plan's global constraints.
+
+**If you are at the game machine:** WP3, then build whatever merged, then WP4 with its run record, findings in the four-slot form. Candidates the agency read surfaced for the author, none started: a select-based receive loop with a named timeout for `mcp_concurrency.py`; a 25-second cap on a single `frame` wait with a typed no-op return; the tool descriptions in the grammar of `references/templates.md` §5, from which the docs' tool tables could be derived; a sha256 lock for the verbatim Timberbot copy; a regenerate-and-diff check for the generators; a one-page decision digest emitted at session start.
+
+### How you know it is done
+
+This entry is above the planning entry; PR #14 merged; the next entry after this one reports a package in the state words with an evidence table.
+
+### Open questions I could not answer
+
+Whether the author wants the `<!-- AGENT: … -->` fill-in notes from `references/templates.md` §2 inside this file's template itself.
+
+### What I deliberately did not do
+
+I did not work WP1 although it was next: a skill written and a package worked in the same session would have been two half-tested things. I did not stamp the five documents: that is WP5's commit, with the contract change it belongs to. I did not edit this file's template.
+
+---
+
 ## 2026-09-10, evening: planning session for iteration 04
 
 **Plan:** [`iteration-04-first-light-verified.md`](iteration-04-first-light-verified.md).

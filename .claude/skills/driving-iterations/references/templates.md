@@ -11,6 +11,7 @@ vendored there, the looper Loop Doctor (MIT), and agency's verb-description rule
 Not run here: <cmd> (<machine>).
 Branch <name> pushed; git ls-remote confirms <sha>. PR #<n> open|none.
 Blocked: none | <the one question>. Next on <machine>: <read X, run Y, paste Z>.
+Risk: <failure mode> → <mitigation> | none after premortem; top cause considered: <cause>.
 ```
 
 ## 2. HANDOVER entry additions
@@ -115,3 +116,14 @@ Result: <the minimal repair, or "No repair needed.">
 
 Do not flag the absence of an arbitrary budget when a clear no-progress stop exists. Do not invent
 missing tools or owners; ask one short question if an unknown blocks a safe repair.
+
+## 7. The review of a plan, a spec or a proof run
+
+Six parts, in this order, from the spec-panel reviews in agency:
+
+1. **Verdict** and a handful of named scores (grounding, decidability, wiring honesty, duplication awareness, testability), each out of ten with one clause of reason.
+2. **Corrections**, numbered, each anchored to a `path:line` or a quoted sentence, each ending in "Fix: …".
+3. **Duplication**: what already exists that this re-implements (name the file).
+4. **Missing wiring**: what nothing calls, loads or reaches (a tool registered but never called from `frame`, a scene file no trigger loads, a check no workflow runs). This lane is separate from correctness because it is the mod's usual failure.
+5. **Open questions triage**: a table `# | Question | Triage` with one of `must resolve before merge`, `resolve (cheap)`, `accept as scoped`, `defer`.
+6. **Must-fix list**, ordered, cross-referencing the corrections.
