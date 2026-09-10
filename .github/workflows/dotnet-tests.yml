@@ -21,6 +21,8 @@ jobs:
               - 'timberbot/src/TimberbotPure.cs'
               - 'timberbot/src/TimberbotJw.cs'
               - 'timberbot/test/**'
+              - 'wardens/src/WardensPure.cs'
+              - 'wardens/test/**'
               - '.github/workflows/dotnet-tests.yml'
 
   test:
@@ -46,6 +48,13 @@ jobs:
 
       - name: Test
         run: dotnet test timberbot/test/Timberbot.Tests.csproj --no-build --configuration Release --verbosity normal
+
+      # The Wardens' Unity-free helpers (wardens/src/WardensPure.cs) have the same shape: a test
+      # project that compiles only sources without game dependencies.
+      - name: Restore (Wardens pure helpers)
+        run: dotnet restore wardens/test/Wardens.Tests.csproj
+      - name: Test (Wardens pure helpers)
+        run: dotnet test wardens/test/Wardens.Tests.csproj --configuration Release --verbosity normal
 
   dotnet-tests-required:
     name: dotnet-tests-required

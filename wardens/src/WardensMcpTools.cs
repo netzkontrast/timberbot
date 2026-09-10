@@ -586,12 +586,12 @@ namespace Wardens
                 a => { _speedManager.ChangeSpeed(Mathf.Clamp(Int(a, "value", 1), 0, 3)); return new JObject { ["speed"] = _speedManager.CurrentSpeed }; });
 
             Add("timberbot",
-                "Call the Timberbot HTTP API compiled into this mod (loopback). method GET with optional query, or POST with a JSON body. Paths as in docs/api-reference.md, e.g. GET /api/summary, POST /api/building/place. The API refuses everything except ping/agent until timberbot_ready has been called (HTTP 409).",
+                "Call the Timberbot HTTP API compiled into this mod (loopback). method GET with optional query (`path` may carry its own query, e.g. /api/tiles?x1=10&y1=40&x2=30&y2=55; `query` entries override it), or POST with a JSON body. Paths as in docs/api-reference.md, e.g. GET /api/summary, POST /api/building/place. The API refuses everything except ping/agent until timberbot_ready has been called (HTTP 409).",
                 Schema(new JObject
                 {
                     ["method"] = Prop("string", "GET | POST", "GET"),
                     ["path"] = Prop("string", "route, starting with /api/"),
-                    ["query"] = new JObject { ["type"] = "object", ["description"] = "GET query parameters (id, detail, limit, offset, name, x, y, radius, ...)" },
+                    ["query"] = new JObject { ["type"] = "object", ["description"] = "GET query parameters (id, detail, limit, offset, name, x, y, radius, ...); merged with any query carried in path" },
                     ["body"] = new JObject { ["type"] = "object", ["description"] = "POST JSON body" },
                 }, "path"),
                 a => Loopback(Str(a, "method", "GET"), Str(a, "path") ?? "", a["query"] as JObject, a["body"] as JObject),
@@ -726,17 +726,16 @@ namespace Wardens
 
         private JObject Loopback(string method, string path, JObject query, JObject body)
         {
-            if (!path.StartsWith("/api/", StringComparison.Ordinal)) throw new ArgumentException("path must start with /api/");
+            if (path == null || !path.StartsWith("/api/", StringComparison.Ordinal)) throw new ArgumentException("path must start with /api/");
             var isPost = string.Equals(method, "POST", StringComparison.OrdinalIgnoreCase);
-            var sb = new StringBuilder($"http://127.0.0.1:{_settings.HttpPort}{path}");
-            if (!isPost)
-            {
-                sb.Append("?format=json");
-                if (query != null)
-                    foreach (var kv in query)
-                        sb.Append('&').Append(Uri.EscapeDataString(kv.Key)).Append('=').Append(Uri.EscapeDataString(kv.Value?.ToString() ?? ""));
-            }
-            var request = new HttpRequestMessage(isPost ? HttpMethod.Post : HttpMethod.Get, sb.ToString());
+            // A GET's query may arrive inside `path`, in `query`, or both. WardensPure merges them and
+            // adds format=json once. (Before: "?format=json" was appended after a query carried in
+            // `path`, so the last parameter's value arrived as "55?format=json" and parsed as 0: the
+            // dropped tiles bound, the ignored offset and the empty name filter of the 2026-09-10 playtest.)
+            var url = isPost
+                ? $"http://127.0.0.1:{_settings.HttpPort}{path}"
+                : WardensPure.BuildLoopbackUrl(_settings.HttpPort, path, query);
+            var request = new HttpRequestMessage(isPost ? HttpMethod.Post : HttpMethod.Get, url);
             if (!string.IsNullOrEmpty(_settings.AuthToken))
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _settings.AuthToken);
             if (isPost)

@@ -169,13 +169,16 @@ required for the very first moves.
 
 **Timberbot API bugs found in this session:**
 
-- `/api/tiles?x1&y1&x2&y2`: whichever query param is *last* in the URL is silently dropped
-  (reproduced 3× with different param orders — it's positional, not key-specific). Workaround:
-  append a harmless trailing param, e.g. `&format=json`.
-- `limit`/`offset` pagination is ignored on `/api/gatherables` and `/api/beavers` — always returns
-  the same first page.
-- `/api/buildings?name=ChargingPost` returned `total:0` immediately after placing one, while the
-  unfiltered list showed it present (`finished:0`) — only observed once, possibly a timing race.
+- Three findings with one cause (traced by reading on 2026-09-10 and fixed the same day, iteration 04
+  WP1; in-game confirmation pending): the `/api/tiles` bound "dropped" whenever it was last in the URL,
+  `limit`/`offset` "ignored" on `/api/gatherables` and `/api/beavers`, and `/api/buildings?name=ChargingPost`
+  returning `total:0`. The `timberbot` MCP tool appended `?format=json` *after* a query the agent had
+  put inside `path`, so the last parameter's value arrived as `55?format=json` and parsed as 0 (and the
+  name filter as `ChargingPost?format=json`). The direct HTTP API never had the bug; the workaround of
+  appending a trailing parameter only moved the corruption onto one nobody read. `WardensPure.BuildLoopbackUrl`
+  now merges the two queries (`wardens/test/WardensPureTests.cs`). Confirm with
+  `timberbot path=/api/tiles?x1=15&y1=40&x2=30&y2=55`: the result must reach x 30 and y 55, and
+  `path=/api/beavers?limit=2&offset=2` must return a different page than `offset=0`.
 - `/api/alerts` returns `type: "Flooded."` (with the period), not in the documented
   `unstaffed`/`unpowered`/`unreachable`/`status` enum.
 - `chapter status`'s `complete` list already showed Badwater through Green on a brand-new Cold Boot
