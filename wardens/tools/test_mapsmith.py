@@ -461,6 +461,43 @@ def test_check_file_reads_a_real_timber(minimal, tmp_path: Path):
     assert not check_file(tmp_path / "nope.timber").ok
 
 
+def test_reachable_from_keeps_a_cluster_on_the_colonys_own_bank(minimal):
+    """A river splits the map into components; `around` + `radius` is a disc that knows nothing
+    about that. Without this key you hand-pick centres until the annulus cannot cross the water."""
+    terrain = [{"op": "base", "height": 6},
+               {"op": "river", "points": [[16, -2], [16, 34]], "bed": 1, "width": 3.0, "tag": "badwater"},
+               {"op": "pad", "at": [4, 12], "size": 8, "height": 6, "name": "start", "reserve": 2},
+               {"op": "clamp", "min": 1, "max": 19}]
+    rule = {"name": "scrap", "template": "RuinColumnH1", "around": [16, 16], "radius": [6, 13],
+            "count": 8, "spacing": 2, "height_range": [6, 6]}
+
+    loose = build(deep_merge(minimal, {"terrain": terrain, "scatter": [rule]}))
+    walk = loose.walkable_cached((6, 14))
+    def beside(b, x, y):
+        return any(walk.at(x + dx, y + dy) for dx, dy in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1))
+                   if 0 <= x + dx < b.size and 0 <= y + dy < b.size)
+    assert not all(beside(loose, e.x, e.y) for e in loose.entities if e.rule == "scrap"), \
+        "the unconstrained cluster should straddle the river, or this test proves nothing"
+
+    held = build(deep_merge(minimal, {"terrain": terrain,
+                                      "scatter": [{**rule, "reachable_from": "start"}]}))
+    scrap = [e for e in held.entities if e.rule == "scrap"]
+    assert len(scrap) == 8
+    assert all(beside(held, e.x, e.y) for e in scrap)
+
+
+def test_reachable_from_a_point_in_the_water_is_a_spec_error(minimal):
+    spec = deep_merge(minimal, {
+        "terrain": [{"op": "base", "height": 6},
+                    {"op": "river", "points": [[16, -2], [16, 34]], "bed": 3, "width": 2.0, "tag": "badwater"},
+                    {"op": "pad", "at": [4, 4], "size": 8, "height": 6, "name": "start", "reserve": 2},
+                    {"op": "clamp", "min": 1, "max": 19}],
+        "scatter": [{"template": "Pine", "around": [8, 20], "radius": 5, "count": 2,
+                     "reachable_from": [16, 16]}]})
+    with pytest.raises(SpecError, match="stands on water"):
+        build(spec)
+
+
 # --- named groups, walking distance, and the CLI ---
 
 def test_entities_remember_which_rule_placed_them(minimal):
@@ -561,6 +598,28 @@ def test_ascii_map_is_readable(minimal):
     body = [line for line in text.splitlines() if len(line) == 32]
     assert len(body) == 32
     assert "A" in text                     # the starting location is marked
+
+
+def test_no_ground_renders_as_blank(minimal):
+    """A blank cell used to mean "lowest ground", which on a high-contrast map reads as off-map."""
+    spec = deep_merge(minimal, {"terrain": [{"op": "base", "height": 4},
+                                            {"op": "hill", "at": [16, 16], "radius": 12, "height": 12},
+                                            {"op": "pad", "at": [2, 2], "size": 8, "height": 4,
+                                             "name": "start", "reserve": 1},
+                                            {"op": "clamp", "min": 1, "max": 19}]})
+    rows = [line for line in ascii_map(build(spec)).splitlines()
+            if len(line) == 32 and not line.startswith(("32x32", "north", "legend"))]
+    assert len(rows) == 32 and not any(" " in row for row in rows)
+
+
+@pytest.mark.parametrize("step", [1, 2, 3, 4, 5])
+def test_entity_marks_survive_sampling(step):
+    """At --step 2 a StartingLocation on an odd tile used to vanish with no warning — while the
+    skill tells you to look for exactly that mark."""
+    spec = load(WASTELAND)
+    rows = [line for line in ascii_map(build(spec), step=step).splitlines()
+            if line and not line.startswith(("96x96", "north", "legend"))]
+    assert any("A" in row for row in rows), f"the starting location vanished at step {step}"
 
 
 def test_png_preview_is_a_png(minimal, tmp_path: Path):

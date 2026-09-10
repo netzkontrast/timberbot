@@ -90,6 +90,32 @@ been seen to load in-game, and retire `gen_map.py` then — not before, because 
 format-verified artefact with an unverified one on the strength of an offline checker is the exact
 trade this tool exists to avoid.
 
+## Found by pointing fresh agents at the skill
+
+Two agents were given the skill and the repo and nothing else — one to build a canyon map from
+scratch, one to push the wasteland's opening scrap further out and prove the colony could still
+reach it. Both succeeded, and between them found the things a solo author does not:
+
+- **The two reachability models disagreed**, and the lenient one was the checker. Fixed by feeding
+  the build's water into `check_world`; a bare `.timber` still cannot know (beds are written dry),
+  and `check` now says so out loud instead of quietly reporting 2.4x the walkable area.
+- **No way to assert a *particular* cluster is reachable**, since five ruin fields share
+  `RuinColumnH*`. Entities now carry the rule that placed them, and `[checks] reachable_scatter`
+  names them.
+- **No way to see a walking distance**, though the design language is "within a day's walk". `build`
+  now prints steps-from-start per named group.
+- **No way to keep a scatter on the colony's side of a river.** One agent hand-computed a river
+  centreline and shrank radii until the annulus could not cross the water — ~60 lines to say
+  something the spec should say. Now `reachable_from = "start"`.
+- **The ASCII preview lied twice**: the lowest ground band was a space (a canyon floor rendered as
+  blank, which reads as off-map), and at `--step 2` an entity on an odd tile silently vanished —
+  including the starting location the skill tells you to look for.
+- `--strict` was documented as a subcommand flag and argparse only took it before the subcommand.
+
+Also surfaced, and not a tool problem: `wardens-campaign-maps.md` §6.5 and `wardens-campaign-arc.md`
+disagree about which level is "The Pods". The level-02 spec carries a comment saying so rather than
+picking a side.
+
 ## Next
 
 - Load both maps in the game; answer the open questions in `references/timber-format.md`.

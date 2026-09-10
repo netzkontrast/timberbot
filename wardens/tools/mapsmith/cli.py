@@ -117,6 +117,10 @@ def cmd_check(args) -> int:
         if args.spec:
             opts = spec_mod.load(Path(args.spec), args.variant).get("checks", {})
         report = check_file(target, opts)
+        print("note: a .timber is written with every bed dry, so this check cannot tell water from "
+              "ground. Walkability here is the lenient model and can report several times the "
+              "reachable area that `check <spec>` does; `reachable_scatter` cannot be evaluated at "
+              "all. Check the spec when you have it.")
     print(f"{target}: {report.summary()}")
     return 1 if (report.errors or (args.strict and report.warnings)) else 0
 

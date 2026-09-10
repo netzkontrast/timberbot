@@ -16,7 +16,7 @@ from pathlib import Path
 from .build import MapBuild
 
 # Height ramp, low to high. Chosen so water and ground are distinguishable in a plain terminal.
-RAMP = " .:-=+*#%@"
+RAMP = ".:-=+*#%@"
 LEGEND = [
     ("~", "water (any mask tagged water/badwater/clean)"),
     ("O", "water source"),
@@ -24,7 +24,7 @@ LEGEND = [
     ("n", "ruin / scrap"),
     ("t", "tree or bush"),
     ("o", "other entity"),
-    (RAMP.strip(), "ground, low to high (left to right)"),
+    (RAMP, "ground, low to high (left to right)"),
 ]
 
 _WATER_MASKS = ("water", "badwater", "clean")
@@ -49,15 +49,20 @@ def ascii_map(b: MapBuild, step: int = 1, legend: bool = True) -> str:
     lo, hi = b.height.min(), b.height.max()
     span = max(hi - lo, 1e-6)
     water = [b.masks[m] for m in _WATER_MASKS if m in b.masks]
+    def sampled(v: int) -> int:
+        """Nearest sampled column/row, so a mark on an unsampled tile still shows."""
+        return min(round(v / step) * step, (size - 1) // step * step)
+
     marks: dict[tuple[int, int], str] = {}
     for e in b.entities:
         char = _entity_char(e.template)
         # Entities drawn later must not hide the landmarks: A > O > n > t > o.
+        cell = (sampled(e.x), sampled(e.y))
         rank = "otnOA"
-        if char != "o" and rank.index(char) >= rank.index(marks.get((e.x, e.y), "o")):
-            marks[(e.x, e.y)] = char
+        if char != "o" and rank.index(char) >= rank.index(marks.get(cell, "o")):
+            marks[cell] = char
         else:
-            marks.setdefault((e.x, e.y), char)
+            marks.setdefault(cell, char)
 
     rows = []
     for y in range(0, size, step):

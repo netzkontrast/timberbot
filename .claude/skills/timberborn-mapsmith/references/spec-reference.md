@@ -4,6 +4,7 @@ Every key a `*.map.toml` can carry. `python3 wardens/tools/mapsmith ops` prints 
 from the source docstrings, so it is never out of date — read this for the parts the CLI does not
 print (placement keys, `[soil]`, `[checks]`, variants).
 
+- [Command line](#command-line)
 - [Top level](#top-level)
 - [Terrain ops](#terrain-ops)
 - [`[[place]]`](#place)
@@ -12,6 +13,31 @@ print (placement keys, `[soil]`, `[checks]`, variants).
 - [`[checks]`](#checks)
 - [Variants](#variants)
 - [Python API](#python-api)
+
+## Command line
+
+```
+mapsmith build <spec>     write the .timber, then check it
+        --out PATH          explicit output file
+        --out-dir DIR       directory to write into
+        --preview PATH      also write a PNG
+        --ascii [--step N]  also print the ASCII map
+        --variant NAME
+mapsmith preview <spec>   build in memory, print the ASCII map, write nothing
+mapsmith check <target>   validate a .timber or a spec  [--spec SPEC to apply a spec's [checks]]
+mapsmith describe <target> [--build]
+mapsmith new <path> [--size N] [--seed N] [--name NAME] [--force]
+mapsmith ops              the terrain vocabulary, printed from the source
+```
+
+**`build` writes to `wardens/src/Maps/<name>.timber` by default** — the directory the Wardens build
+deploys from. Pass `--out` whenever you are trying seeds, working on a copy, or experimenting;
+otherwise a casual run edits shipped content.
+
+`--strict` (treat warnings as failures) is accepted on either side of the subcommand:
+`mapsmith --strict build spec.toml` and `mapsmith build spec.toml --strict` both work.
+
+Exit code 0 when there is nothing to fix, 1 when there is.
 
 ## Top level
 
@@ -59,7 +85,7 @@ One entity at a known spot, or `count` of them along a watercourse.
 | `at` | `[x, y]` or an anchor name. |
 | `dx`, `dy` | Offset applied after `at` — `StartingLocation` anchors 2 tiles inside its pad, hence `dx = -2`. |
 | `along` | A river's `name`, or a `tag` carried by exactly one river. Two rivers sharing a tag is an error: name the one you mean. |
-| `segment` | `[t0, t1]` fraction of that path, `0` at its first control point. Default `[0.0, 0.05]`. |
+| `segment` | `[t0, t1]` fraction of that path. **`0` is the first control point, which for a river entering from a map edge is off the map** — a segment starting at 0 can select nothing but border tiles and fail. Start around `0.05` unless the river begins inland. Default `[0.0, 0.05]`. |
 | `count` | How many to place along the segment. Fewer than asked for is an error. |
 | `spread` | How far either side of the centreline to try. Default 1. |
 | `margin` | Keep this many tiles off the map border. Default 1. |
@@ -87,6 +113,7 @@ rather than under-filling, because a map that quietly lost half its scrap wastes
 | `margin` | Keep this far from the map border. |
 | `height_range` | `[min, max]` ground level the entity may stand on. |
 | `away_from` | `{ name = distance }`. Names may be masks (`badwater`) or anchors (`start`). |
+| `reachable_from` | An anchor or `[x, y]`. Only place where a beaver walking from there could stand beside the entity — i.e. inside that walkable component. This is how you keep a cluster on the colony's own bank: a river splits the map in two and `around` + `radius` is a disc that knows nothing about it, so without this you hand-pick centres and radii until the annulus geometrically cannot cross the water. Pairs with `[checks] reachable_scatter`. |
 | `attempts` | Sampling budget. Default `max(400, count * 60)`. |
 | `growth` | `[min, max]` `Growable.GrowthProgress` — plants. |
 | `variants` | `RuinModels.VariantId` pool — ruins. |

@@ -91,6 +91,8 @@ terminal; `--step 1` when you need to check a specific corner.
 
 What to actually look at:
 
+- **Find `A` first.** Marks are snapped to the nearest sampled tile, so the starting location shows
+  at any `--step`. A blank cell is nothing at all — the lowest ground is `.`, never a space.
 - **Is `A` on a plateau or a pinprick?** The `A` should sit in a patch of one character. Different
   characters around it mean the pad is on a slope and the colony has nowhere to build.
 - **Does the water go where the design said?** Follow the `~` from edge to edge. A river that stops
@@ -192,6 +194,11 @@ require = ["StartingLocation", "WaterSource", "BadwaterSource"]
 min_reachable = 1200
 reachable_scatter = ["the pods"]  # this cluster must be walkable — name it, don't guess a fraction
 ```
+
+`reachable_from = "start"` on a `[[scatter]]` is the other half of this: it restricts placement to
+the walkable component around a point, so a cluster cannot land across a river. Reach for it
+whenever water divides the map — it replaces the fiddly business of shrinking radii until the
+annulus happens not to cross the water.
 
 `reachable_scatter` is usually the check you want. Five ruin clusters share the `RuinColumnH*`
 templates, so a template-prefix check (`reachable = ["RuinColumn"]`) can only say "at least one of

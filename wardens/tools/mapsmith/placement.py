@@ -11,6 +11,7 @@ from __future__ import annotations
 import math
 
 from .build import Entity, MapBuild, SpecError, polar_sample
+from .grid import Mask
 
 
 def _components(rule: dict) -> dict:
@@ -134,6 +135,18 @@ def scatter(b: MapBuild, rule: dict) -> list[Entity]:
     attempts = int(rule.get("attempts", max(400, count * 60)))
     required = int(rule.get("min_count", count))
 
+    # A river cuts a map into components, and `around` + `radius` is a disc that knows nothing about
+    # that: without this, keeping a cluster on the colony's own bank means hand-picking centres and
+    # radii small enough that the annulus geometrically cannot cross the water.
+    walk: Mask | None = None
+    if "reachable_from" in rule:
+        origin = b.resolve_point(rule["reachable_from"])
+        walk = b.walkable_cached((int(round(origin[0])), int(round(origin[1]))))
+        if not walk.any():
+            raise SpecError(f"scatter {rule.get('name', templates[0])!r}: reachable_from "
+                            f"{rule['reachable_from']!r} stands on water or off the map, so nothing "
+                            f"is reachable from it")
+
     placed: list[Entity] = []
     for _try in range(attempts):
         if len(placed) >= count:
@@ -148,6 +161,8 @@ def scatter(b: MapBuild, rule: dict) -> list[Entity]:
             continue
         if _too_close(b, x, y, keep_out):
             continue
+        if walk is not None and not _beside(walk, x, y, b.size):
+            continue
         i = _weighted_index(b, weights)
         e = _entity(b, templates[i], x, y, rule, level=int(levels[i]))
         b.add(e, _footprint(rule))
@@ -157,7 +172,10 @@ def scatter(b: MapBuild, rule: dict) -> list[Entity]:
         raise SpecError(
             f"scatter {rule.get('name', templates[0])!r}: placed {len(placed)} of {count} in {attempts} "
             f"attempts (needed {required}). Widen `radius`, loosen `height_range`/`spacing`, "
-            f"or lower `count`/`min_count`.")
+            f"or lower `count`/`min_count`."
+            + (f" `reachable_from` is on, so candidates outside the walkable component of "
+               f"{rule['reachable_from']!r} were also skipped — the annulus may sit across water."
+               if walk is not None else ""))
     return placed
 
 
@@ -173,6 +191,15 @@ def _resolve_path(b: MapBuild, along: str) -> tuple[list, str]:
                         f"({', '.join(keys)}). Name the one you mean: along = \"<river name>\".")
     raise SpecError(f"place along {along!r}: no watercourse with that name or tag; "
                     f"known: {', '.join(sorted(b.paths)) or 'none'}")
+
+
+def _beside(walk: Mask, x: int, y: int, size: int) -> bool:
+    """A beaver has to stand next to a thing to use it, so touching the component is enough."""
+    for dx, dy in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)):
+        nx, ny = x + dx, y + dy
+        if 0 <= nx < size and 0 <= ny < size and walk.at(nx, ny):
+            return True
+    return False
 
 
 def _too_close(b: MapBuild, x: int, y: int, keep_out: dict) -> bool:

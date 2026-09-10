@@ -52,6 +52,7 @@ class MapBuild:
         self.occupied = Mask(size)      # cells an entity already claims
         self.reserved = Mask(size)      # cells placement must keep clear (the starting pad, mainly)
         self._distance_cache: dict[str, Grid] = {}
+        self._walk_cache: dict[tuple[int, int], Mask] = {}
 
     # -- terrain reads ---------------------------------------------------------------------------
 
@@ -190,6 +191,11 @@ class MapBuild:
                 dist[(nx, ny)] = d + 1
                 queue.append((nx, ny))
         return dist
+
+    def walkable_cached(self, start: tuple[int, int]) -> Mask:
+        if start not in self._walk_cache:
+            self._walk_cache[start] = self.walkable_from(start)
+        return self._walk_cache[start]
 
     def water_cells(self) -> set[tuple[int, int]]:
         """Every tile any water mask covers — what the checker needs to agree with `walkable_from`."""

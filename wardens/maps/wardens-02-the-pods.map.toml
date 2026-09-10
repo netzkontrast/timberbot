@@ -11,6 +11,14 @@
 #
 # This spec exists as much to prove the vocabulary as to ship a level: it is a different map built
 # from the same eleven ops, with no new Python.
+#
+# NUMBERING IS UNRESOLVED, and this file does not settle it. Two design docs disagree:
+# `wardens-campaign-maps.md` §6.5 calls the second map "The Pods" (clean water within reach,
+# contaminated core), which is the brief this map is built to; `wardens-campaign-arc.md` §levels
+# puts "The Sump" (river gorge, one clean spring upstream) at 02 and "The Pods" (lake with poisoned
+# shores, a green island) at 03. The land here follows the maps doc. Rename the file and the `name`
+# once someone decides which doc wins — the map name is what the campaign service keys levels on
+# (`MapNameService.Name`), so it is worth getting right before anything reads it.
 name = "Wardens 02 The Pods"
 size = 96
 seed = 2200
