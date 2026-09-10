@@ -59,6 +59,7 @@ src/
   PollutingBuilding.cs               Spike B stub
   Timberbot/                         verbatim copy of ../../timberbot/src (paths point at Mods/Wardens)
   Maps/Wardens 01 First Light.timber  level 01 of the campaign (tools/gen_map.py); deploy also installs it to Documents/Timberborn/Maps
+  ../maps/*.map.toml                 map specs for tools/mapsmith (the spec-driven builder; see "The map")
 playtest/                            smoke.py (Timberbot API), mcp_smoke.py (MCP), PLAYTEST.md
 WARDEN.md                            the Warden's playbook (deployed to the mod's docs/, served by the `manual` tool)
 CHANGELOG.md                         version history; tools/package.py builds the release ZIP
@@ -226,6 +227,22 @@ about that is built in:
   `campaign` tool. Nothing else survives a map change.
 - **Moving to the next level.** Not built. The completion toast names the next map and the player starts it
   from the New Game screen ([`../design/wardens-campaign-maps.md`](../design/wardens-campaign-maps.md) §2 A).
+
+Newer maps are written from specs instead. `tools/mapsmith` builds a `.timber` from a declarative
+`*.map.toml` in [`../wardens/maps/`](maps/), previews it as ASCII (the only way to look at a map
+without the game), and checks it against everything the game would reject — including that the
+colony can actually walk to the scrap. Two specs ship: `wardens-wasteland.map.toml` (the same
+design as above, as data) and `wardens-02-the-pods.map.toml` (campaign level 2). Neither has been
+loaded in-game yet, so `gen_map.py` stays the provenance of the shipped wasteland for now.
+
+```bash
+python tools/mapsmith preview ../wardens/maps/wardens-02-the-pods.map.toml --step 2
+python tools/mapsmith build   ../wardens/maps/wardens-02-the-pods.map.toml    # -> src/Maps/*.timber
+python tools/mapsmith ops                                                      # the terrain vocabulary
+```
+
+Design note: [`../design/mapsmith.md`](../design/mapsmith.md). Agent manual: the
+`timberborn-mapsmith` skill in `.claude/skills/`.
 
 ## Art
 
