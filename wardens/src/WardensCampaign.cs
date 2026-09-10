@@ -72,8 +72,7 @@ namespace Wardens
         public readonly List<JObject> Ledger = new List<JObject>();
         public string UpdatedUtc = "";
 
-        public static string Path => System.IO.Path.Combine(
-            System.IO.Path.GetDirectoryName(WardensSettings.Path) ?? "", "campaign.json");
+        public static readonly string Path = System.IO.Path.Combine(WardensSettings.ModDir, "campaign.json");
 
         public bool IsCompleted(string levelId) => !string.IsNullOrEmpty(levelId) && Completed.Contains(levelId);
 
@@ -123,10 +122,12 @@ namespace Wardens
                 while (Ledger.Count > MaxLedgerEntries) Ledger.RemoveAt(0);
                 var dir = System.IO.Path.GetDirectoryName(Path);
                 if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                // Copy-then-delete, not move: File.Move needs the target gone first, which leaves a
+                // window where neither file exists. Same order WardensStoryState uses for story.json.
                 var temp = Path + ".tmp";
                 File.WriteAllText(temp, ToJson().ToString(Newtonsoft.Json.Formatting.Indented));
-                if (File.Exists(Path)) File.Delete(Path);
-                File.Move(temp, Path);
+                File.Copy(temp, Path, overwrite: true);
+                File.Delete(temp);
                 return true;
             }
             catch (Exception ex)
@@ -164,8 +165,7 @@ namespace Wardens
         private WardensCampaignRecord _record = new WardensCampaignRecord();
         private WardensLevel _level;
         private bool _enabled;          // the Wardens on a campaign map
-        private bool _completed;        // this level's ending tutorial is finished
-        private bool _announced;        // the completion was announced this session
+        private bool _completed;        // this level's ending tutorial is finished, and handled
         private float _nextPoll;
 
         public WardensCampaignService(MapNameService mapNameService, FactionService factionService,
@@ -242,9 +242,9 @@ namespace Wardens
             {
                 if (!Finished(_level.EndsWithTutorial)) return;
                 _completed = true;
-                bool alreadyKnown = _record.IsCompleted(_level.Id);
+                if (_record.IsCompleted(_level.Id)) return;   // a save from after the ending: old news
                 MarkCompleted(_level.Id);
-                if (!firstPoll && !alreadyKnown) Announce();
+                if (!firstPoll) Announce();
             }
             catch (Exception ex)
             {
@@ -278,7 +278,6 @@ namespace Wardens
         {
             _record = new WardensCampaignRecord();
             _completed = false;
-            _announced = false;
             if (_level != null)
             {
                 _record.Level = _level.Id;
@@ -340,8 +339,6 @@ namespace Wardens
 
         private void Announce()
         {
-            if (_announced) return;
-            _announced = true;
             var next = ById(_level.Next);
             string line = next == null
                 ? $"Level {_level.Id} complete: {_level.Title}. The campaign ends here."

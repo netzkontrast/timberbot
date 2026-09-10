@@ -7,11 +7,15 @@
 # for scrap within scavenging range of the Core, one clean spring in the north-east and nothing
 # else green, an ash plateau ringed by hills. `wardens/tools/gen_map.py` wrote the currently
 # shipped `.timber` from hand-written numpy; this spec is the same design expressed as data.
-name = "Wardens Wasteland"
+#
+# `name` must stay the campaign level's map name: WardensCampaign.cs keys its level table on it,
+# validate.py rejects a shipped map no level claims, and WardensMapInstaller deletes the retired
+# "Wardens Wasteland" from the player's Maps folder on sight.
+name = "Wardens 01 First Light"
 size = 96
 seed = 3000
 game_version = "0.7.10.0"          # the layout verified in design/wardens-wasteland.md; the game migrates it
-description = "The Wardens' wasteland. Badwater from the north, ruins for scrap, one clean spring in the north-east. Bots only."
+description = "The Wardens' wasteland. Badwater from the north, ruins for scrap, one clean spring in the north-east. Bots only. Campaign level 01: First Light."
 
 # --- the land ------------------------------------------------------------------------------------
 

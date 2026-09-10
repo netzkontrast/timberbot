@@ -2,16 +2,17 @@
 //
 // Model Context Protocol, Streamable HTTP transport, JSON-RPC 2.0 over POST /mcp on
 // http://127.0.0.1:<mcpPort>/ (default 8090). Claude Code connects to it straight from the
-// repo's .mcp.json; no Python in between. The server answers `initialize`, `ping`,
-// `tools/list` on the listener thread and queues `tools/call` for the main thread, where
-// game state may be touched (same model as TimberbotHttpServer: listener thread accepts,
-// UpdateSingleton drains, the response is written from the thread pool). Tools that only
-// do I/O (chat long-poll, Timberbot loopback) are marked OffThread and answered directly.
+// repo's .mcp.json; no Python in between. `ping`, `tools/list` and `prompts/list` are answered
+// on the listener thread; everything that reads game state -- `tools/call`, `initialize` and
+// `prompts/get` -- is parked on a queue for the main thread (same model as TimberbotHttpServer:
+// listener thread accepts, UpdateSingleton drains, the response is written from the thread pool).
+// Tools that only do I/O (chat long-poll, Timberbot loopback) are marked OffThread and answered
+// directly.
 //
 // `prompts/list` and `prompts/get` serve the Warden's boot prompt and the level briefing
 // (WardensMcpTools, "prompts"): a client that supports prompts can put the whole playbook in
 // front of the model before the first tool call. The `instructions` field of the initialize
-// reply carries the short version, rebuilt from live state on the main thread each tick.
+// reply carries the short version, built from live state when the request is served.
 //
 // Not implemented on purpose: the optional GET SSE stream (server-initiated messages;
 // answered 405), sessions (Mcp-Session-Id) and resources. Tool results carry the JSON both
@@ -41,9 +42,13 @@ namespace Wardens
         public bool Cutscenes = true;        // WardensCutscenes.cs: false keeps the scene triggers off (MCP play still works)
         public bool InstallMaps = true;      // WardensMapInstaller.cs: false leaves Documents/Timberborn/Maps alone
 
-        public static string Path =>
-            System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "Timberborn", "Mods", "Wardens", "settings.json");
+        // Fixed for the process, and Environment.GetFolderPath is a shell call, not a field read:
+        // resolve both once. ModDir is where every file this mod owns lives (settings.json,
+        // story.json, campaign.json, docs/, Maps/).
+        public static readonly string ModDir = System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Timberborn", "Mods", "Wardens");
+
+        public static readonly string Path = System.IO.Path.Combine(ModDir, "settings.json");
 
         public static WardensSettings Load()
         {
@@ -72,15 +77,17 @@ namespace Wardens
 
     public class WardensMcpServer : ILoadableSingleton, IUpdatableSingleton, IUnloadableSingleton
     {
-        public const string Version = "0.3.6";
+        public const string Version = "0.3.9";
         private static readonly string[] SupportedProtocolVersions = { "2024-11-05", "2025-03-26", "2025-06-18" };
 
+        // A request the listener thread parked for the main thread. `Respond` returns the finished
+        // JSON-RPC response and is only ever invoked from UpdateSingleton, so anything it closes
+        // over may touch game state freely.
         private class PendingCall
         {
             public HttpListenerContext Ctx;
             public JToken Id;
-            public McpTool Tool;
-            public JObject Args;
+            public Func<JObject> Respond;
         }
 
         private readonly WardensMcpTools _tools;
@@ -103,7 +110,7 @@ namespace Wardens
         public void Load()
         {
             Settings = WardensSettings.Load();
-            _tools.Initialize(Settings, this);
+            _tools.Initialize(Settings);
             if (!Settings.McpEnabled)
             {
                 Debug.Log("[Wardens] MCP server disabled in settings.json (mcpEnabled=false)");
@@ -200,9 +207,10 @@ namespace Wardens
                 foreach (var item in batch)
                 {
                     if (!(item is JObject o)) continue;
-                    if (IsToolCall(o))
+                    if (NeedsMainThread(o))
                     {
-                        WriteJson(ctx, 200, JsonRpcError(o["id"], -32600, "batched tools/call is not supported; one request per POST"));
+                        WriteJson(ctx, 200, JsonRpcError(o["id"], -32600,
+                            $"batched {(string)o["method"]} is not supported; one request per POST"));
                         return;
                     }
                     if (IsNotification(o)) continue;
@@ -214,11 +222,26 @@ namespace Wardens
 
             if (!(msg is JObject req)) { WriteJson(ctx, 200, JsonRpcError(null, -32600, "invalid request")); return; }
             if (IsNotification(req)) { WriteEmpty(ctx, 202); return; }   // notifications/initialized etc.
-            if (IsToolCall(req)) { EnqueueToolCall(ctx, req); return; }
+            if (NeedsMainThread(req)) { Enqueue(ctx, req); return; }
             WriteJson(ctx, 200, DispatchImmediate(req));
         }
 
-        private static bool IsToolCall(JObject o) => (string)o["method"] == "tools/call";
+        // `initialize` and `prompts/get` quote live game state (the faction, the level, the
+        // population, the ready gate), so they go through the same main-thread queue as a tool
+        // call rather than reading a snapshot from the listener thread.
+        private static bool NeedsMainThread(JObject o)
+        {
+            switch ((string)o["method"])
+            {
+                case "tools/call":
+                case "initialize":
+                case "prompts/get":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         private static bool IsNotification(JObject o) => o["id"] == null || o["id"].Type == JTokenType.Null;
 
         private JObject DispatchImmediate(JObject req)
@@ -228,54 +251,74 @@ namespace Wardens
             var p = req["params"] as JObject ?? new JObject();
             switch (method)
             {
-                case "initialize":
-                    return Result(id, new JObject
-                    {
-                        ["protocolVersion"] = Negotiate((string)p["protocolVersion"]),
-                        ["capabilities"] = new JObject
-                        {
-                            ["tools"] = new JObject { ["listChanged"] = false },
-                            ["prompts"] = new JObject { ["listChanged"] = false },
-                        },
-                        ["serverInfo"] = new JObject { ["name"] = "wardens", ["version"] = Version },
-                        ["instructions"] = _tools.Instructions,
-                    });
                 case "ping":
                     return Result(id, new JObject());
                 case "tools/list":
                     return Result(id, new JObject { ["tools"] = _tools.ListJson() });
                 case "prompts/list":
                     return Result(id, new JObject { ["prompts"] = _tools.ListPromptsJson() });
-                case "prompts/get":
-                    try { return Result(id, _tools.GetPromptJson((string)p["name"] ?? "")); }
-                    catch (ArgumentException ex) { return JsonRpcError(id, -32602, ex.Message); }
                 default:
                     return JsonRpcError(id, -32601, "method not found: " + method);
             }
         }
 
-        private void EnqueueToolCall(HttpListenerContext ctx, JObject req)
+        // Park the request for the main thread. A tool with OffThread set is pure I/O and answers
+        // here instead, which is what keeps the long-polls (`frame`, `chat_read`) off the queue.
+        private void Enqueue(HttpListenerContext ctx, JObject req)
         {
+            var id = req["id"];
             var p = req["params"] as JObject ?? new JObject();
-            var name = (string)p["name"] ?? "";
-            var args = p["arguments"] as JObject ?? new JObject();
-            var tool = _tools.Find(name);
-            if (tool == null) { WriteJson(ctx, 200, JsonRpcError(req["id"], -32602, "unknown tool: " + name)); return; }
-            if (tool.OffThread) { WriteJson(ctx, 200, RunTool(req["id"], tool, args)); return; }
-            _pending.Enqueue(new PendingCall { Ctx = ctx, Id = req["id"], Tool = tool, Args = args });
+            Func<JObject> respond;
+
+            if ((string)req["method"] == "tools/call")
+            {
+                var name = (string)p["name"] ?? "";
+                var args = p["arguments"] as JObject ?? new JObject();
+                var tool = _tools.Find(name);
+                if (tool == null) { WriteJson(ctx, 200, JsonRpcError(id, -32602, "unknown tool: " + name)); return; }
+                if (tool.OffThread) { WriteJson(ctx, 200, RunTool(id, tool, args)); return; }
+                respond = () => RunTool(id, tool, args);
+            }
+            else if ((string)req["method"] == "initialize")
+            {
+                respond = () => Result(id, InitializeResult(p));
+            }
+            else
+            {
+                var name = (string)p["name"] ?? "";
+                respond = () => Result(id, _tools.GetPromptJson(name));
+            }
+            _pending.Enqueue(new PendingCall { Ctx = ctx, Id = id, Respond = respond });
         }
+
+        private JObject InitializeResult(JObject p) => new JObject
+        {
+            ["protocolVersion"] = Negotiate((string)p["protocolVersion"]),
+            ["capabilities"] = new JObject
+            {
+                ["tools"] = new JObject { ["listChanged"] = false },
+                ["prompts"] = new JObject { ["listChanged"] = false },
+            },
+            ["serverInfo"] = new JObject { ["name"] = "wardens", ["version"] = Version },
+            ["instructions"] = _tools.BuildInstructions(),
+        };
 
         // ---- main thread ----------------------------------------------------------------------
 
         public void UpdateSingleton()
         {
-            // The initialize reply and the prompts quote live game state, and both are answered on
-            // the listener thread. This is where that snapshot is taken (throttled inside).
-            _tools.RefreshInstructions();
+            if (!_running) return;
             int n = 0;
             while (n++ < 8 && _pending.TryDequeue(out var call))
             {
-                var response = RunTool(call.Id, call.Tool, call.Args);
+                JObject response;
+                try { response = call.Respond(); }
+                catch (ArgumentException ex) { response = JsonRpcError(call.Id, -32602, ex.Message); }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning("[Wardens] MCP request failed on the main thread: " + ex);
+                    response = JsonRpcError(call.Id, -32603, ex.Message);
+                }
                 var ctx = call.Ctx;
                 ThreadPool.QueueUserWorkItem(_ => TryWrite(ctx, 200, response));
             }

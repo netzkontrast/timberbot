@@ -41,10 +41,6 @@ namespace Wardens
 
         private readonly MapRepository _mapRepository;
 
-        public int Installed { get; private set; }
-        public int Skipped { get; private set; }
-        public string SourceDirectory { get; private set; } = "";
-
         public WardensMapInstaller(MapRepository mapRepository)
         {
             _mapRepository = mapRepository;
@@ -71,10 +67,10 @@ namespace Wardens
                 return;
             }
 
-            SourceDirectory = ModMapsDirectory();
-            if (!Directory.Exists(SourceDirectory))
+            var sourceDirectory = ModMapsDirectory();
+            if (!Directory.Exists(sourceDirectory))
             {
-                Debug.LogWarning($"[Wardens] no Maps folder in the mod ({SourceDirectory}); " +
+                Debug.LogWarning($"[Wardens] no Maps folder in the mod ({sourceDirectory}); " +
                                  "the campaign maps will not appear under Custom maps");
                 return;
             }
@@ -82,15 +78,16 @@ namespace Wardens
             var target = MapRepository.UserMapsDirectory;
             Directory.CreateDirectory(target);
 
-            foreach (var source in Directory.GetFiles(SourceDirectory, "*.timber"))
+            int installed = 0, skipped = 0;
+            foreach (var source in Directory.GetFiles(sourceDirectory, "*.timber"))
             {
                 var name = Path.GetFileName(source);
                 var destination = Path.Combine(target, name);
                 try
                 {
-                    if (UpToDate(source, destination)) { Skipped++; continue; }
+                    if (UpToDate(source, destination)) { skipped++; continue; }
                     File.Copy(source, destination, overwrite: true);
-                    Installed++;
+                    installed++;
                     Debug.Log($"[Wardens] installed map '{Path.GetFileNameWithoutExtension(name)}' -> {destination}");
                 }
                 catch (Exception ex)
@@ -99,21 +96,24 @@ namespace Wardens
                 }
             }
 
-            if (Installed > 0) RemoveRetired(target);
+            // Retirement is a property of the shipped set, not of whether a copy happened on this
+            // launch: after the first launch nothing is installed, and the stale file would survive.
+            int removed = RemoveRetired(target);
 
             // The New Game screen builds its list from MapRepository; without this the maps only
             // show up after a restart.
-            if (Installed > 0)
+            if (installed > 0 || removed > 0)
             {
                 _mapRepository.NotifyMapRepositoryChanged();
-                Debug.Log($"[Wardens] maps: {Installed} installed, {Skipped} already current, list refreshed");
+                Debug.Log($"[Wardens] maps: {installed} installed, {skipped} already current, " +
+                          $"{removed} retired removed, list refreshed");
             }
             else
             {
-                Debug.Log($"[Wardens] maps: {Skipped} already current in {target}");
+                Debug.Log($"[Wardens] maps: {skipped} already current in {target}");
             }
 
-            WarnAboutMissingLevels();
+            WarnAboutMissingLevels(target);
         }
 
         // Same size and no older than the source: the shipped maps are byte-reproducible
@@ -127,8 +127,9 @@ namespace Wardens
             return a.Length == b.Length && b.LastWriteTimeUtc >= a.LastWriteTimeUtc;
         }
 
-        private static void RemoveRetired(string target)
+        private static int RemoveRetired(string target)
         {
+            int removed = 0;
             foreach (var retired in RetiredMapNames)
             {
                 var path = Path.Combine(target, retired + ".timber");
@@ -136,6 +137,7 @@ namespace Wardens
                 try
                 {
                     File.Delete(path);
+                    removed++;
                     Debug.Log($"[Wardens] removed the retired map '{retired}' from {target} " +
                               "(it shipped under that name in an earlier version; saves made on it are unaffected)");
                 }
@@ -144,15 +146,16 @@ namespace Wardens
                     Debug.LogWarning($"[Wardens] cannot remove the retired map {retired}: {ex.Message}");
                 }
             }
+            return removed;
         }
 
         // The level table is the campaign; say plainly which of its maps the player will not find.
-        private void WarnAboutMissingLevels()
+        private static void WarnAboutMissingLevels(string target)
         {
             foreach (var level in WardensCampaignService.Levels)
             {
                 if (!level.Shipped) continue;
-                var path = Path.Combine(MapRepository.UserMapsDirectory, level.MapName + ".timber");
+                var path = Path.Combine(target, level.MapName + ".timber");
                 if (!File.Exists(path))
                     Debug.LogWarning($"[Wardens] campaign level {level.Id} ({level.Title}) has no map at {path}");
             }
@@ -176,7 +179,7 @@ namespace Wardens
             {
                 Debug.LogWarning("[Wardens] cannot resolve the mod folder from the assembly: " + ex.Message);
             }
-            return Path.Combine(Path.GetDirectoryName(WardensSettings.Path) ?? "", "Maps");
+            return Path.Combine(WardensSettings.ModDir, "Maps");
         }
     }
 }

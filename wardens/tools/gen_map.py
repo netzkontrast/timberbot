@@ -42,7 +42,6 @@ from pathlib import Path
 import numpy as np
 
 SRC = Path(__file__).resolve().parents[1] / "src"
-DESIGN = Path(__file__).resolve().parents[2] / "design"
 NAMESPACE = uuid.UUID("6f1c2d3e-7a1b-4c5d-9e8f-0a1b2c3d4e5f")
 
 
@@ -110,7 +109,6 @@ class Terrain:
     GAME_VERSION = "0.7.10.0"          # the verified format; the game migrates it (see module docstring)
     TIMESTAMP = "2026-09-03 18:00:00"  # fixed so re-runs are byte-identical
     STAMP = (2026, 9, 3, 18, 0, 0)     # zip entry mtime, same reason
-    REQUIRE_BADWATER = True            # false only where the land is healed (level 10)
 
     def __init__(self, size: int | None = None, seed: int | None = None):
         self.size = self.SIZE if size is None else size
@@ -138,8 +136,13 @@ class Terrain:
     def build_entities(self) -> None:
         raise NotImplementedError
 
-    def contract(self, world: dict, grid: np.ndarray) -> list[str]:
-        """Level-specific assertions on a written map. Empty list means the contract holds."""
+    @classmethod
+    def contract(cls, world: dict, grid: np.ndarray) -> list[str]:
+        """What this level's play depends on. Empty list means the contract holds.
+
+        A classmethod on purpose: the checker must be able to state a level's contract without
+        building its terrain, and nothing here needs the instance.
+        """
         return []
 
     def build(self) -> "Terrain":
@@ -478,15 +481,17 @@ class FirstLight(Terrain):
 
     # -- the contract ----------------------------------------------------------------------------
 
-    def contract(self, world: dict, grid: np.ndarray) -> list[str]:
+    @classmethod
+    def contract(cls, world: dict, grid: np.ndarray) -> list[str]:
         """What the level's play depends on (design/wardens-campaign-map-set.md §2, level 01).
 
         First Light is the tutorial level: everything Chapter 1 asks for has to be within reach of
         the starting pad, and the map's one clean spring has to exist and be far from the badwater.
+        Badwater is asserted here rather than in the format tier: a level whose land is healed
+        (level 10) will simply not ask for it.
         """
         bad = []
         h = surface(grid)
-        s = h.shape[0]
 
         start = templates(world, "StartingLocation")
         if len(start) != 1:
@@ -621,9 +626,11 @@ def check(path: Path, level: type[Terrain] | None = None) -> list[str]:
     sx, sy = sing["MapSize"]["Size"]["X"], sing["MapSize"]["Size"]["Y"]
     if (meta["Width"], meta["Height"]) != (sx, sy):
         problems.append("map_metadata size differs from MapSize")
-    if level is None:
-        level = level_for_map_name(path.stem)
-    layers = level.LAYERS if level else Terrain.LAYERS
+    # Resolve the level once. `Terrain` is the fallback: its LAYERS are the format's, and its
+    # contract is empty, so an unknown map runs the format tier and nothing else.
+    known = level is not None or level_for_map_name(path.stem) is not None
+    level = level or level_for_map_name(path.stem) or Terrain
+    layers = level.LAYERS
     vox = sing["TerrainMap"]["Voxels"]["Array"].split()
     if len(vox) != sx * sy * layers:
         problems.append(f"voxels: {len(vox)} values, expected {sx * sy * layers} ({layers} layers)")
@@ -671,15 +678,13 @@ def check(path: Path, level: type[Terrain] | None = None) -> list[str]:
                 problems.append("StartingLocation needs 3 blocks of air above the pad")
     if starts != 1:
         problems.append(f"{starts} StartingLocation entities, expected 1")
-    # A map with no badwater is a bug everywhere except the healed land of the epilogue.
-    require_badwater = level.REQUIRE_BADWATER if level else Terrain.REQUIRE_BADWATER
-    has_badwater = any(e["Template"] == "BadwaterSource" for e in w["Entities"])
-    if require_badwater and not has_badwater:
+    # Badwater is a level's business, so a known level asserts it in its contract. For a map the
+    # registry does not know, there is no contract to run, and "no badwater at all" is still the
+    # most likely mistake worth naming.
+    if not known and not any(e["Template"] == "BadwaterSource" for e in w["Entities"]):
         problems.append("no BadwaterSource")
-    if not require_badwater and has_badwater:
-        problems.append("BadwaterSource on a level whose land is healed")
-    if level is not None and not problems:
-        problems.extend(f"contract: {p}" for p in level(size=sx).contract(w, grid))
+    if not problems:
+        problems.extend(f"contract: {p}" for p in level.contract(w, grid))
     return problems
 
 
@@ -699,7 +704,7 @@ def generate(cls: type[Terrain], out: Path | None, preview: Path | None,
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Generate the Wardens campaign maps.")
-    ap.add_argument("--level", default=DEFAULT_LEVEL, help=f"level id, default {DEFAULT_LEVEL}")
+    ap.add_argument("--level", help=f"level id, default {DEFAULT_LEVEL}; with --check, forces the contract to run")
     ap.add_argument("--all", action="store_true", help="generate every level in the registry")
     ap.add_argument("--list", action="store_true", help="list the registry and exit")
     ap.add_argument("--size", type=int, help="override the level's size (variants only; ships pinned)")
@@ -715,8 +720,7 @@ def main() -> int:
             print(f"{key}  {cls.MAP_NAME:<28} {cls.SIZE}x{cls.SIZE}  seed {cls.SEED}")
         return 0
     if args.check:
-        cls = level_class(args.level) if args.level != DEFAULT_LEVEL else None
-        problems = check(args.check, cls)
+        problems = check(args.check, level_class(args.level) if args.level else None)
         print("problems:", problems or "none")
         return 1 if problems else 0
     if args.all:
@@ -724,7 +728,7 @@ def main() -> int:
         for key in sorted(LEVELS):
             rc |= generate(LEVELS[key], None, None, None, None)
         return rc
-    return generate(level_class(args.level), args.out, args.preview, args.size, args.seed)
+    return generate(level_class(args.level or DEFAULT_LEVEL), args.out, args.preview, args.size, args.seed)
 
 
 if __name__ == "__main__":

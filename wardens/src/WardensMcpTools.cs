@@ -94,15 +94,6 @@ namespace Wardens
 
         public int Count => _tools.Count;
 
-        // The server's `initialize` reply carries these. They are rebuilt on the main thread
-        // (RefreshInstructions, driven by WardensMcpServer.UpdateSingleton) and read from the
-        // listener thread, so they are a cached snapshot rather than a live query: reading game
-        // state off the main thread is the one thing this server never does.
-        public string Instructions { get; private set; } = "";
-        private float _instructionsRefreshed = -999f;
-        private JObject _campaignSnapshot = new JObject();
-        private JArray _ledgerSnapshot = new JArray();
-
         public WardensMcpTools(FactionService factionService, SpeedManager speedManager,
             CharacterPopulation population, TutorialService tutorialService, TutorialSettings tutorialSettings,
             WardensPointer pointer, WardensChat chat, WardensCameraDirector director, WardensCutscenes cutscenes,
@@ -128,14 +119,13 @@ namespace Wardens
             _campaign = campaign;
         }
 
-        public void Initialize(WardensSettings settings, WardensMcpServer server)
+        public void Initialize(WardensSettings settings)
         {
             _settings = settings;
             _tools.Clear();
             _byName.Clear();
             Build();
             foreach (var t in _tools) _byName[t.Name] = t;
-            RefreshInstructions(force: true);
         }
 
         public McpTool Find(string name) => _byName.TryGetValue(name ?? "", out var t) ? t : null;
@@ -153,32 +143,19 @@ namespace Wardens
         // Three layers, strongest first:
         //   1. `instructions` in the initialize reply (below). Every MCP client puts this in front of
         //      the model once, before the first tool call, so it carries the identity, the live state
-        //      of this particular run, and the rules that must not be broken.
+        //      of this particular run, and the rules that must not be broken. `initialize` is parked
+        //      on the main-thread queue, so this reads live state rather than a snapshot.
         //   2. the `warden_boot` prompt (prompts/list, prompts/get): the whole playbook on demand. A
         //      client that supports prompts can inject it as a message; Claude Code offers it as a
         //      slash command.
         //   3. the `manual` tool, which returns the same playbook as a tool result.
         //
-        // The three must agree. When the playbook changes, wardens/WARDEN.md, design/wardens-play.md
-        // and this file change together (AGENTS.md, "Change one, change all three").
+        // These must agree with wardens/WARDEN.md (the source), design/wardens-play.md and
+        // .claude/skills/warden-play/SKILL.md. Change WARDEN.md and the rest follow; AGENTS.md,
+        // "The agent's contract", is the standing rule.
 
-        private const float InstructionsMaxAgeSeconds = 2f;
-
-        /// Main thread only (WardensMcpServer.UpdateSingleton drives it). Cheap, and throttled.
-        public void RefreshInstructions(bool force = false)
-        {
-            if (!force && Time.unscaledTime - _instructionsRefreshed < InstructionsMaxAgeSeconds) return;
-            _instructionsRefreshed = Time.unscaledTime;
-            try
-            {
-                Instructions = BuildInstructions();
-                _campaignSnapshot = _campaign.State();
-                _ledgerSnapshot = _campaign.Ledger(20);
-            }
-            catch (Exception ex) { Debug.LogWarning("[Wardens] instructions: " + ex.Message); }
-        }
-
-        private string BuildInstructions()
+        /// Main thread only: WardensMcpServer parks `initialize` on its queue to call this.
+        public string BuildInstructions()
         {
             var sb = new StringBuilder();
             sb.Append("You are the Warden: the mind of a colony of machines in a poisoned land, playing Timberborn from inside the ")
@@ -243,11 +220,7 @@ namespace Wardens
                 sb.Append("off (this map is not a campaign level)");
             }
 
-            int bots = 0, beavers = 0;
-            foreach (var c in _population.Characters)
-            {
-                if (c.GetComponent<Bot>() != null) bots++; else beavers++;
-            }
+            CountPopulation(out int bots, out int beavers, out _, out _);
             sb.Append("; bots=").Append(bots).Append("; beavers=").Append(beavers);
             sb.Append("; speed=").Append(_speedManager.CurrentSpeed).Append(_speedManager.CurrentSpeed <= 0f ? " (paused)" : "");
             sb.Append("; timberbot_ready=").Append(_timberbot.AgentState.Ready ? "yes" : "no (call timberbot_ready first)");
@@ -286,15 +259,15 @@ namespace Wardens
             {
                 case "warden_boot":
                     description = "The Warden's playbook and the state of this run.";
-                    text = Instructions + "\n\n---\n\nTHE PLAYBOOK (docs/WARDEN.md)\n\n" + ManualText();
+                    text = BuildInstructions() + "\n\n---\n\nTHE PLAYBOOK (docs/WARDEN.md)\n\n" + ManualText();
                     break;
                 case "warden_level":
                     description = "This level, and what the campaign remembers across maps.";
                     text = "The campaign this run belongs to. Timberborn has no objective system: a level is a map plus the chapter "
                          + "line that runs on it, and only campaign.json survives a map change.\n\n"
-                         + _campaignSnapshot.ToString(Formatting.Indented)
+                         + _campaign.State().ToString(Formatting.Indented)
                          + "\n\nThe Ledger so far (the last entries written on any level):\n"
-                         + _ledgerSnapshot.ToString(Formatting.Indented);
+                         + _campaign.Ledger(20).ToString(Formatting.Indented);
                     break;
                 default:
                     throw new ArgumentException("unknown prompt: " + name);
@@ -313,13 +286,28 @@ namespace Wardens
             };
         }
 
-        private static string ManualText()
+        /// One pass over the population: bots, beavers, and the bots whose Energy need resolved.
+        /// Shared by `wardens_status` and the initialize instructions so the two cannot disagree.
+        private void CountPopulation(out int bots, out int beavers, out int withEnergy, out float energy)
         {
-            var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(WardensSettings.Path) ?? "", "docs", "WARDEN.md");
-            return System.IO.File.Exists(path)
-                ? System.IO.File.ReadAllText(path)
-                : "(WARDEN.md is not deployed; the repo copy is wardens/WARDEN.md)";
+            bots = 0; beavers = 0; withEnergy = 0; energy = 0f;
+            foreach (var c in _population.Characters)
+            {
+                if (c.GetComponent<Bot>() == null) { beavers++; continue; }
+                bots++;
+                var e = BotsChargedStep.Energy(c.GetComponent<NeedManager>());
+                if (e != null) { withEnergy++; energy += e.Value; }
+            }
         }
+
+        /// The deployed playbook: one place knows where it lives and what to say when it does not.
+        private static string ManualPath =>
+            System.IO.Path.Combine(WardensSettings.ModDir, "docs", "WARDEN.md");
+
+        private static string ManualText() =>
+            System.IO.File.Exists(ManualPath)
+                ? System.IO.File.ReadAllText(ManualPath)
+                : "(WARDEN.md is not deployed; the repo copy is wardens/WARDEN.md)";
 
         // ---- schema helpers -----------------------------------------------------------------------
 
@@ -397,13 +385,10 @@ namespace Wardens
             Add("manual",
                 "The Warden's playbook (docs/WARDEN.md in the mod folder): who you are, the Ledger, the frame loop, where to look, the camera rules, the chapter playbook, the voice. Read it once per session before acting.",
                 Schema(new JObject()),
-                a =>
-                {
-                    var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(WardensSettings.Path) ?? "", "docs", "WARDEN.md");
-                    if (!System.IO.File.Exists(path))
-                        return new JObject { ["path"] = path, ["error"] = "not deployed; the repo copy is wardens/WARDEN.md" };
-                    return new JObject { ["path"] = path, ["text"] = System.IO.File.ReadAllText(path) };
-                }, offThread: true);
+                a => System.IO.File.Exists(ManualPath)
+                    ? new JObject { ["path"] = ManualPath, ["text"] = ManualText() }
+                    : new JObject { ["path"] = ManualPath, ["error"] = "not deployed; the repo copy is wardens/WARDEN.md" },
+                offThread: true);
 
             Add("chapter",
                 "Story chapters that gate the building bar (WardensChapters.cs): each chapter opens when its tutorial finishes and unlocks the padlocked buildings. action=status lists every chapter with its gate and per-building lock state; action=unlock opens chapter_id now (dev/testing).",
@@ -639,18 +624,7 @@ namespace Wardens
 
         private JObject Status()
         {
-            int bots = 0, beavers = 0, withEnergy = 0;
-            float energy = 0f;
-            foreach (var c in _population.Characters)
-            {
-                if (c.GetComponent<Bot>() != null)
-                {
-                    bots++;
-                    var e = BotsChargedStep.Energy(c.GetComponent<NeedManager>());
-                    if (e != null) { withEnergy++; energy += e.Value; }
-                }
-                else beavers++;
-            }
+            CountPopulation(out int bots, out int beavers, out int withEnergy, out float energy);
             return new JObject
             {
                 ["faction"] = _factionService.Current?.Id,
