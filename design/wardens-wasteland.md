@@ -1,10 +1,14 @@
 # The Wardens' wasteland: the shipped map
 
-> **Status:** generated (2026-09-03) by [`wardens/tools/gen_map.py`](../wardens/tools/gen_map.py) into
-> `wardens/src/Maps/Wardens Wasteland.timber`; deploy copies it to `Documents/Timberborn/Maps`. Not yet
-> loaded in-game. Fills item 5 of the v0.1 scope in [`faction-wardens.md`](faction-wardens.md). It becomes
-> level 01 of the campaign; the other nine maps are [`wardens-campaign-map-set.md`](wardens-campaign-map-set.md),
-> which also inherits this file's open questions about the water map and the ruin templates.
+> **Status:** generated (2026-09-03) by [`wardens/tools/gen_map.py`](../wardens/tools/gen_map.py); **renamed
+> 2026-09-10** to `wardens/src/Maps/Wardens 01 First Light.timber` — it *is* level 01 of the campaign, and the
+> level table keys on the map name. Terrain, entities and thumbnail are byte-identical to the file that shipped
+> as *Wardens Wasteland*; only the description in `map_metadata.json` changed. Deploy copies it to
+> `Documents/Timberborn/Maps`, and `WardensMapInstaller` does the same at the main menu for players who never
+> run a build. **Still not loaded in-game.** Fills item 5 of the v0.1 scope in
+> [`faction-wardens.md`](faction-wardens.md). The other nine maps are
+> [`wardens-campaign-map-set.md`](wardens-campaign-map-set.md), which also inherits this file's open questions
+> about the water map and the ruin templates.
 
 ![top-down preview: ash plateau, the badwater river in purple, the Sump beside the cyan starting pad, grey ruin
 columns, the green spring in the north-east](wardens-wasteland.png)
@@ -50,15 +54,32 @@ Two deliberate choices:
    sources fill the river and the Sump during the first day. Soil contamination in the file is a cosmetic
    estimate; the game recomputes it from the badwater.
 
-`gen_map.py --check <file>` runs the static checks the game would fail on (array sizes, top layer air, entities
-on the surface and inside bounds, one StartingLocation on a flat pad with air above, a BadwaterSource).
+`gen_map.py --check <file>` runs two tiers. **The format**, which the game would fail on: array sizes, top layer
+air, entities on the surface and inside bounds, one StartingLocation on a flat pad with air above, a
+BadwaterSource. Then **the level's contract** (`FirstLight.contract`), which the *level* would fail on — the
+properties the play above depends on, restated as assertions:
+
+| Contract | Why |
+|---|---|
+| >= 5 ruin columns within 16 tiles of the start; >= 600 total scrap | chapter 1 has no other building material |
+| >= 3 BadwaterSources, and bed cells touching both the north and the south edge | the river has to cross the map, not puddle at the rim |
+| >= 40 bed-height cells within 12 tiles of the start | the Sump, and the Sludge Pump that goes in it |
+| exactly 1 clean WaterSource, >= 20 tiles from any badwater source | "there is not much", and it has to stay clean |
+| >= 80 plants | the spring's grove, the only green |
+| 3-40% of tiles contaminated above 0.5 | poison is a band; a flood and a rumour are both wrong |
+| >= 4 UndergroundRuins | the mines of a later act |
+
+The seed (3000) and the size (96) are pinned in the level class and must never change after the map ships: the
+same name with a different seed is a different map, and level 10 (*Home*) regenerates this exact heightfield.
 
 ## Open questions (answered by the first in-game load)
 
 - Does 1.1 accept the 0.7.10 layout through migration, or does it want a 1.1-native water map?
 - Do `RuinColumnH*` and `UndergroundRuins` still exist under those names in 1.1?
 - Is the Sump deep enough for the Sludge Pump (deep badwater pump) once filled? If not, lower its bed to 3.
-- Does the game list a `.timber` shipped inside a mod's `Maps/` folder, or only the copy in `Documents/Timberborn/Maps`?
-  Research (2026-09-05, [`wardens-campaign-maps.md`](wardens-campaign-maps.md) §1) says assume **only the copy**: the
-  official mod layout has no `Maps/` folder and mod.io maps are installed by hand; the mod should copy its maps
-  into `Documents/Timberborn/Maps` at runtime and call `MapRepository.NotifyMapRepositoryChanged()`.
+- ~~Does the game list a `.timber` shipped inside a mod's `Maps/` folder, or only the copy in
+  `Documents/Timberborn/Maps`?~~ **Answered 2026-09-10** by the 1.1.2.4 decompile: only the copy.
+  `MapRepository.GetUserMapNames()` enumerates `UserDataFolder.Folder/Maps` and nothing else, and
+  `WardensMapInstaller` (MainMenu context) does that copy at runtime. A mod *can* list maps from its own folder,
+  but only by implementing `Timberborn.MapItemsUI.ICustomMapItemFactory` — recorded in
+  [`wardens-campaign-maps.md`](wardens-campaign-maps.md) §1 as the better mechanism once it can be tested.

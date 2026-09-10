@@ -97,7 +97,7 @@ For the Wardens: `dotnet build wardens/src/Wardens.csproj -c Release` (bumps the
 
 - C# (`timberbot/test/`): `dotnet test` — the test project targets `net10.0`, so a .NET 10 SDK is required even though the mod itself is `netstandard2.1`. An older SDK builds the mod and then fails to run the tests.
 - Python (`python/tests/`): `uv run --project python --extra dev pytest`
-- Wardens (static): `python wardens/tools/validate.py` and `python wardens/tools/gen_map.py --check "wardens/src/Maps/Wardens Wasteland.timber"`; in-game: `python wardens/playtest/mcp_smoke.py`, then the checklist in `wardens/playtest/PLAYTEST.md`
+- Wardens (static): `python wardens/tools/validate.py` and `python wardens/tools/gen_map.py --check "wardens/src/Maps/Wardens 01 First Light.timber"`; in-game: `python wardens/playtest/mcp_smoke.py`, then the checklist in `wardens/playtest/PLAYTEST.md`
 
 Run the suite that matches the layer you touched; run both when changes cross the boundary.
 

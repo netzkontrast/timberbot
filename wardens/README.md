@@ -28,7 +28,7 @@ The mod is one DLL plus data, and it does four jobs:
 4. **The story and the land**: chapters that open the building bar as the tutorial line advances
    (`WardensChapters.cs`, "How the chapters work" below), cutscenes played from scene files
    (`WardensCutscenes.cs`, `Cutscenes/*.json`, "How cutscenes work" below) and the shipped wasteland
-   map (`Maps/Wardens Wasteland.timber`, "The map" below).
+   map (`Maps/Wardens 01 First Light.timber`, "The map" below).
 
 ```
 src/
@@ -58,7 +58,7 @@ src/
   WardensMcpTools.cs                 the tool table
   PollutingBuilding.cs               Spike B stub
   Timberbot/                         verbatim copy of ../../timberbot/src (paths point at Mods/Wardens)
-  Maps/Wardens Wasteland.timber      the shipped map (tools/gen_map.py); deploy also installs it to Documents/Timberborn/Maps
+  Maps/Wardens 01 First Light.timber  level 01 of the campaign (tools/gen_map.py); deploy also installs it to Documents/Timberborn/Maps
 playtest/                            smoke.py (Timberbot API), mcp_smoke.py (MCP), PLAYTEST.md
 WARDEN.md                            the Warden's playbook (deployed to the mod's docs/, served by the `manual` tool)
 CHANGELOG.md                         version history; tools/package.py builds the release ZIP
@@ -194,13 +194,38 @@ Skip; the agent sees `cutscene.start` / `cutscene.end` in its frames and stays o
 
 ## The map
 
-`tools/gen_map.py` writes `Maps/Wardens Wasteland.timber`, the wasteland the faction design asks for: a badwater
+`tools/gen_map.py` writes `Maps/Wardens 01 First Light.timber`, the wasteland the faction design asks for: a badwater
 river from three sources at the north edge meandering to the south edge, the Sump beside the Core for the
 Sludge Pump, ruin clusters in scavenging range, underground ruins for later mines, and one clean spring in the
 north-east as the only green. The build deploys it into the mod folder and into `Documents/Timberborn/Maps`
-(override with `-p:MapsDir=...`), where the new-game screen lists it as `[Custom] Wardens Wasteland`. Design,
+(override with `-p:MapsDir=...`), where the new-game screen lists it as `[Custom] Wardens 01 First Light`. Design,
 file format and the choices behind them: [`../design/wardens-wasteland.md`](../design/wardens-wasteland.md).
-`gen_map.py --check <file>` runs the static checks; the generator runs them after every write.
+
+The generator is one class per level (`Terrain` holds the shared toolkit and the file plumbing,
+`FirstLight` builds level 01) behind a registry: `--level 01`, `--all`, `--list`. Each level pins its own
+seed, and a shipped seed never changes — the same name with a different seed is a different map.
+`gen_map.py --check <file>` runs two tiers: the format the game would choke on, and the level's
+**contract** — the properties its play depends on (scrap within reach of the pad, the river crossing the
+map, the Sump deep enough, exactly one clean spring far from the badwater, contamination a band and not a
+flood). The generator runs both after every write.
+
+## The campaign
+
+A level is a map plus the chapter line that runs on it. Timberborn has no objective system, so nothing
+about that is built in:
+
+- **Getting the map to the player.** The game lists custom maps from `Documents/Timberborn/Maps` and
+  nowhere else — a mod's own `Maps/` folder is not a map source. `WardensMapInstaller` ([Context("MainMenu")])
+  copies the mod's maps there at the main menu and calls `MapRepository.NotifyMapRepositoryChanged()`, so a
+  Workshop install needs no manual copy. `settings.json` `installMaps: false` turns it off.
+- **Knowing which level this is.** `MapNameService.Name` is the map file's name, so the level table in
+  `WardensCampaign.cs` is keyed by map name. A map that is not in the table means "not a campaign level"
+  and the service goes quiet.
+- **Remembering across levels.** Every map is a fresh save, so `campaign.json` (beside `settings.json`)
+  carries the levels completed, the current level, and the Ledger the agent appends to with the MCP
+  `campaign` tool. Nothing else survives a map change.
+- **Moving to the next level.** Not built. The completion toast names the next map and the player starts it
+  from the New Game screen ([`../design/wardens-campaign-maps.md`](../design/wardens-campaign-maps.md) §2 A).
 
 ## Art
 

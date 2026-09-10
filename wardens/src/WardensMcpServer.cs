@@ -8,10 +8,15 @@
 // UpdateSingleton drains, the response is written from the thread pool). Tools that only
 // do I/O (chat long-poll, Timberbot loopback) are marked OffThread and answered directly.
 //
+// `prompts/list` and `prompts/get` serve the Warden's boot prompt and the level briefing
+// (WardensMcpTools, "prompts"): a client that supports prompts can put the whole playbook in
+// front of the model before the first tool call. The `instructions` field of the initialize
+// reply carries the short version, rebuilt from live state on the main thread each tick.
+//
 // Not implemented on purpose: the optional GET SSE stream (server-initiated messages;
-// answered 405), sessions (Mcp-Session-Id), resources and prompts. Tool results carry the
-// JSON both as text content and as structuredContent, plus "chat": player messages typed
-// in the in-game panel that the agent has not seen yet.
+// answered 405), sessions (Mcp-Session-Id) and resources. Tool results carry the JSON both
+// as text content and as structuredContent, plus "chat": player messages typed in the
+// in-game panel that the agent has not seen yet.
 
 using System;
 using System.Collections.Concurrent;
@@ -34,6 +39,7 @@ namespace Wardens
         public string AuthToken = "";        // Timberbot's bearer token, if any
         public bool ChapterGating = true;    // WardensChapters.cs: false opens every chapter at load
         public bool Cutscenes = true;        // WardensCutscenes.cs: false keeps the scene triggers off (MCP play still works)
+        public bool InstallMaps = true;      // WardensMapInstaller.cs: false leaves Documents/Timberborn/Maps alone
 
         public static string Path =>
             System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
@@ -53,6 +59,7 @@ namespace Wardens
                     s.AuthToken = (json.Value<string>("authToken") ?? "").Trim();
                     s.ChapterGating = json.Value<bool?>("chapterGating") ?? s.ChapterGating;
                     s.Cutscenes = json.Value<bool?>("cutscenes") ?? s.Cutscenes;
+                    s.InstallMaps = json.Value<bool?>("installMaps") ?? s.InstallMaps;
                 }
             }
             catch (Exception ex)
@@ -65,7 +72,7 @@ namespace Wardens
 
     public class WardensMcpServer : ILoadableSingleton, IUpdatableSingleton, IUnloadableSingleton
     {
-        public const string Version = "0.3.2";
+        public const string Version = "0.3.5";
         private static readonly string[] SupportedProtocolVersions = { "2024-11-05", "2025-03-26", "2025-06-18" };
 
         private class PendingCall
@@ -225,7 +232,11 @@ namespace Wardens
                     return Result(id, new JObject
                     {
                         ["protocolVersion"] = Negotiate((string)p["protocolVersion"]),
-                        ["capabilities"] = new JObject { ["tools"] = new JObject { ["listChanged"] = false } },
+                        ["capabilities"] = new JObject
+                        {
+                            ["tools"] = new JObject { ["listChanged"] = false },
+                            ["prompts"] = new JObject { ["listChanged"] = false },
+                        },
                         ["serverInfo"] = new JObject { ["name"] = "wardens", ["version"] = Version },
                         ["instructions"] = _tools.Instructions,
                     });
@@ -233,6 +244,11 @@ namespace Wardens
                     return Result(id, new JObject());
                 case "tools/list":
                     return Result(id, new JObject { ["tools"] = _tools.ListJson() });
+                case "prompts/list":
+                    return Result(id, new JObject { ["prompts"] = _tools.ListPromptsJson() });
+                case "prompts/get":
+                    try { return Result(id, _tools.GetPromptJson((string)p["name"] ?? "")); }
+                    catch (ArgumentException ex) { return JsonRpcError(id, -32602, ex.Message); }
                 default:
                     return JsonRpcError(id, -32601, "method not found: " + method);
             }
@@ -253,6 +269,9 @@ namespace Wardens
 
         public void UpdateSingleton()
         {
+            // The initialize reply and the prompts quote live game state, and both are answered on
+            // the listener thread. This is where that snapshot is taken (throttled inside).
+            _tools.RefreshInstructions();
             int n = 0;
             while (n++ < 8 && _pending.TryDequeue(out var call))
             {

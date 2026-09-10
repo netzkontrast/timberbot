@@ -11,8 +11,15 @@ and prints what would throw. Exit code 1 when there are problems.
 Also cross-checks the chapter table in src/WardensChapters.cs against the blueprints: every
 template shipped with the chapter padlock (ScienceCost == CHAPTER_LOCK) must belong to a chapter,
 every chapter template must exist and be padlocked, the gating tutorial must exist, and each
-chapter needs its Title/Unlocked loc rows. The cutscene files (Cutscenes/*.json) are checked by
-check_cutscenes.py, which this script calls (it also runs alone, without the game's files).
+chapter needs its Title/Unlocked loc rows.
+
+And the campaign table in src/WardensCampaign.cs against the shipped maps: every level marked shipped
+has its .timber in Maps/, every .timber is claimed by a level, `next` points at a level that exists,
+and a shipped level names an ending tutorial that exists (without one it can never complete). The
+table is keyed by map name, so a rename in gen_map.py that misses it strands the level silently.
+
+The cutscene files (Cutscenes/*.json) are checked by check_cutscenes.py, which this script calls (it
+also runs alone, without the game's files).
 """
 from __future__ import annotations
 
@@ -23,12 +30,13 @@ import sys
 import zipfile
 from pathlib import Path
 
-from check_cutscenes import check as check_cutscenes, read_chapters
+from check_cutscenes import check as check_cutscenes, read_chapters, read_levels
 
 GAME = Path("F:/Steam/steamapps/common/Timberborn/Timberborn_Data/StreamingAssets/Modding")
 DEFAULT_MOD = Path.home() / "Documents/Timberborn/Mods/Wardens"
 FACTION = "Wardens"
 CHAPTERS_CS = Path(__file__).resolve().parents[1] / "src" / "WardensChapters.cs"
+CAMPAIGN_CS = Path(__file__).resolve().parents[1] / "src" / "WardensCampaign.cs"
 CHAPTER_LOCK = 999999   # WardensChapterService.LockedCost
 # Trigger ids that vanilla or WardensTriggers.cs finish through ITutorialTriggers.AddTrigger.
 TRIGGER_IDS = {"StairsUnlockedTrigger", "SurvivedFirstDroughtTrigger", "SurvivedFirstBadtideTrigger",
@@ -247,6 +255,36 @@ def main() -> int:
     for n in sorted(padlocked - set(listed)):
         problems.append(f"{n}: padlocked (ScienceCost {CHAPTER_LOCK}) but no chapter in WardensChapters.cs unlocks it")
 
+    # the campaign (src/WardensCampaign.cs) vs. the shipped maps and the tutorial line.
+    # A level is a map plus the chapter line on it, and the table is keyed by map name, so a
+    # rename in gen_map.py that misses the table strands the level silently: the game loads the
+    # map, WardensCampaignService finds no row and goes quiet. Same for a level whose ending
+    # tutorial does not exist — it can never complete.
+    levels = read_levels(CAMPAIGN_CS) if CAMPAIGN_CS.exists() else []
+    if not levels:
+        problems.append(f"no levels parsed from {CAMPAIGN_CS}")
+    maps = {p.stem for p in (mod / "Maps").glob("*.timber")} if (mod / "Maps").is_dir() else set()
+    ids: set[str] = set()
+    for lid, map_name, title, ends, nxt, shipped in levels:
+        if lid in ids:
+            problems.append(f"level {lid}: duplicate id")
+        ids.add(lid)
+        if not map_name.startswith("Wardens "):
+            problems.append(f"level {lid}: map name {map_name!r} does not start with 'Wardens ' (the campaign prefix)")
+        if shipped and map_name not in maps:
+            problems.append(f"level {lid}: marked shipped but {map_name}.timber is not in {mod / 'Maps'}")
+        if not shipped and map_name in maps:
+            problems.append(f"level {lid}: {map_name}.timber exists but the table says shipped=false")
+        if ends and ends not in tutorials:
+            problems.append(f"level {lid}: ending tutorial unknown: {ends}")
+        if shipped and not ends:
+            problems.append(f"level {lid}: shipped without an ending tutorial, so it can never complete")
+    for lid, _, _, _, nxt, _ in levels:
+        if nxt and nxt not in ids:
+            problems.append(f"level {lid}: next level {nxt!r} is not in the table")
+    for name in sorted(maps - {m for _, m, _, _, _, _ in levels}):
+        problems.append(f"{name}.timber ships but no level in WardensCampaign.cs claims it")
+
     # cutscenes (Cutscenes/*.json): captions, triggers, anchors; see check_cutscenes.py
     cutscene_files = sorted((mod / "Cutscenes").glob("*.json")) if (mod / "Cutscenes").is_dir() else []
     problems += check_cutscenes(mod, loc=loc, tutorials=set(tutorials), chapters={cid for cid, _, _ in chapters},
@@ -255,6 +293,7 @@ def main() -> int:
     print(f"mod: {mod}")
     print(f"collections: {', '.join(active)}")
     print(f"chapters: {len(chapters)}, padlocked templates: {len(padlocked)}")
+    print(f"campaign levels: {len(levels)} ({sum(1 for l in levels if l[5])} with a map), maps: {len(maps)}")
     print(f"templates: {len(templates)} (+{len(aliases)} aliases), goods: {len(goods)}, planters: "
           + ", ".join(f"{g}: {len(planters.get(g, []))}" for g in sorted(groups)))
     print(f"tutorials: {len(tutorials)}, stages: {len(stages)}, loc keys: {len(loc)}, cutscenes: {len(cutscene_files)}")

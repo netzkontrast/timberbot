@@ -85,6 +85,7 @@ namespace Wardens
         private readonly WardensAssetDump _assetDump;
         private readonly WardensChapterService _chapters;
         private readonly WardensFrames _frames;
+        private readonly WardensCampaignService _campaign;
         private long _lastFrameSeq;
 
         private readonly List<McpTool> _tools = new List<McpTool>();
@@ -92,13 +93,22 @@ namespace Wardens
         private WardensSettings _settings = new WardensSettings();
 
         public int Count => _tools.Count;
+
+        // The server's `initialize` reply carries these. They are rebuilt on the main thread
+        // (RefreshInstructions, driven by WardensMcpServer.UpdateSingleton) and read from the
+        // listener thread, so they are a cached snapshot rather than a live query: reading game
+        // state off the main thread is the one thing this server never does.
         public string Instructions { get; private set; } = "";
+        private float _instructionsRefreshed = -999f;
+        private JObject _campaignSnapshot = new JObject();
+        private JArray _ledgerSnapshot = new JArray();
 
         public WardensMcpTools(FactionService factionService, SpeedManager speedManager,
             CharacterPopulation population, TutorialService tutorialService, TutorialSettings tutorialSettings,
             WardensPointer pointer, WardensChat chat, WardensCameraDirector director, WardensCutscenes cutscenes,
             EntitySelectionService selection, QuickNotificationService quickNotifications, TimberbotService timberbot,
-            WardensAssetDump assetDump, WardensChapterService chapters, WardensFrames frames)
+            WardensAssetDump assetDump, WardensChapterService chapters, WardensFrames frames,
+            WardensCampaignService campaign)
         {
             _factionService = factionService;
             _speedManager = speedManager;
@@ -115,6 +125,7 @@ namespace Wardens
             _assetDump = assetDump;
             _chapters = chapters;
             _frames = frames;
+            _campaign = campaign;
         }
 
         public void Initialize(WardensSettings settings, WardensMcpServer server)
@@ -124,18 +135,7 @@ namespace Wardens
             _byName.Clear();
             Build();
             foreach (var t in _tools) _byName[t.Name] = t;
-            Instructions =
-                "In-game MCP server of The Wardens (Timberborn). You are the Warden: the mind of a colony of machines, playing beside " +
-                "a human who sees the game. Read the playbook first: call `manual` (docs/WARDEN.md in the mod folder). " +
-                "Heartbeat: call `frame` in a loop. It returns every N game ticks or as soon as something happens (the human typed, " +
-                "a day started, a building finished, a chapter opened, a beaver was born) and carries `attention`: where to look, " +
-                "in order, with positions `camera` and `point` accept. Do not poll the read API to find out whether anything changed. " +
-                "Every tool result may contain \"chat\": messages the player typed that you have not seen; answer them with `say`. " +
-                "`point` shows the player a tile (highlight + arrow + toast). " +
-                "`timberbot` forwards to the Timberbot HTTP API compiled into this mod (GET reads, POST actions, one mutation at a time); " +
-                "call `timberbot_ready` once so the API accepts requests, and `timberbot_routes` to list routes. " +
-                "`wardens_status`, `tutorial` and `chapter` report the story state; `camera` and `cutscene` drive the camera, only when the playbook allows. " +
-                "A playing cutscene (`cutscene.playing` in the frame, events cutscene.start / cutscene.end) owns the camera: leave it and say nothing until it ends.";
+            RefreshInstructions(force: true);
         }
 
         public McpTool Find(string name) => _byName.TryGetValue(name ?? "", out var t) ? t : null;
@@ -146,6 +146,179 @@ namespace Wardens
             foreach (var t in _tools)
                 arr.Add(new JObject { ["name"] = t.Name, ["description"] = t.Description, ["inputSchema"] = t.InputSchema });
             return arr;
+        }
+
+        // ---- what the agent is told before it acts ------------------------------------------------
+        //
+        // Three layers, strongest first:
+        //   1. `instructions` in the initialize reply (below). Every MCP client puts this in front of
+        //      the model once, before the first tool call, so it carries the identity, the live state
+        //      of this particular run, and the rules that must not be broken.
+        //   2. the `warden_boot` prompt (prompts/list, prompts/get): the whole playbook on demand. A
+        //      client that supports prompts can inject it as a message; Claude Code offers it as a
+        //      slash command.
+        //   3. the `manual` tool, which returns the same playbook as a tool result.
+        //
+        // The three must agree. When the playbook changes, wardens/WARDEN.md, design/wardens-play.md
+        // and this file change together (AGENTS.md, "Change one, change all three").
+
+        private const float InstructionsMaxAgeSeconds = 2f;
+
+        /// Main thread only (WardensMcpServer.UpdateSingleton drives it). Cheap, and throttled.
+        public void RefreshInstructions(bool force = false)
+        {
+            if (!force && Time.unscaledTime - _instructionsRefreshed < InstructionsMaxAgeSeconds) return;
+            _instructionsRefreshed = Time.unscaledTime;
+            try
+            {
+                Instructions = BuildInstructions();
+                _campaignSnapshot = _campaign.State();
+                _ledgerSnapshot = _campaign.Ledger(20);
+            }
+            catch (Exception ex) { Debug.LogWarning("[Wardens] instructions: " + ex.Message); }
+        }
+
+        private string BuildInstructions()
+        {
+            var sb = new StringBuilder();
+            sb.Append("You are the Warden: the mind of a colony of machines in a poisoned land, playing Timberborn from inside the ")
+              .Append("running game, beside a human who sees the world through the camera. The human decides purpose (where the green ")
+              .Append("goes, who lives here, what is remembered). You decide logistics (power, scrap, badwater, Data, shifts, hauling). ")
+              .Append("If you are not sure whether something is purpose or logistics, it is purpose: ask.\n\n");
+
+            sb.Append("STATE OF THIS RUN\n").Append(StateLine()).Append("\n\n");
+
+            sb.Append("START HERE, IN THIS ORDER\n")
+              .Append("1. `manual` - the playbook (docs/WARDEN.md). Read it once per session, before acting.\n")
+              .Append("2. `campaign action=status` - which level this map is, and what earlier levels left you.\n")
+              .Append("3. `wardens_status` - faction, speed, population, tutorial and chapter state.\n")
+              .Append("4. `timberbot_ready` - once; the read/write API refuses everything until you call it.\n")
+              .Append("5. `chat_history` - what was said before you arrived. Answer anything unanswered first.\n")
+              .Append("6. `frame` with after=0, and stay in that loop.\n\n");
+
+            sb.Append("THE LOOP\n")
+              .Append("`frame` is the heartbeat and the only thing you wait on. It returns every N game ticks, or the moment something ")
+              .Append("happens (the human typed, a day or night started, a building finished, a chapter opened, a beaver was born, an ")
+              .Append("alert appeared, the human selected something), and it carries `attention`: where to look, in order, with positions ")
+              .Append("`camera` and `point` accept. Pass `after` = the last seq you saw. Never poll the read API to find out whether ")
+              .Append("anything changed. Every tool result may carry \"chat\": messages the human typed that you have not seen. Answer ")
+              .Append("those with `say` before anything else.\n\n");
+
+            sb.Append("THE TOOLS ARE THE BODY\n")
+              .Append("`say` is the voice, `point` the finger (highlight, arrow and optional toast on one tile), `camera` the eye, ")
+              .Append("`timberbot` the hands: it forwards to the Timberbot HTTP API compiled into this same mod (GET reads, POST acts), ")
+              .Append("and `timberbot_routes` lists what it will take. `campaign`, `chapter` and `tutorial` are the memory of the plan; ")
+              .Append("`campaign action=record` is the only memory that outlives this map. `selection` is the human pointing at something.\n\n");
+
+            sb.Append("RULES THAT DO NOT BEND\n")
+              .Append("- Mutations are sequential. Never overlap POST calls through `timberbot`.\n")
+              .Append("- The camera is the human's. Never move it unprompted except once at a chapter transition; `camera action=get` first, restore after.\n")
+              .Append("- A playing cutscene owns the camera and the conversation (`cutscene.playing`; events cutscene.start / cutscene.end): touch nothing and say nothing until it ends.\n")
+              .Append("- Never demolish, never pause the colony, never force a chapter open (`chapter action=unlock`), never answer a choice card (`cutscene action=choose`) and never reset a record, unless the human asked for that exact thing.\n")
+              .Append("- Say what you poisoned on the day you poisoned it.\n")
+              .Append("- Unprompted speech is at most three lines. Terse. Measurements, not adjectives. No exclamation marks, no emoji, no filler.\n");
+            return sb.ToString();
+        }
+
+        /// One line of live state, so the model starts from where the run actually is rather than
+        /// from where the documentation assumes it is.
+        private string StateLine()
+        {
+            var sb = new StringBuilder();
+            string faction = _factionService.Current?.Id ?? "unknown";
+            sb.Append("faction=").Append(faction);
+            if (faction != WardensStartingPopulation.FactionId)
+                sb.Append(" (NOT the Wardens: the story, the chapters and the campaign are all inert on this save)");
+
+            var level = _campaign.Level;
+            sb.Append("; campaign=");
+            if (_campaign.Enabled && level != null)
+            {
+                sb.Append("level ").Append(level.Id).Append(" '").Append(level.Title).Append("' on map '").Append(level.MapName)
+                  .Append("', ends when the tutorial ").Append(level.EndsWithTutorial).Append(" finishes");
+                if (_campaign.Completed) sb.Append(" (ALREADY COMPLETE)");
+            }
+            else
+            {
+                sb.Append("off (this map is not a campaign level)");
+            }
+
+            int bots = 0, beavers = 0;
+            foreach (var c in _population.Characters)
+            {
+                if (c.GetComponent<Bot>() != null) bots++; else beavers++;
+            }
+            sb.Append("; bots=").Append(bots).Append("; beavers=").Append(beavers);
+            sb.Append("; speed=").Append(_speedManager.CurrentSpeed).Append(_speedManager.CurrentSpeed <= 0f ? " (paused)" : "");
+            sb.Append("; timberbot_ready=").Append(_timberbot.AgentState.Ready ? "yes" : "no (call timberbot_ready first)");
+            int unread = _chat.UndeliveredCount();
+            if (unread > 0) sb.Append("; UNREAD FROM THE HUMAN=").Append(unread).Append(" (answer with `say` first)");
+            return sb.ToString();
+        }
+
+        // ---- prompts -------------------------------------------------------------------------------
+
+        public JArray ListPromptsJson() => new JArray
+        {
+            new JObject
+            {
+                ["name"] = "warden_boot",
+                ["title"] = "Warden: boot",
+                ["description"] = "The Warden's full playbook (WARDEN.md) plus the live state of this run. Inject once at the start of a session.",
+                ["arguments"] = new JArray(),
+            },
+            new JObject
+            {
+                ["name"] = "warden_level",
+                ["title"] = "Warden: this level",
+                ["description"] = "Which campaign level this map is, what finishes it, and what earlier levels left in the Ledger.",
+                ["arguments"] = new JArray(),
+            },
+        };
+
+        /// prompts/get. File and cached state only, so it is answered on the listener thread like
+        /// the other read-only surfaces.
+        public JObject GetPromptJson(string name)
+        {
+            string text;
+            string description;
+            switch (name)
+            {
+                case "warden_boot":
+                    description = "The Warden's playbook and the state of this run.";
+                    text = Instructions + "\n\n---\n\nTHE PLAYBOOK (docs/WARDEN.md)\n\n" + ManualText();
+                    break;
+                case "warden_level":
+                    description = "This level, and what the campaign remembers across maps.";
+                    text = "The campaign this run belongs to. Timberborn has no objective system: a level is a map plus the chapter "
+                         + "line that runs on it, and only campaign.json survives a map change.\n\n"
+                         + _campaignSnapshot.ToString(Formatting.Indented)
+                         + "\n\nThe Ledger so far (the last entries written on any level):\n"
+                         + _ledgerSnapshot.ToString(Formatting.Indented);
+                    break;
+                default:
+                    throw new ArgumentException("unknown prompt: " + name);
+            }
+            return new JObject
+            {
+                ["description"] = description,
+                ["messages"] = new JArray
+                {
+                    new JObject
+                    {
+                        ["role"] = "user",
+                        ["content"] = new JObject { ["type"] = "text", ["text"] = text },
+                    },
+                },
+            };
+        }
+
+        private static string ManualText()
+        {
+            var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(WardensSettings.Path) ?? "", "docs", "WARDEN.md");
+            return System.IO.File.Exists(path)
+                ? System.IO.File.ReadAllText(path)
+                : "(WARDEN.md is not deployed; the repo copy is wardens/WARDEN.md)";
         }
 
         // ---- schema helpers -----------------------------------------------------------------------
@@ -247,6 +420,40 @@ namespace Wardens
                         if (!_chapters.Force(id)) throw new ArgumentException("unknown chapter " + id);
                     }
                     return _chapters.State();
+                });
+
+            Add("campaign",
+                "The campaign across maps. Timberborn has no objective system, so a level is a map plus the chapter line that runs on it, " +
+                "and what survives a map change lives in campaign.json beside the mod. action=status returns the level table, which level this " +
+                "map is, whether it is complete and which map comes next; action=ledger returns the last `limit` Ledger entries written on any " +
+                "level; action=record appends one Ledger entry (`entry`, any JSON object: the daily poisoned/healed/green/archive/born line from " +
+                "WARDEN.md is what belongs here) and is the only memory you have that outlives this map; action=complete marks a level done and " +
+                "action=reset wipes the record (both dev/testing).",
+                Schema(new JObject
+                {
+                    ["action"] = Prop("string", "status | ledger | record | complete | reset", "status"),
+                    ["entry"] = new JObject { ["type"] = "object", ["description"] = "for record: the Ledger entry, e.g. {\"day\":12,\"poisoned\":214,\"healed\":0,\"green\":31,\"archive\":9,\"born\":0,\"seen\":\"...\"}" },
+                    ["limit"] = Prop("integer", "for ledger: how many entries", 20),
+                    ["level_id"] = Prop("string", "for complete: the level, e.g. 01; defaults to the current one"),
+                }),
+                a =>
+                {
+                    switch (Str(a, "action", "status"))
+                    {
+                        case "ledger":
+                            return new JObject { ["ledger"] = _campaign.Ledger(Int(a, "limit", 20)) };
+                        case "record":
+                            if (!(a["entry"] is JObject entry)) throw new ArgumentException("entry required (an object)");
+                            return new JObject { ["recorded"] = _campaign.Record_Ledger(entry), ["entries"] = _campaign.Record.Ledger.Count };
+                        case "complete":
+                            _campaign.MarkCompleted(Str(a, "level_id") ?? _campaign.Level?.Id
+                                ?? throw new ArgumentException("level_id required: this map is not a campaign level"));
+                            break;
+                        case "reset":
+                            _campaign.Reset();
+                            break;
+                    }
+                    return _campaign.State();
                 });
 
             Add("point",
@@ -457,6 +664,7 @@ namespace Wardens
                 },
                 ["tutorial"] = TutorialState(),
                 ["chapter"] = _chapters.Summary(),
+                ["campaign"] = _campaign.State(),
                 ["pointers"] = _pointer.Count,
                 ["camera"] = _director.State(),
                 ["cutscene_played"] = _cutscenes.HasPlayed(WardensCutscenes.ColdBootId),

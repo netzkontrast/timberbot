@@ -10,7 +10,7 @@ that Claude Code connects to directly.
    has the two copy steps).
 2. In Timberborn's Mod Manager enable **The Wardens** and **disable Timberbot API** (the same
    code is compiled into the Wardens; two copies fight over port 8085).
-3. New Game → faction **The Wardens**, tutorial toggle on → map **[Custom] Wardens Wasteland** (the
+3. New Game → faction **The Wardens**, tutorial toggle on → map **[Custom] Wardens 01 First Light** (the
    build installs it to `Documents/Timberborn/Maps`; any map works if it is missing). The Cold Boot
    cutscene plays (22 s, paused: letterbox, three captions, one orbit around the Core, Skip at the top
    right); the tutorial cards are bottom-right throughout and the game stays paused afterwards.
@@ -107,7 +107,7 @@ wakes it every 60 game ticks or when something happens, and tells it where to lo
   claims 0.7.10 on purpose). Expect the Core on a flat pad with a dry basin east of it that the badwater
   from the north edge fills during the first day; ruin columns to the north-west and south of the Core;
   a pond with pines and birches on the hill in the north-east. If the map does not appear in the list,
-  check `Documents/Timberborn/Maps/Wardens Wasteland.timber` exists; if it fails to load, the log names
+  check `Documents/Timberborn/Maps/Wardens 01 First Light.timber` exists; if it fails to load, the log names
   the singleton or template, and `python wardens/tools/gen_map.py --check "<file>"` rules out the
   static causes.
 - A Charging Post next to the Core, connected by a shaft, is what keeps the bots alive; build it first.

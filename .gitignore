@@ -17,7 +17,9 @@ skills/
 site/
 .test-baselines/
 docs/reachability-investigation.md
-.claude/
+.claude/*
+# ...but shared skills are part of the repo (.claude/skills/warden-play: the playing agent's plan).
+!.claude/skills/
 venv/
 venv-*/
 .venv/

@@ -40,9 +40,9 @@ EXCLUDED_SUFFIXES = {".cs", ".dll"}
 README = """The Wardens {version} for Timberborn
 
 1. Copy the Wardens folder into Documents/Timberborn/Mods/ (so that Documents/Timberborn/Mods/Wardens/manifest.json exists).
-2. Copy the contents of the Maps folder into Documents/Timberborn/Maps/ (the New Game screen then lists "[Custom] Wardens Wasteland").
+2. Copy the contents of the Maps folder into Documents/Timberborn/Maps/ (the New Game screen then lists "[Custom] Wardens 01 First Light").
 3. In the Mod Manager enable The Wardens and disable Timberbot API (the same code is compiled into the Wardens; two copies fight over port 8085).
-4. New Game -> The Wardens, tutorial on, map [Custom] Wardens Wasteland.
+4. New Game -> The Wardens, tutorial on, map [Custom] Wardens 01 First Light.
 
 An AI agent connects through the MCP server in the mod (http://127.0.0.1:8090/mcp); its playbook is Wardens/docs/WARDEN.md.
 Settings: Wardens/settings.json. Source and documentation: https://github.com/netzkontrast/timberbot/tree/main/wardens

@@ -1,6 +1,8 @@
 # The Wardens as a campaign: putting the player on the right map
 
-> **Status:** research (2026-09-05), no game install, nothing compiled. Every game API named below is
+> **Status:** research (2026-09-05); §1, §5.1, §5.2 and §5.5 **verified against the 1.1.2.4 decompile
+> on 2026-09-10**, and §6 steps 1 and 2 are built (`WardensMapInstaller.cs`, `WardensCampaign.cs`) but
+> not yet loaded in-game. The rest is unchanged research.
 > either already used in this repo, read from a mod's published source, or quoted from the game's own
 > log; the "not verified" list in §5 is what the next decompile session must confirm before code is
 > written. Built on it: the system design [`wardens-campaign-design.md`](wardens-campaign-design.md) and the
@@ -32,7 +34,10 @@ requests for one); "level" is our word, the game only knows maps, saves and fact
 | **A mod's own folder is not a documented map source.** The official mod directory layout has no `Maps/` entry, and the community guide tells mod.io map users to copy the file into `Documents/Timberborn/Maps` by hand. | [Mod directory structure, official wiki](https://github.com/mechanistry/timberborn-modding/wiki/Mod-directory-structure); [Steam guide](https://steamcommunity.com/sharedfiles/filedetails/?id=3262168856) ("Custom maps obtained outside of Steam Workshop, for example via Mod.io, can be added manually by copying the file to the Maps folder"). |
 | The map list can be refreshed at runtime: `MapRepository.NotifyMapRepositoryChanged()`; maps can be removed with `MapRepository.DeleteMap(MapFileReference)` (`Timberborn.MapRepositorySystem`). | [MapBrowser `WorkshopSubscriptionService.cs`](https://github.com/ihsoft/TimberbornMods/blob/main/MapBrowser/Core/WorkshopSubscriptionService.cs), [`MapBrowserDialog.cs`](https://github.com/ihsoft/TimberbornMods/blob/main/MapBrowser/CoreUI/MapBrowserDialog.cs) (v1.0.0, August 2026, so 1.1-era). |
 | The list the New Game screen shows is `MapItemProvider.GetCustomMaps()` → `MapItem { MapFileReference, DisplayName }` (`Timberborn.MapItemsUI`); thumbnails via `MapThumbnailCache.GetThumbnail(MapFileReference)` (`Timberborn.MapThumbnail`). | same files. |
-| `MapFileReference` has `Name` and `Path`, and a positional constructor with **eight** parameters, the name second: `new(default, mapName, null, null, false, false, false, null)`. Built-in ("resource") maps have an empty path. | [EditSaveDifficulty `EditDifficultyDialog.U7.cs`](https://github.com/datvm/TimberbornMods/blob/master/EditSaveDifficulty/UI/EditDifficultyDialog.U7.cs); Player.log line below. |
+| **Corrected 2026-09-10 by the decompile.** `MapFileReference` is a `readonly struct` with **four** properties — `Name`, `Path`, `Resource`, `UserFolder` — a *private* constructor, and three static factories: `FromResource(name)`, `FromUserFolder(name)`, `FromDisk(path)`. The "eight positional parameters" recorded here earlier came from another mod and is not the 1.1 shape; never construct it positionally. | `ilspycmd Timberborn.MapRepositorySystem.dll` (1.1.2.4). |
+| `MapRepository.UserMapsDirectory => Path.Combine(UserDataFolder.Folder, "Maps")`; `GetUserMapNames()` enumerates `*.timber` in exactly that directory and nothing else; `NotifyMapRepositoryChanged()` takes no arguments and posts `MapRepositoryChangedEvent`; `MapRepositorySystemConfigurator` binds `MapRepository` in the **MainMenu, Game and MapEditor** contexts. | same decompile. |
+| `MapItemProvider.GetCustomMaps()` is `GetUserMaps().Concat(<every ICustomMapItemFactory>.Create())`, so `Timberborn.MapItemsUI.ICustomMapItemFactory` is a **supported extension point for listing maps from anywhere**, a mod's own folder included, via `MapFileReference.FromDisk(path)`. `MapItem` takes (reference, displayName, displayDescription, size, isRecommended, isUnconventional, isDeletable, isDev, mapIcon). | `ilspycmd Timberborn.MapItemsUI.dll` (1.1.2.4). |
+| `MapNameService` is in `Timberborn.GameWonderCompletion`, bound in the **Game** context, and its `Name` is the **map file's name** (from `MapFileReference.Name`), persisted with the save and falling back to `GameSceneParameters.NewGameConfiguration.MapFileReference` on a new game. `HasMapName` says whether it is set. | `ilspycmd Timberborn.GameWonderCompletion.dll` (1.1.2.4). |
 | The game logs the new-game configuration as `Starting new game at <utc>: FactionId: Folktails, MapFileReference: Name: Lakes, Path: , Resource: True, NewGameMode: StartingAdults: 8, ...` — so the configuration record carries **FactionId, MapFileReference, NewGameMode**. | [Steam bug thread with a Player.log](https://steamcommunity.com/app/1062090/discussions/2/603021231210417409/); [`playtest-and-video-capture.md`](playtest-and-video-capture.md) §1.1 named `NewGameConfiguration → GameSceneParameters → scene load` from the 1.1.2.4 decompile. |
 | `NewGameMode` (1.0+, replaces `GameModeSpec`) is a positional record: StartingAdults, AdultAgeProgress, StartingChildren, ChildAgeProgress, FoodConsumption, WaterConsumption, StartingFood, StartingWater, TemperateWeatherDuration (min/max), DroughtDuration, DroughtDurationHandicapMultiplier, DroughtDurationHandicapCycles, CyclesBeforeRandomizingBadtide, ChanceForBadtide, BadtideDuration, BadtideDurationHandicapMultiplier, BadtideDurationHandicapCycles, InjuryChance, DemolishableRecoveryRate. | [EditSaveDifficulty `NewGameParameterService.U7.cs`](https://github.com/datvm/TimberbornMods/blob/master/EditSaveDifficulty/Services/NewGameParameterService.U7.cs). |
 | The vanilla new-game mode panel can be driven from code: `NewGameModePanel(VisualElementLoader, <GameSceneLoader>, PanelStack, ILoc, CustomNewGameModeController)`, `Load()`, `SelectFactionAndMap(FactionSpec, MapFileReference)`, `_predefinedNewGameMode`, `OnCustomizeButtonClicked()`, `GetPanel()`; `CustomNewGameModeController.TryGetValidatedNewGameMode(out NewGameMode)`. EditSaveDifficulty binds `CustomNewGameModeController` in `[Context("Game")]` itself, i.e. **a main-menu class can be instantiated inside a running game** when its dependencies resolve. | same mod, `EditDifficultyDialog.U7.cs` + `MConfigs.cs`; the mod's [Steam page](https://steamcommunity.com/sharedfiles/filedetails/?id=3476629381) names `Timberborn.GameSceneLoading.GameSceneLoader` next to that constructor. |
@@ -140,10 +145,15 @@ cross-check to every level (templates padlocked, tutorials exist, loc rows prese
 In order of how much depends on the answer (decompile setup: [`faction-wardens.md`](faction-wardens.md) §5,
 [`../docs/devenv.md`](../docs/devenv.md)):
 
-1. `Timberborn.MapRepositorySystem.MapRepository`: which directories it enumerates (`UserDataFolder/Maps`,
-   Workshop content, mod folders?), the method that lists maps, the exact `NotifyMapRepositoryChanged`
-   signature. This settles A and the open question in `wardens-wasteland.md` for good.
-2. `MapFileReference`: all eight fields, and whether `Path` for a `Documents/Maps` map is absolute.
+1. ~~`MapRepository`: which directories it enumerates, the method that lists maps, the exact
+   `NotifyMapRepositoryChanged` signature.~~ **Answered 2026-09-10** (§1): only `UserDataFolder.Folder/Maps`,
+   `GetUserMapNames()`, and a no-argument `NotifyMapRepositoryChanged()`. Method A is built
+   (`wardens/src/WardensMapInstaller.cs`). The open question in `wardens-wasteland.md` is settled: the game
+   does **not** list a `.timber` shipped inside a mod folder, but `ICustomMapItemFactory` is the supported
+   way to make it do so without copying anything.
+2. ~~`MapFileReference`: all eight fields.~~ **Answered 2026-09-10**: four properties, a private constructor
+   and three static factories (§1). A user-folder map carries an empty `Path` and `UserFolder = true`;
+   `CustomMapNameToFileName` resolves it to `UserMapsDirectory/<name>.timber`.
 3. `Timberborn.NewGameConfigurationSystem.NewGameConfiguration` constructor;
    `Timberborn.GameSceneLoading.GameSceneLoader`'s start-new-game method; and which configurator binds
    `GameSceneLoader` (MainMenu only, or Game too). EditSaveDifficulty passes `null` for that parameter of
@@ -151,19 +161,24 @@ In order of how much depends on the answer (decompile setup: [`faction-wardens.m
    through a save-and-return-to-menu (`autoload.json`-style handoff) rather than a direct scene switch.
 4. `NewGameModePanel`'s second constructor parameter type; `CustomNewGameModeController`'s
    dependencies; where the per-faction default `NewGameMode` comes from (a spec in the blueprints?).
-5. `MapNameService`: namespace, and whether `Name` is the file name or the localized display name.
+5. ~~`MapNameService`: namespace, and whether `Name` is the file name or the localized display name.~~
+   **Answered 2026-09-10**: `Timberborn.GameWonderCompletion`, Game context, the file name (§1). The
+   level table in `WardensCampaign.cs` is keyed on it.
 6. `ValidatingGameLoader` in the Game context (for B).
 7. `UserDataFolder.Folder` under Proton, against `TimberbotPaths`.
 
 ## 6. Work plan (in order, each step testable in-game)
 
-1. **Runtime map installer** (A): MainMenu-context singleton, copy + `NotifyMapRepositoryChanged`, log
-   what it installed. ~40 lines, verified APIs only. Playtest: subscribe-style install (mod folder only,
-   empty `Maps`), the level maps appear under *Custom maps*.
-2. **`WardensCampaign` service + `campaign.json`**: level table (§4), level detection, completion
-   detection, toast + Uplink line, MCP `campaign` tool (`status`, `next`, `reset`). No transition yet;
-   the player starts the next level by hand from the New Game screen.
-3. **Transition** (C after §5.3 is answered, else B): the dialog, the handoff file if needed.
+1. ~~**Runtime map installer** (A)~~ — **built 2026-09-10**: `wardens/src/WardensMapInstaller.cs`, MainMenu
+   context, copy-if-missing-or-older plus `NotifyMapRepositoryChanged()`, an `installMaps` switch in
+   `settings.json`, and a `RetiredMapNames` list so a renamed level does not leave its old copy behind in the
+   player's Maps folder. **Not yet loaded in-game.** Playtest: subscribe-style install (mod folder only, empty
+   `Maps`), the level maps appear under *Custom maps*.
+2. ~~**`WardensCampaign` service + `campaign.json`**~~ — **built 2026-09-10**: `wardens/src/WardensCampaign.cs`.
+   Level table keyed by map name, level detection through `MapNameService`, completion detection by polling
+   `TutorialService._finishedTutorials` for the level's ending tutorial, toast + Uplink line, and the MCP
+   `campaign` tool (`status`, `ledger`, `record`, `complete`, `reset`). No transition: the player starts the
+   next level by hand from the New Game screen. **Not yet loaded in-game.**
 4. **Main-menu *Continue campaign*** button after `LoadMapButton` (MapBrowser precedent) that starts the
    level named in `campaign.json`.
 5. **Second map**: `gen_map.py --level 02` (The Pods: clean water within reach, contaminated core), the

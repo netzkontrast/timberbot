@@ -50,6 +50,17 @@ def read_chapters(path: Path = CHAPTERS_CS) -> list[tuple[str, str, list[str]]]:
     return [(cid, tutorial, re.findall(r'"([^"]+)"', names)) for cid, tutorial, names in entries]
 
 
+def read_levels(path: Path) -> list[tuple[str, str, str, str, str, bool]]:
+    """(id, map name, title, ending tutorial, next, shipped) per `new WardensLevel(...)` in the C# table."""
+    text = path.read_text(encoding="utf-8")
+    text = re.sub(r"//[^\n]*", "", text)   # strip line comments; the table itself has none inside
+    entries = re.findall(
+        r'new WardensLevel\(\s*"([^"]*)"\s*,\s*"([^"]*)"\s*,\s*"([^"]*)"\s*,\s*"([^"]*)"\s*,'
+        r'\s*(?:"([^"]*)"|null)\s*,\s*(true|false)\s*\)', text)
+    return [(lid, name, title, ends, nxt or "", shipped == "true")
+            for lid, name, title, ends, nxt, shipped in entries]
+
+
 def read_loc_texts(mod: Path) -> dict[str, str]:
     """Loc key -> text from the mod's Localizations/enUS*.csv (the vanilla table is validate.py's job)."""
     texts: dict[str, str] = {}
