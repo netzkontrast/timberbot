@@ -111,6 +111,7 @@ class Terrain:
     TIMESTAMP = "2026-09-03 18:00:00"  # fixed so re-runs are byte-identical
     STAMP = (2026, 9, 3, 18, 0, 0)     # zip entry mtime, same reason
     REQUIRE_BADWATER = True            # false only where the land is healed (level 10)
+    SHIPPED = True                     # false: never written into src/Maps (validate.py rejects an unclaimed .timber)
 
     def __init__(self, size: int | None = None, seed: int | None = None):
         self.size = self.SIZE if size is None else size
@@ -543,10 +544,74 @@ class FirstLight(Terrain):
         return bad
 
 
+class Home(FirstLight):
+    """Level 10. Level 01's basin from the same seed, healed: the contamination zero, the badwater
+    sources replaced by clean ones so the river runs clear, the plateau under trees.
+    design/wardens-campaign-map-set.md §2 (10), design/wardens-campaign-story.md §12. Not shipped
+    until its level has an ending (validate.py refuses a shipped level without one); write it with
+    --out, outside src/Maps.
+    """
+
+    LEVEL = "10"
+    MAP_NAME = "Wardens 10 Home"
+    DESCRIPTION = ("The Wardens' basin, three thousand days on: the river runs clear and the ash is "
+                   "under birches. Campaign level 10: Home.")
+    REQUIRE_BADWATER = False
+    SHIPPED = False
+    TREE_TARGET = 20            # times level 01's plant count (the map-set contract says >= 20x)
+
+    def contamination(self) -> np.ndarray:
+        return np.zeros((self.size, self.size))
+
+    def build_entities(self) -> None:
+        super().build_entities()        # the same rng stream: terrain, ruins and the grove are level 01's
+        for e in self.entities:
+            if e["Template"] == "BadwaterSource":
+                e["Template"] = "WaterSource"
+        self.sources = []
+        h = self.height
+        s = self.size
+        taken = set(self.trees) | {(x, y) for x, y, _ in self.ruins}
+        want = self.TREE_TARGET * len(self.trees)
+        order = [(x, y) for y in range(2, s - 2) for x in range(2, s - 2)]
+        self.rng.shuffle(order)
+        for x, y in order:
+            if len(self.trees) >= want:
+                break
+            if (x, y) in taken or not self.free(x, y, margin=0) or h[y, x] < 5:
+                continue
+            if any(abs(x - rx) <= 1 and abs(y - ry) <= 1 for rx, ry, _ in self.ruins):
+                continue
+            taken.add((x, y))
+            self.trees.append((x, y))
+            kind = self.rng.random()
+            template = "Birch" if kind < 0.5 else "Pine" if kind < 0.85 else "BlueberryBush"
+            self.entities.append({"Id": self.ident(template, x, y), "Template": template,
+                                  "Components": {"BlockObject": {"Coordinates": {"X": x, "Y": y, "Z": self.z_at(x, y)}},
+                                                 "Growable": {"GrowthProgress": 1.0}}})
+
+    def contract(self, world: dict, grid: np.ndarray) -> list[str]:
+        """Home is level 01's land, healed: same heightfield, no poison, no badwater, trees everywhere."""
+        bad = []
+        reference = FirstLight(size=self.size).build()
+        if not np.array_equal(surface(grid), reference.height):
+            bad.append("heightfield differs from level 01 (Home is level 01's land, healed)")
+        cont = floats_of(world, "SoilContaminationSimulator", "ContaminationLevels")
+        if cont.any():
+            bad.append("contamination is not zero everywhere")
+        if templates(world, "BadwaterSource"):
+            bad.append("a BadwaterSource on healed land")
+        plants = len(templates(world, "Pine")) + len(templates(world, "Birch")) + len(templates(world, "BlueberryBush"))
+        if plants < self.TREE_TARGET * len(reference.trees):
+            bad.append(f"{plants} plants, expected >= {self.TREE_TARGET * len(reference.trees)} ({self.TREE_TARGET}x level 01)")
+        return bad
+
+
 # --- the registry --------------------------------------------------------------------------------
 
 LEVELS: dict[str, type[Terrain]] = {
     FirstLight.LEVEL: FirstLight,
+    Home.LEVEL: Home,
 }
 DEFAULT_LEVEL = FirstLight.LEVEL
 
@@ -687,6 +752,8 @@ def check(path: Path, level: type[Terrain] | None = None) -> list[str]:
 
 def generate(cls: type[Terrain], out: Path | None, preview: Path | None,
              size: int | None, seed: int | None) -> int:
+    if not cls.SHIPPED and out is None:
+        raise SystemExit(f"level {cls.LEVEL} ({cls.MAP_NAME}) is not shipped: pass --out to write it outside src/Maps")
     w = cls(size=size, seed=seed).build()
     target = out or (SRC / "Maps" / f"{cls.MAP_NAME}.timber")
     write_timber(w, target, preview)
@@ -712,7 +779,7 @@ def main() -> int:
     if args.list:
         for key in sorted(LEVELS):
             cls = LEVELS[key]
-            print(f"{key}  {cls.MAP_NAME:<28} {cls.SIZE}x{cls.SIZE}  seed {cls.SEED}")
+            print(f"{key}  {cls.MAP_NAME:<28} {cls.SIZE}x{cls.SIZE}  seed {cls.SEED}" + ("" if cls.SHIPPED else "  (not shipped)"))
         return 0
     if args.check:
         cls = level_class(args.level) if args.level != DEFAULT_LEVEL else None
@@ -722,6 +789,9 @@ def main() -> int:
     if args.all:
         rc = 0
         for key in sorted(LEVELS):
+            if not LEVELS[key].SHIPPED:
+                print(f"skipping level {key} ({LEVELS[key].MAP_NAME}): not shipped; pass --level {key} --out to write it")
+                continue
             rc |= generate(LEVELS[key], None, None, None, None)
         return rc
     return generate(level_class(args.level), args.out, args.preview, args.size, args.seed)

@@ -274,8 +274,12 @@ Each step is testable before the next begins.
    2026-09-10.** `world.json`, `version.txt` and the thumbnail are byte-identical to the pre-refactor file;
    only `map_metadata.json` changed, and only because the description now names the level. Level 01's contract
    (§2) is implemented as `FirstLight.contract` and runs on every `--check`.
-3. **Level 10 (`Home`)** next, not level 02. It is the regeneration pass over level 01: no new primitives, and
-   it proves the registry, per-level contracts and the per-level `BadwaterSource` rule for the cost of a flag.
+3. ~~**Level 10 (`Home`)** next, not level 02. It is the regeneration pass over level 01: no new primitives, and
+   it proves the registry, per-level contracts and the per-level `BadwaterSource` rule for the cost of a flag.~~
+   **Done 2026-09-10** (iteration 04, WP8): `Home(FirstLight)` in `gen_map.py`, the same seed and heightfield,
+   contamination zero, the three badwater sources turned into clean ones so the river runs clear, 3,020 plants
+   (20× level 01's 151); `--check` runs its contract. Unshipped (`SHIPPED = False`, written only with `--out`)
+   until its level has an ending, so the table row keeps `shipped: false`. Not loaded in-game.
 4. **Answer the water question** (§5). Timeboxed. Everything after this depends on the answer.
 5. **Level 02 (`The Sump`)** — gorge + confluence, the first genuinely new terrain, and the first map whose
    contract is a real constraint.
