@@ -17,6 +17,7 @@ Beyond this file:
 - [`docs/architecture.md`](docs/architecture.md) — thread model, server split, write-job queue
 - [`docs/spec/mcp-endpoint.md`](docs/spec/mcp-endpoint.md) + [`docs/adr/ADR-001-mcp-host.md`](docs/adr/ADR-001-mcp-host.md) — the in-mod MCP endpoint (`POST /mcp`); protocol core in `TimberbotMcp.cs`
 - [`docs/plan/roadmap-v2-mod-first.md`](docs/plan/roadmap-v2-mod-first.md) — current phase plan; `docs/audit/` — Phase 0 audit and contradiction log
+- [`docs/plan/HANDOVER.md`](docs/plan/HANDOVER.md) — **read this first when continuing the Wardens work**: what the last session did and verified, where the mod stands with sources, and the order of the current iteration's packages; the packages themselves are [`docs/plan/iteration-04-first-light-verified.md`](docs/plan/iteration-04-first-light-verified.md)
 - [`docs/devenv.md`](docs/devenv.md) — toolchain (.NET, Python, `ilspycmd`)
 
 When touching `wardens/`:
@@ -274,6 +275,8 @@ The mod currently does **not** support:
 See `design/automation-plan.md` for the full implementation plan with decompiled API surface from `Timberborn.Automation.dll` and `Timberborn.AutomationBuildings.dll`.
 
 ### The Wardens: state on 2026-09-06 (v0.3.0)
+
+**Update 2026-09-10 (v0.3.6).** The campaign batch (level 01 renamed and pinned, the map installer, the campaign service and `campaign.json`, the `campaign` tool, live-state `initialize` instructions, the prompts, the `warden-play` skill) is built, and its load path was seen in the game: the mod loads, the installer runs at the main menu, `initialize` and `prompts/*` answer, `campaign` reports "not a campaign level" on a vanilla map. A new game on `Wardens 01 First Light` has still never been started, no cutscene has played, and the one MCP playtest (`wardens/playtest/PLAYTEST.md`, "Playtest findings") ended in a flooded-Core softlock and a dropped connection on an unidentified map. The next iteration is the proof run of level 01 plus the two MCP server fixes that playtest's findings trace to: [`docs/plan/iteration-04-first-light-verified.md`](docs/plan/iteration-04-first-light-verified.md), with the session-to-session record in [`docs/plan/HANDOVER.md`](docs/plan/HANDOVER.md). This section is rewritten from evidence when that iteration closes. The list below is the 0.3.0 state and still holds where it says "not yet verified".
 
 Built and deployed once (the v0.2 batch: faction, tutorial line, in-game MCP, art) but **not yet verified in-game**; everything after that is **not yet compiled anywhere**, because the development environment had no game install. v0.3.0 adds the release path: a local Release build plus `python wardens/tools/package.py` produces the ZIP, and the Mod Manager shows `thumbnail.png`. In order of what the next local build and a twenty-minute smoke run should answer:
 

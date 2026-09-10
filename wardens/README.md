@@ -9,7 +9,9 @@ full arc [`../design/wardens-campaign-arc.md`](../design/wardens-campaign-arc.md
 the story's text [`../design/wardens-campaign-story.md`](../design/wardens-campaign-story.md),
 the cutscenes [`../design/wardens-cutscenes.md`](../design/wardens-cutscenes.md).
 Playtesting with an agent: [`playtest/PLAYTEST.md`](playtest/PLAYTEST.md). Where things stand and what is
-still unverified: `../AGENTS.md`, "The Wardens: state". Version history: [`CHANGELOG.md`](CHANGELOG.md).
+still unverified: `../AGENTS.md`, "The Wardens: state". What the last session did and what the next one
+should do, in order: [`../docs/plan/HANDOVER.md`](../docs/plan/HANDOVER.md) and the iteration plan it points to.
+Version history: [`CHANGELOG.md`](CHANGELOG.md).
 
 The mod is one DLL plus data, and it does four jobs:
 

@@ -44,6 +44,13 @@ MCP server answers `initialize` with the live-state instructions, `prompts/list`
 work, and the `campaign` tool correctly reports "not a campaign level" on a vanilla map. **Not yet
 verified: a new game on `Wardens 01 First Light`** — level detection, completion and the toast.
 
+- **Iteration 04 is planned, not built** (2026-09-10, evening; `docs/plan/HANDOVER.md` and
+  `docs/plan/iteration-04-first-light-verified.md`): the proof run of level 01 on its own map, the two
+  MCP server fixes the playtest findings trace to by reading (the `timberbot` passthrough drops the last
+  query parameter when the query is carried in `path`; the MCP listener handles one request at a time, so
+  a `frame` long-poll blocks every other call), a `ledger` tool for the daily line, one answer to the
+  level-02 numbering, and level 10 *Home* as a generator flag. Nothing in it changes this version.
+
 ## 0.3.0 (2026-09-06): cutscenes, a release path
 
 - **Cutscenes as data** (`design/wardens-cutscenes.md`). A scene is `Cutscenes/<Id>.json`: shots with a
