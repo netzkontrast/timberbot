@@ -118,6 +118,7 @@ timberbot/
 ├── agents/
 │   └── beaver-developer.md      # Dev-agent prompt for working on this codebase
 ├── .claude/skills/
+│   ├── timberborn-mapsmith/     # Authoring .timber maps from a spec (tools/mapsmith)
 │   └── warden-play/SKILL.md     # Precompiled plan for the agent that PLAYS a level (not for dev work)
 ├── .mcp.json                    # Claude Code → the Wardens' in-game MCP server (127.0.0.1:8090/mcp)
 ├── wardens/                     # The Wardens faction mod (see wardens/README.md for the full file map)
