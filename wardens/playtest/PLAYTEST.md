@@ -39,6 +39,8 @@ or call the MCP tool `timberbot_ready`.
 | `wardens_status` | main | faction, speed, bots/beavers + avg Energy, tutorial + chapter state, pointers, camera, ready gate |
 | `tutorial` | main | `status`, or `next` to force the next stage of a tutorial id |
 | `chapter` | main | `status`: every story chapter with its gating tutorial and per-building lock state; `unlock` forces `chapter_id` open |
+| `campaign` | main | `status` (the level table, this map's level, completion, the next map), `ledger` / `record` (the cross-level memory in `campaign.json`), `complete` / `reset` (testing) |
+| `ledger` | main | the Ledger in one call: poisoned, healed, green, archive, born, bots charged, up to five newly poisoned tiles, deltas since the previous call, and the formatted `line`; `action=record seen=...` also writes the entry to `campaign.json` |
 | `frame` | listener | long-poll for the next sensor frame: every `every_ticks` game ticks or on an event (chat, day, building, chapter, birth, alert, selection); carries `attention` (where to look) |
 | `manual` | listener | the Warden's playbook, `docs/WARDEN.md` from the mod folder |
 | `point` / `unpoint` | main | highlight + bobbing arrow + toast on a tile, optional camera pan |

@@ -75,27 +75,35 @@ Each phase: **enter** when the condition holds, do the acts in order, **leave** 
 
 On level completion the mod toasts and says which map is next. There is no in-game transition:
 the human starts the next level from the New Game screen. Before that happens, write the closing
-Ledger entry with `campaign action=record` — it is the only thing that survives the map change.
+Ledger entry with `ledger action=record` — it is the only thing that survives the map change.
 
 ## 3. The daily routine
 
-Once per in-game day, and after any act that changes the numbers:
+Once per in-game day, and after any act that changes the numbers, one call:
+
+```
+ledger action=record seen="<one line the camera could not have shown>"
+```
+
+It computes the entry, writes it to the campaign record, and returns `line`, formatted exactly as
+`WARDEN.md` prescribes:
 
 ```
 D12  poisoned 214 (+8)  healed 0  green 31 (-3)  archive 9 (+3)  born 0  bots 5/5 charged
 ```
 
-| Field | Source |
+| Field | Meaning |
 |---|---|
-| `poisoned` | tiles with `contamination > 0` — `timberbot GET /api/tiles` over the settlement's bounding box |
-| `healed` | tiles poisoned in an earlier entry and clean now (keep yesterday's set) |
-| `green` | `moisture > 0 && contamination == 0` |
-| `archive` | `DataCore` in `/api/resources` |
-| `born` | beavers in `/api/population` (bots counted separately) |
+| `poisoned` | tiles whose soil is contaminated |
+| `healed` | tiles poisoned at the previous call and clean now |
+| `green` | moist and not poisoned |
+| `archive` | Data Cores in stock |
+| `born` | beavers alive (bots counted separately, with how many are charged) |
 
-Then `campaign action=record entry={...}` with the same numbers plus a `seen` line. **`seen` is the
-one that matters**: an observation the human could not have made from the camera alone. It is the
-Data you exist to collect, and it is what the next level reads back.
+`ledger` alone (`action=compute`) returns the same numbers without recording them, plus
+`poisoned_new`: up to five tiles poisoned since the previous call, positions `point` accepts. **`seen`
+is the one that matters**: an observation the human could not have made from the camera alone. It is
+the Data you exist to collect, and it is what the next level reads back.
 
 Act I drives `poisoned` up. Say so on the day it happens; never bury it in a summary.
 

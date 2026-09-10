@@ -87,6 +87,7 @@ namespace Wardens
         private readonly WardensChapterService _chapters;
         private readonly WardensFrames _frames;
         private readonly WardensCampaignService _campaign;
+        private readonly WardensLedger _ledger;
         // The last frame seq handed out. The `frame` tool is OffThread and WardensMcpServer runs each
         // request on a pool thread, so this is read and advanced with Interlocked, never assigned.
         private long _lastFrameSeq;
@@ -111,7 +112,7 @@ namespace Wardens
             WardensPointer pointer, WardensChat chat, WardensCameraDirector director, WardensCutscenes cutscenes,
             EntitySelectionService selection, QuickNotificationService quickNotifications, TimberbotService timberbot,
             WardensAssetDump assetDump, WardensChapterService chapters, WardensFrames frames,
-            WardensCampaignService campaign)
+            WardensCampaignService campaign, WardensLedger ledger)
         {
             _factionService = factionService;
             _speedManager = speedManager;
@@ -129,6 +130,7 @@ namespace Wardens
             _chapters = chapters;
             _frames = frames;
             _campaign = campaign;
+            _ledger = ledger;
         }
 
         public void Initialize(WardensSettings settings, WardensMcpServer server)
@@ -211,7 +213,8 @@ namespace Wardens
               .Append("`say` is the voice, `point` the finger (highlight, arrow and optional toast on one tile), `camera` the eye, ")
               .Append("`timberbot` the hands: it forwards to the Timberbot HTTP API compiled into this same mod (GET reads, POST acts), ")
               .Append("and `timberbot_routes` lists what it will take. `campaign`, `chapter` and `tutorial` are the memory of the plan; ")
-              .Append("`campaign action=record` is the only memory that outlives this map. `selection` is the human pointing at something.\n\n");
+              .Append("`ledger` is the conscience: one call for the daily line, and `ledger action=record` writes it to campaign.json with ")
+              .Append("your `seen`, the only memory that outlives this map. `selection` is the human pointing at something.\n\n");
 
             sb.Append("RULES THAT DO NOT BEND\n")
               .Append("- Mutations are sequential. Never overlap POST calls through `timberbot`.\n")
@@ -462,6 +465,31 @@ namespace Wardens
                             break;
                     }
                     return _campaign.State();
+                });
+
+            Add("ledger",
+                "The Ledger in one call (WARDEN.md, \"The Ledger\"): poisoned (tiles whose soil is contaminated), healed (poisoned at " +
+                "the previous call and clean now), green (moist and clean), archive (Data Cores in stock), born (beavers), bots and how " +
+                "many are charged, up to five newly poisoned tiles (positions point accepts), deltas since the previous call, and `line`, " +
+                "the formatted entry. action=compute returns it; action=record also appends it to campaign.json (the same record as " +
+                "campaign action=record) with your `seen` line: the daily routine in one call. Session memory: after a reload the first " +
+                "call has no deltas.",
+                Schema(new JObject
+                {
+                    ["action"] = Prop("string", "compute | record", "compute"),
+                    ["seen"] = Prop("string", "for record: the day's observation, one line, the thing the camera could not have shown"),
+                }),
+                a =>
+                {
+                    var entry = _ledger.Compute();
+                    if (Str(a, "action", "compute") == "record")
+                    {
+                        var stored = (JObject)entry.DeepClone();
+                        stored.Remove("poisoned_new");
+                        stored["seen"] = Str(a, "seen", "");
+                        entry["recorded"] = _campaign.Record_Ledger(stored);
+                    }
+                    return entry;
                 });
 
             Add("point",

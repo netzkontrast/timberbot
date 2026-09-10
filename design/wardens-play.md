@@ -130,9 +130,12 @@ and a chapter that has a scene of its own needs no flight from the Warden.
 
 In the order they unblock the stance:
 
-1. **A `ledger` tool** in C# (soil contamination counts, green tiles, Data stock, population) so the
-   daily entry costs one call instead of a tile scan through the passthrough. Until then `WARDEN.md`
-   computes it from `/api/tiles`.
+1. ~~**A `ledger` tool** in C# (soil contamination counts, green tiles, Data stock, population) so the
+   daily entry costs one call instead of a tile scan through the passthrough.~~ **Built 2026-09-10**
+   (iteration 04, WP5): `wardens/src/WardensLedger.cs` counts poisoned, healed, green, archive, born
+   and charged bots on the main thread from the same services `/api/tiles` reads, keeps the previous
+   call's poisoned set, and formats the line; the MCP `ledger` tool returns it, and `action=record`
+   writes it to `campaign.json` with the `seen` line. Not yet seen in the game.
 2. **Frames on the Timberbot WebSocket too**, so `tbot watch` can drive an out-of-process agent from
    the same heartbeat the MCP `frame` tool gives an in-process one.
 3. **The Archive in the save.** Today the Uplink history is in memory; an `ISaveableSingleton` that

@@ -41,6 +41,8 @@ namespace Wardens
             Bind<WardensCutscenes>().AsSingleton();
             // The Warden's heartbeat: sensor frames per N game ticks for the MCP `frame` tool.
             Bind<WardensFrames>().AsSingleton();
+            // The Ledger in one call (WARDEN.md, "The Ledger"), behind the MCP `ledger` tool.
+            Bind<WardensLedger>().AsSingleton();
             Bind<WardensAssetDump>().AsSingleton();
             Bind<WardensMcpTools>().AsSingleton();
             Bind<WardensMcpServer>().AsSingleton();

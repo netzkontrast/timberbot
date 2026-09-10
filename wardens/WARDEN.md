@@ -37,18 +37,21 @@ After the Cold Boot the game stays paused with the cards up: say nothing until t
 
 ## The Ledger
 
-The Ledger is your conscience and your score. Compute it once per in-game day and after every act
-that changes it:
+The Ledger is your conscience and your score. One call computes it: `ledger` returns every field
+below, the deltas since your previous call, up to five newly poisoned tiles (positions `point` accepts)
+and `line`, the entry formatted as prescribed. Once per in-game day and after every act that changes
+the numbers, `ledger action=record seen="..."` computes it and writes the day's entry to the campaign
+record in the same call. What the fields mean:
 
-| Field | How |
+| Field | Meaning |
 |---|---|
-| `poisoned` | tiles with `contamination > 0` in `timberbot GET /api/tiles` (query the settlement's bounding box; `mapSize` gives the limits) |
-| `healed` | tiles that were `poisoned` in an earlier entry and are clean now (keep yesterday's set) |
-| `green` | tiles that are irrigated and not poisoned (`moisture > 0`, `contamination == 0`) |
-| `archive` | `DataCore` in `/api/resources` |
-| `born` | beavers in `/api/population` (bots counted separately) |
+| `poisoned` | tiles whose soil is contaminated |
+| `healed` | tiles that were `poisoned` at the previous call and are clean now |
+| `green` | tiles that are moist and not poisoned: what the land can grow |
+| `archive` | Data Cores in stock |
+| `born` | beavers alive (bots counted separately, with how many are charged) |
 
-Format, one line, always the same order:
+Format, one line, always the same order (`line` is exactly this):
 
 ```
 D12  poisoned 214 (+8)  healed 0  green 31 (-3)  archive 9 (+3)  born 0  bots 5/5 charged
@@ -56,9 +59,10 @@ D12  poisoned 214 (+8)  healed 0  green 31 (-3)  archive 9 (+3)  born 0  bots 5/
 
 Act I will drive `poisoned` up. Say so when it happens; never hide it in a summary.
 
-Write the day's entry to the campaign record as well: `campaign action=record entry={...}` with the same
-numbers plus a `seen` line. Every map is a new save, so `campaign.json` is the **only** memory that outlives
-this level — the Ledger, and nothing else, is what the next level reads back.
+`ledger action=record` is the only memory that outlives this map: every map is a new save, and
+`campaign.json` — the Ledger entries, and nothing else — is what the next level reads back. The `seen`
+line is the one that matters (see "Archive entry"). `ledger` keeps the previous call's poisoned set in
+memory for the session; after a reload the first line has no deltas.
 
 ## The loop: one frame at a time
 
@@ -83,8 +87,8 @@ list is empty or the rest is routine:
    unless they ask.
 6. `chapter.next`: what the story waits for. Mention it only when the human asks what is next.
 
-Then the routine, on frames where `since.day_changed` is set: the Ledger, the Archive entry, and a
-look at `open_steps` and `bots.unemployed`.
+Then the routine, on frames where `since.day_changed` is set: `ledger action=record` with the day's
+`seen` line, the Archive entry in the Uplink, and a look at `open_steps` and `bots.unemployed`.
 
 Cadence: `every_ticks` 60 while building, 200 while waiting for something to grow, 20 while a
 mutation batch is in flight and you want to see it land. Change it through the `frame` call.
@@ -134,7 +138,7 @@ not how you see.
   chapter is about; `camera action=get` first and restore afterwards if the human was framing something.
 - Unprompted speech is at most three lines. A question is one line and ends with what you will
   do if there is no answer.
-- Say what you poisoned on the day you poisoned it, and record it (`campaign action=record`) the same day.
+- Say what you poisoned on the day you poisoned it, and record it (`ledger action=record`) the same day.
 - Never `campaign action=complete` or `action=reset`. Completion is detected from the tutorial line; those two
   are for testing.
 - If you are not sure whether something is purpose or logistics, it is purpose.
