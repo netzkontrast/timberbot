@@ -1,7 +1,9 @@
 # Iteration 04: First Light, verified
 
 > **For agentic workers:** work this plan package by package (superpowers:subagent-driven-development
-> or superpowers:executing-plans; steps use `- [ ]` checkboxes). Packages marked **[game]** need a
+> or superpowers:executing-plans; steps use `- [ ]` checkboxes) and report each package's state in the
+> words of the `driving-iterations` skill (`.claude/skills/driving-iterations/SKILL.md`: `written`,
+> `checked`, `built`, `tested`, `verified`, `blocked`, with the evidence line beside it). Packages marked **[game]** need a
 > machine with Timberborn installed and cannot be done from a cloud container: do the **[cloud]**
 > packages there, push each as its own pull request, and leave the game-side steps to the human with
 > the evidence they need, through `docs/plan/HANDOVER.md`. Read that file before this one: it says

@@ -17,7 +17,7 @@ Beyond this file:
 - [`docs/architecture.md`](docs/architecture.md) — thread model, server split, write-job queue
 - [`docs/spec/mcp-endpoint.md`](docs/spec/mcp-endpoint.md) + [`docs/adr/ADR-001-mcp-host.md`](docs/adr/ADR-001-mcp-host.md) — the in-mod MCP endpoint (`POST /mcp`); protocol core in `TimberbotMcp.cs`
 - [`docs/plan/roadmap-v2-mod-first.md`](docs/plan/roadmap-v2-mod-first.md) — current phase plan; `docs/audit/` — Phase 0 audit and contradiction log
-- [`docs/plan/HANDOVER.md`](docs/plan/HANDOVER.md) — **read this first when continuing the Wardens work**: what the last session did and verified, where the mod stands with sources, and the order of the current iteration's packages; the packages themselves are [`docs/plan/iteration-04-first-light-verified.md`](docs/plan/iteration-04-first-light-verified.md)
+- [`docs/plan/HANDOVER.md`](docs/plan/HANDOVER.md) — **read this first when continuing the Wardens work**: what the last session did and verified, where the mod stands with sources, and the order of the current iteration's packages; the packages themselves are [`docs/plan/iteration-04-first-light-verified.md`](docs/plan/iteration-04-first-light-verified.md); the discipline for working a package and writing the entry (the state words `written`/`checked`/`built`/`tested`/`verified`, the status line, the evidence table, the finding form) is the [`driving-iterations`](.claude/skills/driving-iterations/SKILL.md) skill: invoke it before reporting a package's state
 - [`docs/devenv.md`](docs/devenv.md) — toolchain (.NET, Python, `ilspycmd`)
 
 When touching `wardens/`:
@@ -119,6 +119,7 @@ timberbot/
 ├── agents/
 │   └── beaver-developer.md      # Dev-agent prompt for working on this codebase
 ├── .claude/skills/
+│   ├── driving-iterations/      # Working a plan package across the cloud/game split: state words, status line, HANDOVER entry, findings, the doc-drift checker
 │   ├── timberborn-mapsmith/     # Authoring .timber maps from a spec (tools/mapsmith)
 │   └── warden-play/SKILL.md     # Precompiled plan for the agent that PLAYS a level (not for dev work)
 ├── .mcp.json                    # Claude Code → the Wardens' in-game MCP server (127.0.0.1:8090/mcp)
