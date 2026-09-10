@@ -1,0 +1,273 @@
+{
+  "BuildingSpec": {
+    "SelectionSoundName": "Shaft",
+    "LoopingSoundName": "",
+    "BuildingCost": [
+      {
+        "Id": "ScrapMetal",
+        "Amount": 15
+      }
+    ],
+    "ScienceCost": 40,
+    "PlaceFinished": false,
+    "FinishableWithBeaversOnSite": false,
+    "DrawRangeBoundsOnIt": false
+  },
+  "BuildingModelSpec": {
+    "FinishedModelName": "#Finished",
+    "UnfinishedModelName": "#Unfinished",
+    "FinishedUncoveredModelName": "",
+    "UndergroundModelName": "",
+    "ConstructionModeModel": "Finished",
+    "UndergroundModelDepth": 0
+  },
+  "TemplateSpec": {
+    "TemplateName": "VerticalPowerShaft.Wardens",
+    "BackwardCompatibleTemplateNames": [],
+    "RequiredFeatureToggle": "",
+    "DisablingFeatureToggle": ""
+  },
+  "ShaftSoundEmitterSpec": {},
+  "BlockObjectNavMeshSettingsSpec": {
+    "NoAutoWalls": false,
+    "GenerateFloorsOnStackable": true,
+    "EdgeGroups": [],
+    "UnblockedCoordinates": []
+  },
+  "BlockObjectSpec": {
+    "Size": {
+      "X": 1,
+      "Y": 1,
+      "Z": 1
+    },
+    "Blocks": [
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      }
+    ],
+    "Entrance": {
+      "HasEntrance": false,
+      "Coordinates": {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      }
+    },
+    "BaseZ": 0,
+    "Overridable": false,
+    "Flippable": false
+  },
+  "MechanicalNodeSpec": {
+    "PowerOutput": 0,
+    "PowerInput": 0,
+    "IsShaft": true
+  },
+  "TransputProviderSpec": {
+    "Transputs": [
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Down, Left, Up, Right",
+        "ReverseRotation": true
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Bottom, Top",
+        "ReverseRotation": false
+      }
+    ],
+    "IgnoreRotation": false
+  },
+  "PlaceableBlockObjectSpec": {
+    "ToolGroupId": "Power",
+    "ToolOrder": 26,
+    "ToolShape": "Square",
+    "Layout": "TwoSegmentLine",
+    "CustomPivot": {
+      "HasCustomPivot": false,
+      "Coordinates": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      }
+    },
+    "CanBeAttachedToTerrainSide": false,
+    "DevModeTool": false
+  },
+  "LabeledEntitySpec": {
+    "DisplayNameLocKey": "Building.VerticalPowerShaft.DisplayName",
+    "DescriptionLocKey": "Building.VerticalPowerShaft.Description",
+    "FlavorDescriptionLocKey": "Building.VerticalPowerShaft.FlavorDescription",
+    "Icon": "Buildings/Power/VerticalPowerShaft/VerticalPowerShaftIcon"
+  },
+  "ConstructionSiteProgressVisualizerSpec": {
+    "ProgressThresholds": [
+      0.0
+    ]
+  },
+  "ModularShaftSpec": {},
+  "ModularShaftCoverSpec": {
+    "CoverModelName": "#Cover"
+  },
+  "BobingaboutMergeableObjectModelSpec": {
+    "ModelNamePrefix": "Platform",
+    "MergeGroups": [
+      "Levee",
+      "Platform"
+    ],
+    "DownLeftUpRightString": [
+      "0000",
+      "0001",
+      "0101",
+      "0011",
+      "0111",
+      "1111"
+    ],
+    "AllowRotating": true,
+    "AllowDown": true,
+    "AllowLeft": true,
+    "AllowUp": true,
+    "AllowRight": true,
+    "MergeAtHeight": 0
+  },
+  "Children": {
+    "#Finished": {
+      "CollidersSpec": {
+        "BoxColliders": [
+          {
+            "Center": {
+              "X": 0.5,
+              "Y": 0.231245369,
+              "Z": 0.5
+            },
+            "Size": {
+              "X": 1.0,
+              "Y": 0.462490737,
+              "Z": 1.0
+            }
+          }
+        ],
+        "SphereColliders": [],
+        "CapsuleColliders": []
+      },
+      "Children": {
+        "#Cover": {
+          "TimbermeshSpec": {
+            "Model": "Buildings/Power/PowerShaft/ShaftCover.LeafCoats.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 0.5,
+                  "Y": 0.91,
+                  "Z": 0.5
+                },
+                "Size": {
+                  "X": 1.0,
+                  "Y": 0.17,
+                  "Z": 1.0
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          },
+          "Children": {
+            "Platform0000": {
+              "TimbermeshSpec": {
+                "Model": "Buildings/Power/PowerShaft/ShaftCover0000.LeafCoats.Model"
+              }
+            },
+            "Platform0001": {
+              "TimbermeshSpec": {
+                "Model": "Buildings/Power/PowerShaft/ShaftCover0001.LeafCoats.Model"
+              }
+            },
+            "Platform0101": {
+              "TimbermeshSpec": {
+                "Model": "Buildings/Power/PowerShaft/ShaftCover0101.LeafCoats.Model"
+              }
+            },
+            "Platform0011": {
+              "TimbermeshSpec": {
+                "Model": "Buildings/Power/PowerShaft/ShaftCover0011.LeafCoats.Model"
+              }
+            },
+            "Platform0111": {
+              "TimbermeshSpec": {
+                "Model": "Buildings/Power/PowerShaft/ShaftCover0111.LeafCoats.Model"
+              }
+            },
+            "Platform1111": {
+              "TimbermeshSpec": {
+                "Model": "Buildings/Power/PowerShaft/ShaftCover1111.LeafCoats.Model"
+              }
+            }
+          }
+        }
+      }
+    },
+    "#Unfinished": {
+      "Children": {
+        "ConstructionBase1x1Top": {
+          "TimbermeshSpec": {
+            "Model": "ConstructionBases/ConstructionBase1x1Top/ConstructionBase1x1Top.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 0.5,
+                  "Y": 0.1,
+                  "Z": 0.5
+                },
+                "Size": {
+                  "X": 0.5,
+                  "Y": 0.2,
+                  "Z": 0.5
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        },
+        "ConstructionStage0": {
+          "TimbermeshSpec": {
+            "Model": "Buildings/Power/PowerShaft/VerticalPowerShaft.LeafCoats.ConstructionStage0.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 0.5,
+                  "Y": 0.0493066423,
+                  "Z": 0.5
+                },
+                "Size": {
+                  "X": 1.00475121,
+                  "Y": 0.0986132845,
+                  "Z": 0.9964336
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        }
+      }
+    }
+  }
+}

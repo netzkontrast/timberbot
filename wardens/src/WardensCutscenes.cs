@@ -4,9 +4,10 @@
 // is the format). One runner plays them on the main thread: it pauses and locks the speed, shows
 // the overlay (WardensCutsceneOverlay), flies the camera through WardensCameraDirector one shot at
 // a time, fills the captions' {0}.. from the game (`args`), places pointers, highlights, toasts and
-// Uplink lines, records marks and choices in the story record (WardensStoryState), skips shots whose
-// `when` condition does not hold, and hands the game back, in every path, through Finish(), with
-// the speed unlock in a finally (a scene that throws must not leave the game locked at speed 0,
+// Uplink lines, replays archived badtides (WardensArchivedBadtides), records marks and choices in
+// the story record (WardensStoryState), skips shots whose `when` condition does not hold, and hands
+// the game back, in every path, through Finish(), with the speed unlock in a finally (a scene
+// that throws must not leave the game locked at speed 0,
 // the rule the old WardensColdBoot followed).
 //
 // Triggers: NewGameInitializedEvent (new_game), the chapter service's ChapterOpened event
@@ -71,6 +72,7 @@ namespace Wardens
         private readonly WardensCutsceneOverlay _overlay;
         private readonly WardensChapterService _chapters;
         private readonly WardensStoryState _story;
+        private readonly WardensArchivedBadtides _badtides;
 
         private readonly List<CutsceneScene> _scenes = new List<CutsceneScene>();
         private readonly Dictionary<string, CutsceneScene> _byId = new Dictionary<string, CutsceneScene>(StringComparer.OrdinalIgnoreCase);
@@ -101,7 +103,7 @@ namespace Wardens
             EntitySelectionService selection, CharacterPopulation population, IDayNightCycle dayNightCycle,
             GameCycleService cycles, ScienceService science, ILoc loc, QuickNotificationService quickNotifications,
             WardensCameraDirector director, WardensPointer pointer, WardensChat chat, WardensCutsceneOverlay overlay,
-            WardensChapterService chapters, WardensStoryState story)
+            WardensChapterService chapters, WardensStoryState story, WardensArchivedBadtides badtides)
         {
             _eventBus = eventBus;
             _factionService = factionService;
@@ -122,6 +124,7 @@ namespace Wardens
             _overlay = overlay;
             _chapters = chapters;
             _story = story;
+            _badtides = badtides;
         }
 
         public bool Playing => _scene != null;
@@ -352,6 +355,7 @@ namespace Wardens
                 catch (Exception ex) { Debug.LogWarning("[Wardens] cutscene toast: " + ex.Message); }
             }
             if (!string.IsNullOrEmpty(shot.Say)) _chat.SystemSays(shot.Say);
+            if (shot.Badtide > 0) _badtides.Replay(shot.Badtide);
         }
 
         private bool Applies(CutsceneShot shot)

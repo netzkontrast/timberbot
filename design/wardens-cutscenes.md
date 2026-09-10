@@ -128,6 +128,7 @@ policy, and its orbit is the first scene.
 | `args` | string[] | `[]` | values for the caption's `{0}`.. placeholders, read when the shot starts: `day`, `cycle`, `cycle_day`, `bots`, `beavers`, `archive` (Data Cores in stock), `science`, `good:<GoodId>` (stock across the districts), `choice:<key>` (a recorded pick, or `none`), `mark:<name>` (a recorded day, or `none`). They go through `ILoc.T(key, args)` the way the tutorial steps' numbers do, so a loc row keeps vanilla's `{0}` convention |
 | `highlight` | pointer | none | like `point` without the arrow and the toast: the object on the tile is tinted (the Core's light coming on, in the Cold Boot's second shot) |
 | `mark` | string | none | records the current day under this name in the story record when the shot starts |
+| `badtide` | number | none | 1-based: replays that archived badtide when the shot starts (`WardensArchivedBadtides` posts the vanilla `HazardousWeatherSelected`/`Started`/`Ended` events for `BadtideWeather`, duration from `GetDurationAtCycle(n)`). The real toast, sound and `HazardousWeatherHistory` bookkeeping, without simulating days that never happened - the wasteland lived through its badtides before day 1. Replaying the scene replays them, so a tuning run inflates the save's history |
 | `choices` | choice[] | `[]` | a choice card: `{ "id", "caption" \| "text" }` per button. The shot waits for a pick (Continue does not end it); the pick is recorded under `choice_key` |
 | `choice_key` | string | `<Scene>.<shot id>` | where the pick is recorded |
 | `when` | condition | none | `{ "choice": "<key>", "is": "<id>" }` or `{ "choice": "<key>", "is_not": "<id>" }`: the shot plays only when the recorded pick matches. An unset pick matches nothing under `is` and everything under `is_not`; a scene whose remaining shots are all skipped ends |
@@ -209,8 +210,9 @@ the Python checker implements the same rules.
 - `UpdateSingleton()`: polls finished tutorials (twice a second), drains the trigger queue when
   idle, and advances the shot when its end condition (§3.2) holds.
 - A shot starts by resolving its keyframes against the anchors and the start pose, calling
-  `director.Fly(frames, onFinished)`, placing the pointer, sending the toast, saying the line, and
-  setting the caption and the step dots. The flight's completion is the callback, not a guess about
+  `director.Fly(frames, onFinished)`, placing the pointer, sending the toast, saying the line,
+  replaying a `badtide` through `WardensArchivedBadtides`, and setting the caption and the step
+  dots. The flight's completion is the callback, not a guess about
   the director's update order.
 - `Skip()` ends the scene now; `Continue()` releases a `wait: continue` shot; `Reload()` re-reads the
   folder. `HasPlayed(id)` and `Playing` / `CurrentId` / `Summary()` / `State()` serve the tool table

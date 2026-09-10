@@ -4,7 +4,8 @@
 // each with a camera flight (keyframes relative to a named anchor and to the pose the camera had
 // when the scene began), one caption (a loc key, with `args` filling its {0}.. placeholders from the
 // game), and optionally a pointer, a highlight, a toast, an Uplink line, a mark in the story record,
-// a choice card (the pick is recorded) and a condition on an earlier choice. This file holds the
+// an archived badtide to replay (WardensArchivedBadtides), a choice card (the pick is recorded) and a
+// condition on an earlier choice. This file holds the
 // plain data classes and Parse(), which applies the defaults and throws FormatException naming the
 // field on anything malformed. No game types here, on purpose: tools/check_cutscenes.py implements
 // the same rules for the static check, and the runner (WardensCutscenes.cs) is the only place that
@@ -73,6 +74,7 @@ namespace Wardens
         public string Toast;
         public string Say;
         public string Mark;                               // record the day under this name when the shot starts
+        public int Badtide;                               // 1..N: replay that archived badtide when the shot starts
         public readonly List<CutsceneChoice> Choices = new List<CutsceneChoice>();
         public string ChoiceKey;                          // where the pick is recorded; default <Scene>.<Shot>
         public CutsceneCondition When;
@@ -214,6 +216,13 @@ namespace Wardens
             shot.Say = Str(o, "say", where);
             shot.Mark = Str(o, "mark", where);
             if (shot.Mark != null && shot.Mark.Length == 0) throw new FormatException($"{where}.mark: empty");
+            var badtide = Num(o, "badtide", where);
+            if (badtide.HasValue)
+            {
+                shot.Badtide = (int)badtide.Value;
+                if (shot.Badtide < 1 || shot.Badtide != badtide.Value)
+                    throw new FormatException($"{where}.badtide: '{badtide.Value}' (a whole number, 1 or more)");
+            }
 
             var choices = o["choices"];
             if (choices != null && choices.Type != JTokenType.Null)

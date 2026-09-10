@@ -31,7 +31,7 @@ ARG_PREFIXES = ("good:", "choice:", "mark:")
 SCENE_FIELDS = {"id", "on", "pause", "leave_paused", "restore_camera", "letterbox", "skippable", "say", "shots"}
 SCENE_BOOLS = ("pause", "leave_paused", "restore_camera", "letterbox", "skippable")
 SHOT_FIELDS = {"id", "caption", "text", "args", "seconds", "wait", "camera", "point", "highlight", "toast", "say",
-               "mark", "choices", "choice_key", "when"}
+               "mark", "badtide", "choices", "choice_key", "when"}
 KEYFRAME_FIELDS = {"t", "anchor", "x", "y", "z", "offset", "h", "v", "zoom", "dh", "dv", "dzoom"}
 POINTER_FIELDS = {"anchor", "x", "y", "z", "offset", "message", "seconds", "color"}
 CHOICE_FIELDS = {"id", "caption", "text"}
@@ -193,6 +193,10 @@ def _check_shot(s, where: str, loc: set[str], texts: dict[str, str], choice_keys
     for f in ("point", "highlight"):
         if f in s:
             _check_pointer(s[f], f"{where}.{f}", out)
+    if "badtide" in s:
+        b = s["badtide"]
+        if not isinstance(b, int) or isinstance(b, bool) or b < 1:
+            out.append(f"{where}.badtide: {b!r} (a whole number, 1 or more)")
     choices = s.get("choices", [])
     if not isinstance(choices, list):
         out.append(f"{where}.choices: not an array")

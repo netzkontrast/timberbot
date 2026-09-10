@@ -31,6 +31,8 @@ namespace Wardens
             // the overlay draws the letterbox, the captions and the choice cards; the story record
             // (story.json) keeps the choices and marks. design/wardens-cutscenes.md.
             Bind<WardensStoryState>().AsSingleton();
+            // The three badtides the wasteland logged before day 1, replayed by a shot's `badtide`.
+            Bind<WardensArchivedBadtides>().AsSingleton();
             Bind<WardensCutsceneOverlay>().AsSingleton();
             Bind<WardensCutscenes>().AsSingleton();
             // The Warden's heartbeat: sensor frames per N game ticks for the MCP `frame` tool.

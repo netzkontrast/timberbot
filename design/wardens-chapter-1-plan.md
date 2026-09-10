@@ -189,3 +189,23 @@ stages (`Wardens.ColdBoot.Wake` / `.Directive`), which answers §9's last questi
 overlay exists, and whether the Wake and Directive text should move into it is for the smoke run. The
 system, the format and the open questions: [`wardens-cutscenes.md`](wardens-cutscenes.md). Not yet
 verified in-game. The Core's light coming on (shot 2) is not implemented.
+
+## Status 2026-09-10, badtide cold-open
+
+The Cold Boot plays back **3 archived badtides**, one per shot of `Cutscenes/ColdBoot.json`
+(`"badtide": 1|2|3`), and a new stage `Wardens.ColdBoot.Badtides` sets it up right after "Wake".
+Mechanically: `WardensArchivedBadtides` posts the real vanilla `HazardousWeatherSelectedEvent`
+/`Started`/`Ended` events for `BadtideWeather` (durations from `BadtideWeather.GetDurationAtCycle(1..3)`,
+the same call the real weather cycle uses) instead of fast-forwarding actual simulated days. Checked in
+the decompiled game code first: nothing reacts to those events except a notification toast, a sound cue,
+and `HazardousWeatherHistory`'s own bookkeeping - no water or contamination system does, those key off
+`WeatherService.IsHazardousWeather` over real elapsed cycles - so this gives the real toast + sound 3
+times, seeds a real streak/history (feeding the normal badtide-chance math going forward) and satisfies
+`SurvivedFirstBadtideTrigger`, without needing to simulate days that never happened. Each firing also
+drops a line into the WARDENS UPLINK chat with its real logged duration. Replaying the scene through the
+MCP `cutscene` tool replays the badtides too, so tuning the shot does inflate the save's history - reset
+the save (or the scene) after a tuning run.
+
+Open thread from the same conversation: whether the *starting* resources/buildings should change to
+match a world that has already been through this (more Scrap on the map, a saltier opening economy,
+etc.) - not implemented, flagged for a follow-up design pass.

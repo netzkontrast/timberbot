@@ -12,6 +12,7 @@
   "shots": [
     {
       "id": "orbit",
+      "badtide": 1,
       "caption": "Wardens.Cutscene.ColdBoot.Orbit",
       "seconds": 8,
       "camera": [
@@ -33,6 +34,7 @@
     },
     {
       "id": "core",
+      "badtide": 2,
       "caption": "Wardens.Cutscene.ColdBoot.Core",
       "seconds": 8,
       "camera": [
@@ -51,6 +53,7 @@
     },
     {
       "id": "settle",
+      "badtide": 3,
       "caption": "Wardens.Cutscene.ColdBoot.Settle",
       "seconds": 6,
       "camera": [

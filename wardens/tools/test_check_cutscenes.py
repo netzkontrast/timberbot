@@ -224,6 +224,22 @@ def test_shot_rules(mod: Path) -> None:
     assert "Scene.json: shots[0].mark: empty" in problems
 
 
+def test_badtide_rules(mod: Path) -> None:
+    scene = copy.deepcopy(GOOD)
+    scene["shots"] = [
+        {"caption": "Wardens.Cutscene.Scene.One", "badtide": 1},        # fine
+        {"caption": "Wardens.Cutscene.Scene.One", "badtide": 0},        # 1-based
+        {"caption": "Wardens.Cutscene.Scene.One", "badtide": 1.5},      # whole numbers only
+        {"caption": "Wardens.Cutscene.Scene.One", "badtide": "1"},      # a number, not a string
+    ]
+    write(mod, "Scene", scene)
+    problems = run(mod)
+    assert not [p for p in problems if p.startswith("Scene.json: shots[0].badtide")]
+    assert "Scene.json: shots[1].badtide: 0 (a whole number, 1 or more)" in problems
+    assert "Scene.json: shots[2].badtide: 1.5 (a whole number, 1 or more)" in problems
+    assert "Scene.json: shots[3].badtide: '1' (a whole number, 1 or more)" in problems
+
+
 def test_args_and_placeholders(mod: Path) -> None:
     scene = copy.deepcopy(GOOD)
     scene["shots"] = [

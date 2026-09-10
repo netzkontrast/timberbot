@@ -51,7 +51,7 @@ or call the MCP tool `timberbot_ready`.
 | `timberbot` | listener | GET/POST passthrough to the compiled-in Timberbot API (loopback) |
 | `timberbot_ready` | main | open the ready gate in-process |
 | `timberbot_routes` | listener | route list |
-| `dump_assets` | main | write loaded blueprints / materials / textures to `Mods/Wardens/dump` (for the Leaf Coats port) |
+| `dump_assets` | main | write loaded blueprints / materials / textures to `Documents/Timberborn/WardensDump` (for the Leaf Coats port; deliberately not inside `Mods/Wardens/`) |
 
 Every tool result may carry `chat`: player messages not yet delivered to the agent.
 
@@ -68,8 +68,13 @@ wakes it every 60 game ticks or when something happens, and tells it where to lo
 ## Checks for the tutorial
 
 - `wardens_status` → `tutorial.active` shows `Wardens.ColdBoot.Wake` right after a new game, with
-  `stages_left: 1`; no vanilla tutorial ids appear (they are neutered by the faction modifier).
-- Click Continue through the two Cold Boot cards. `Wardens.Basics` follows (move, rotate, zoom,
+  `stages_left: 2`; no vanilla tutorial ids appear (they are neutered by the faction modifier).
+- During the orbit, 3 badtide notification toasts + sounds fire at roughly 1.5 s/5.5 s/9.5 s
+  ("archived" badtides, see design/wardens-chapter-1-plan.md), each dropping a line into the
+  WARDENS UPLINK chat with a real logged duration. `chat_history` should show 3 "Archive: badtide
+  N of 3" lines after the orbit finishes.
+- Click Continue through the three Cold Boot cards (Wake, Badtides, Directive). `Wardens.Basics`
+  follows (move, rotate, zoom,
   pause/unpause, speed 2 → 3 → 1), then `Wardens.Scrap`: "Place: Scavenger Flag (0/2)",
   "Build: Scavenger Flag (0/2)", "Connect: Scavenger Flag (0/2)", "Stock: Scrap Metal (0/10)".
 - Then Badwater and Biomass (Sludge Pump, Charging Post + "Select a Warden" + "Charge: every Warden
@@ -163,4 +168,4 @@ After `python wardens/tools/import_leafcoats.py` the mod folder also carries Lea
 the Script Pack DLLs, Vertical Nav Mesh and Harmony (0Harmony.dll). Disable those seven workshop mods
 in the mod manager, or two copies of the same assemblies load. To extract the bundle content for the port: load any game, then
 `dump_assets what=blueprints filter=LeafCoats`, `what=materials filter=LeafCoats`,
-`what=textures filter=LeafCoats max_count=400`; results land in `Documents/Timberborn/Mods/Wardens/dump/`.
+`what=textures filter=LeafCoats max_count=400`; results land in `Documents/Timberborn/WardensDump/`.

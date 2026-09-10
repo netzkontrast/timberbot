@@ -1,0 +1,336 @@
+{
+  "BuildingSpec": {
+    "SelectionSoundName": "BadwaterDome",
+    "LoopingSoundName": "",
+    "BuildingCost": [
+      {
+        "Id": "ScrapMetal",
+        "Amount": 70
+      }
+    ],
+    "ScienceCost": 2000,
+    "PlaceFinished": false,
+    "FinishableWithBeaversOnSite": false,
+    "DrawRangeBoundsOnIt": false
+  },
+  "BuildingModelSpec": {
+    "FinishedModelName": "#Finished",
+    "UnfinishedModelName": "#Unfinished",
+    "FinishedUncoveredModelName": "",
+    "UndergroundModelName": "#Underground",
+    "ConstructionModeModel": "Finished",
+    "UndergroundModelDepth": 99
+  },
+  "TemplateSpec": {
+    "TemplateName": "BadwaterDome.Wardens",
+    "BackwardCompatibleTemplateNames": [],
+    "RequiredFeatureToggle": "",
+    "DisablingFeatureToggle": ""
+  },
+  "BlockObjectSpec": {
+    "Size": {
+      "X": 3,
+      "Y": 3,
+      "Z": 1
+    },
+    "Blocks": [
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      }
+    ],
+    "Entrance": {
+      "HasEntrance": false,
+      "Coordinates": {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      }
+    },
+    "BaseZ": 0,
+    "Overridable": false,
+    "Flippable": false
+  },
+  "PlaceableBlockObjectSpec": {
+    "ToolGroupId": "Water",
+    "ToolOrder": 80,
+    "ToolShape": "Square",
+    "Layout": "Single",
+    "CustomPivot": {
+      "HasCustomPivot": false,
+      "Coordinates": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      }
+    },
+    "CanBeAttachedToTerrainSide": false,
+    "DevModeTool": false
+  },
+  "LabeledEntitySpec": {
+    "DisplayNameLocKey": "Building.BadwaterDome.DisplayName",
+    "DescriptionLocKey": "Building.BadwaterDome.Description",
+    "FlavorDescriptionLocKey": "Building.BadwaterDome.FlavorDescription",
+    "Icon": "Buildings/Water/BadwaterDome/BadwaterDomeIcon"
+  },
+  "WaterSourceRegulatorSpec": {},
+  "WaterSourceRegulatorAnimationControllerSpec": {
+    "RegulatorTransforms": [
+      {
+        "TransformName": "#Quarter#Dome1",
+        "TargetOffset": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        "TargetRotation": {
+          "X": 0.0,
+          "Y": 60.0,
+          "Z": 0.0
+        }
+      },
+      {
+        "TransformName": "#Quarter#Dome2",
+        "TargetOffset": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        "TargetRotation": {
+          "X": 0.0,
+          "Y": 60.0,
+          "Z": 0.0
+        }
+      },
+      {
+        "TransformName": "#Quarter#Dome3",
+        "TargetOffset": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        "TargetRotation": {
+          "X": 0.0,
+          "Y": 60.0,
+          "Z": 0.0
+        }
+      },
+      {
+        "TransformName": "#Quarter#Dome4",
+        "TargetOffset": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        "TargetRotation": {
+          "X": 0.0,
+          "Y": 60.0,
+          "Z": 0.0
+        }
+      }
+    ]
+  },
+  "BuildingModelGroundCutoffSpec": {
+    "Targets": [
+      "#Quarter#Dome1",
+      "#Quarter#Dome2",
+      "#Quarter#Dome3",
+      "#Quarter#Dome4"
+    ],
+    "Offset": 0.0
+  },
+  "BuildingTerrainCutoutSpec": {
+    "CutoutTiles": [
+      {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      },
+      {
+        "X": 0,
+        "Y": 1,
+        "Z": 0
+      },
+      {
+        "X": 0,
+        "Y": 2,
+        "Z": 0
+      },
+      {
+        "X": 1,
+        "Y": 0,
+        "Z": 0
+      },
+      {
+        "X": 1,
+        "Y": 2,
+        "Z": 0
+      },
+      {
+        "X": 2,
+        "Y": 0,
+        "Z": 0
+      },
+      {
+        "X": 2,
+        "Y": 1,
+        "Z": 0
+      },
+      {
+        "X": 2,
+        "Y": 2,
+        "Z": 0
+      }
+    ]
+  },
+  "ConstructionSiteProgressVisualizerSpec": {
+    "ProgressThresholds": [
+      0.0
+    ]
+  },
+  "UnderstructureConstraintSpec": {
+    "UnderstructureTemplateNames": [
+      "BadwaterSource"
+    ]
+  },
+  "RegulatedWaterSourceBlockerSpec": {},
+  "Children": {
+    "#Underground": {
+      "TimbermeshSpec": {
+        "Model": "Buildings/Water/BadwaterPressurizer/BadwaterPressurizer.IronTeeth.Underground"
+      }
+    },
+    "#Finished": {
+      "TimbermeshSpec": {
+        "Model": "Buildings/Water/BadwaterDome.LeafCoats.Model"
+      },
+      "CollidersSpec": {
+        "BoxColliders": [
+          {
+            "Center": {
+              "X": 1.5,
+              "Y": 0.05,
+              "Z": 1.5
+            },
+            "Size": {
+              "X": 3.0,
+              "Y": 0.1,
+              "Z": 3.0
+            }
+          }
+        ],
+        "SphereColliders": [],
+        "CapsuleColliders": []
+      }
+    },
+    "#Unfinished": {
+      "Children": {
+        "ConstructionBase3x3EdgesOnly": {
+          "TimbermeshSpec": {
+            "Model": "ConstructionBases/ConstructionBase3x3EdgesOnly/ConstructionBase3x3EdgesOnly.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 0.05,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 3.0,
+                  "Y": 0.1,
+                  "Z": 3.0
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        },
+        "ConstructionStage0": {
+          "TimbermeshSpec": {
+            "Model": "Buildings/Water/BadwaterDome.LeafCoats.ConstructionStage0.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 0.05,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 3.0,
+                  "Y": 0.1,
+                  "Z": 3.0
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        }
+      }
+    }
+  }
+}

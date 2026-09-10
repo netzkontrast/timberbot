@@ -48,7 +48,8 @@ src/
   WardensCutscenes.cs                cutscene runner + triggers (new game, chapter opened, tutorial finished)
   WardensCutsceneScript.cs           the scene format (Cutscenes/*.json) and its parser
   WardensCutsceneOverlay.cs          letterbox, caption, step dots, Skip / Continue
-  Cutscenes/ColdBoot.json            the Cold Boot: three shots around the Core (design/wardens-ui/ColdBoot.dc.html)
+  Cutscenes/ColdBoot.json            the Cold Boot: three shots around the Core, one archived badtide each (design/wardens-ui/ColdBoot.dc.html)
+  WardensArchivedBadtides.cs         replays the badtides the wasteland logged before day 1 (a shot's `badtide`)
   WardensFrames.cs                   the heartbeat: a sensor frame per N game ticks or per event, for the MCP `frame` tool
   WardensCameraDirector.cs           keyframe camera flights (cutscenes, MCP, trailer)
   WardensPointer.cs                  highlight + arrow + toast on a tile ("look here")
@@ -233,6 +234,12 @@ Models stay vanilla references. Everything costs Scrap Metal (the Scavenger Flag
 science cost is 0 for the starting bar, `CHAPTER_LOCK` for the chapter-gated buildings (see above),
 and a real science price only for Planter Rig, Stairs and Platform.
 
+`tools/gen_port.py` ports Leaf Coats buildings the same way, from a live `dump_assets` dump instead
+of a zip (`design/leafcoats-port-plan.md` has the full plan and status). The current batch — 44
+buildings the Iron Teeth re-specs above don't already cover (District management, Power, Science,
+Water, Metal, the larger Storage tier) — sits in `Buildings.WardensPort`, not yet added to the
+faction's `TemplateCollectionIds`.
+
 | Template | From | What changed |
 |---|---|---|
 | `Core.Wardens` (starting building) | DistrictCenter.IronTeeth | + 150 hp power output |
@@ -262,4 +269,6 @@ and the code it needs (Bobingabout Script Pack, Vertical Nav Mesh) into `src/` f
 `--remove` takes them out again. With the copies in the mod, **disable the seven workshop mods** (Leaf Coats + 3 add-ons, Script Pack, Vertical Nav Mesh, Harmony: Vertical Nav Mesh is a Harmony patch).
 The analysis and the file-by-file port plan are in
 [`../design/leafcoats-port-plan.md`](../design/leafcoats-port-plan.md); the building blueprints
-inside their bundle are read with the MCP tool `dump_assets` (writes to `Mods/Wardens/dump/`).
+inside their bundle are read with the MCP tool `dump_assets` (writes to `Documents/Timberborn/WardensDump/`,
+deliberately outside `Mods/Wardens/` — the mod loader scans every mod folder recursively with no
+folder exclusions, so a dump left inside one gets indexed as real mod content on the next boot).

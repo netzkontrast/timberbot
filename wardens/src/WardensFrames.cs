@@ -28,6 +28,7 @@ using Timberborn.GameDistricts;
 using Timberborn.HazardousWeatherSystem;
 using Timberborn.NeedSystem;
 using Timberborn.Population;
+using Timberborn.ResourceCountingSystem;
 using Timberborn.ScienceSystem;
 using Timberborn.SelectionSystem;
 using Timberborn.SingletonSystem;

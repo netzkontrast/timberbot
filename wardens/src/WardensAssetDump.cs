@@ -3,13 +3,20 @@
 // Mod asset bundles built with Unity 6000.5 cannot be opened by the offline tools we tried, but
 // the running game has already loaded every blueprint, texture and material from every enabled
 // mod. This singleton writes them out on request (MCP tool `dump_assets`):
-//   <Mods/Wardens/dump>/blueprints/<path>.json   every blueprint the SpecService knows, as the
-//                                                 game merged it (vanilla + all mods + modifiers)
-//   <dump>/materials.json                          every Material: shader, colors, texture names
-//   <dump>/textures/<name>.png                     Texture2D whose name matches the filter, via a
-//                                                 RenderTexture blit (GPU-only textures included)
-// Enable the Leaf Coats mods for one game session, run the tool, disable them again: the port
-// plan then has the real building blueprints and atlas textures to work from.
+//   <dump>/blueprints/<path>.json   every blueprint the SpecService knows, as the
+//                                   game merged it (vanilla + all mods + modifiers)
+//   <dump>/materials.json           every Material: shader, colors, texture names
+//   <dump>/textures/<name>.png      Texture2D whose name matches the filter, via a
+//                                   RenderTexture blit (GPU-only textures included)
+//
+// DumpRoot is a SIBLING of Mods/, not inside it: ModSystemFileProvider.CacheFilesFromMod scans
+// every enabled mod's directory with GetFiles("*", SearchOption.AllDirectories) and no folder
+// exclusion, so a dump written under Mods/Wardens/ gets re-loaded as if it were real, current mod
+// content on the next boot. That is exactly what happened here: a dump taken mid-session sat in
+// Mods/Wardens/dump/ and got indexed alongside the real blueprints, so a *.blueprint.json that
+// had since been deleted from src (e.g. a dropped LeafCoats recipe or need) kept "existing" via
+// its frozen dump copy, first as a duplicate-key crash, later as a stale collection member once
+// the real file was gone but the dump snapshot's collection still listed it.
 
 using System;
 using System.Collections.Generic;
@@ -32,7 +39,7 @@ namespace Wardens
 
         public static string DumpRoot =>
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "Timberborn", "Mods", "Wardens", "dump");
+                "Timberborn", "WardensDump");
 
         public JObject DumpBlueprints(string pathFilter)
         {
