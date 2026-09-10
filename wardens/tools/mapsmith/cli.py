@@ -18,6 +18,7 @@ from pathlib import Path
 from . import spec as spec_mod
 from .build import MapBuild, SpecError
 from .checks import check_file
+from .contracts import CONTRACTS
 from .preview import ascii_map, write_png
 from .terrain import OPS
 from .world import read_timber, write_timber
@@ -73,8 +74,20 @@ min_reachable = 500
 '''
 
 
+def _spec_path(args) -> Path:
+    """A spec path, or a campaign level id resolved through wardens/maps/levels.toml."""
+    level = getattr(args, "level", None)
+    if level:
+        if getattr(args, "spec", None):
+            raise SpecError("pass a spec path or --level, not both")
+        return spec_mod.level_spec(level)
+    if not getattr(args, "spec", None):
+        raise SpecError("give a spec path or --level <id>")
+    return Path(args.spec)
+
+
 def _load(args) -> tuple[dict, MapBuild]:
-    spec = spec_mod.load(Path(args.spec), getattr(args, "variant", None))
+    spec = spec_mod.load(_spec_path(args), getattr(args, "variant", None))
     return spec, spec_mod.build(spec)
 
 
@@ -105,7 +118,43 @@ def cmd_preview(args) -> int:
     return 0
 
 
+def cmd_levels(args) -> int:
+    """The campaign's map index, and whether it agrees with the C# level table."""
+    table = spec_mod.levels()
+    if not table:
+        print(f"no {spec_mod.LEVELS_INDEX}", file=sys.stderr)
+        return 1
+    cs = spec_mod.campaign_cs_levels()
+    print(f"{'id':4s} {'map':28s} {'spec':34s} built")
+    for level_id, row in sorted(table.items()):
+        built = (DEFAULT_OUT / f"{row.get('map', '')}.timber").exists()
+        spec_name = row.get("spec") or f"({row.get('generator') or 'no generator'})"
+        flag = "" if level_id in cs else "  !! not in WardensCampaign.cs"
+        print(f"{level_id:4s} {row.get('map', ''):28s} {spec_name:34s} {'yes' if built else 'no'}{flag}")
+    problems = spec_mod.verify_levels()
+    for problem in problems:
+        print(f"  [error] {problem}")
+    print("levels: " + ("consistent with WardensCampaign.cs" if not problems
+                        else f"{len(problems)} disagreement(s)"))
+    return 1 if problems and args.verify else 0
+
+
+def cmd_contracts(_args) -> int:
+    print("contracts (use as a key in the spec's [contract] table):\n")
+    for name, fn in sorted(CONTRACTS.items()):
+        doc = (fn.__doc__ or "").strip().splitlines()
+        print(f"  {name}")
+        for line in doc:
+            print(f"      {line.strip()}" if line.strip() else "")
+        print()
+    print("A contract is the level design, checked as geometry: what must stay true of the ground")
+    print("for the intended play to be the only play that works. See design/wardens-campaign-map-set.md §0.")
+    return 0
+
+
 def cmd_check(args) -> int:
+    if getattr(args, "level", None) and not args.target:
+        args.target = str(spec_mod.level_spec(args.level))
     target = Path(args.target)
     opts: dict = {}
     if target.suffix == ".toml":
@@ -188,7 +237,8 @@ def main(argv: list[str] | None = None) -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     b = sub.add_parser("build", parents=[strict], help="write the .timber a spec describes, then check it")
-    b.add_argument("spec")
+    b.add_argument("spec", nargs="?")
+    b.add_argument("--level", help="a campaign level id from wardens/maps/levels.toml, e.g. 02")
     b.add_argument("--out", help="explicit output path")
     b.add_argument("--out-dir", help=f"directory to write into (default {DEFAULT_OUT})")
     b.add_argument("--variant")
@@ -198,14 +248,16 @@ def main(argv: list[str] | None = None) -> int:
     b.set_defaults(func=cmd_build)
 
     p = sub.add_parser("preview", parents=[strict], help="build in memory and print the ASCII map (writes nothing)")
-    p.add_argument("spec")
+    p.add_argument("spec", nargs="?")
+    p.add_argument("--level", help="a campaign level id from wardens/maps/levels.toml")
     p.add_argument("--variant")
     p.add_argument("--step", type=int, default=1, help="sample every Nth tile")
     p.add_argument("--png", help="also write a PNG here")
     p.set_defaults(func=cmd_preview)
 
     c = sub.add_parser("check", parents=[strict], help="validate a .timber file or a spec")
-    c.add_argument("target", help="a .timber file or a .map.toml spec")
+    c.add_argument("target", nargs="?", help="a .timber file or a .map.toml spec")
+    c.add_argument("--level", help="a campaign level id from wardens/maps/levels.toml")
     c.add_argument("--spec", help="spec whose [checks] table to apply to a .timber")
     c.add_argument("--variant")
     c.set_defaults(func=cmd_check)
@@ -226,6 +278,13 @@ def main(argv: list[str] | None = None) -> int:
 
     o = sub.add_parser("ops", parents=[strict], help="list the terrain ops and placement keys")
     o.set_defaults(func=cmd_ops)
+
+    ct = sub.add_parser("contracts", parents=[strict], help="list the contracts a [contract] table can assert")
+    ct.set_defaults(func=cmd_contracts)
+
+    lv = sub.add_parser("levels", parents=[strict], help="the campaign map index, cross-checked against the C# table")
+    lv.add_argument("--verify", action="store_true", help="exit 1 when the index and WardensCampaign.cs disagree")
+    lv.set_defaults(func=cmd_levels)
 
     args = ap.parse_args(argv)
     args.strict = bool(getattr(args, "strict_first", False) or getattr(args, "strict_here", False))
