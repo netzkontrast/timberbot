@@ -7,12 +7,16 @@ version: "0.9.0"
 
 This is the full Timberbot Guide for playing Timberborn through the `tbot` CLI.
 
+!!! warning "This guide governs the CLI path only"
+    Commands here are `tbot` shell invocations. If your tools are named `timberborn_*` you are on the [in-mod MCP endpoint](mcp.md); if they are named `mcp__game__*` you are on the frozen Python MCP server; if you have `frame` and `manual` you are a Warden. Tool names, spatial reads, and available commands differ per interface — see [Agent Interfaces](agent-interfaces.md) to find yours.
+
 The `timberbot` agent prompt (shipped as `tbot.agent_prompts.timberbot` and materialized via `tbot init`) is the slim runtime prompt injected at launch. This page is the full guide behind that prompt. The split keeps launch tokens low while preserving the deeper operating rules and reference material the agent may need.
 
 Read this first. Use the other docs only when needed:
 
 - [API Reference](api-reference.md) for exact commands, endpoint shapes, helper behavior, pagination, and error payloads
 - [Getting Started](getting-started.md) for install, PATH, remote host, and troubleshooting
+- [Agent Interfaces](agent-interfaces.md) if you are unsure whether this guide applies to you
 
 ## How the agent gets here
 
@@ -159,7 +163,7 @@ Important planning fields:
 
 Sort preference: non-flooded > reachable > lower distance > pathAccess > nearPower.
 
-`z` must equal the terrain height at the placement location. Wrong `z` causes invisible or broken placement. Use the brain map for fast orientation and `tiles` when you need raw data.
+`z` must equal the terrain height at the placement location. Wrong `z` causes invisible or broken placement. Use `tbot brain` for fast orientation and `tbot tiles` when you need raw data — both are CLI-only. On the in-mod MCP endpoint the equivalent is `timberborn_get_region` (`format=map` to orient, `format=json` for raw per-tile data); the frozen Python MCP server has no spatial read at all.
 
 A new game starts with only a district center and no roads. Paths cost nothing. Stairs and platforms require science unlocks.
 

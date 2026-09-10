@@ -4,8 +4,9 @@
 > either already used in this repo, read from a mod's published source, or quoted from the game's own
 > log; the "not verified" list in §5 is what the next decompile session must confirm before code is
 > written. Built on it: the system design [`wardens-campaign-design.md`](wardens-campaign-design.md) and the
-> campaign concept [`wardens-campaign-concept.md`](wardens-campaign-concept.md). The map itself is
-> [`wardens-wasteland.md`](wardens-wasteland.md); the story the maps serve is
+> campaign concept [`wardens-campaign-concept.md`](wardens-campaign-concept.md). What each level's land has to
+> guarantee, and what the generator needs to build it, is [`wardens-campaign-map-set.md`](wardens-campaign-map-set.md).
+> The map itself is [`wardens-wasteland.md`](wardens-wasteland.md); the story the maps serve is
 > [`faction-wardens.md`](faction-wardens.md) (three acts) and [`wardens-chapter-1-plan.md`](wardens-chapter-1-plan.md).
 
 ## 0. The question

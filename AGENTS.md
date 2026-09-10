@@ -13,6 +13,7 @@ Beyond this file:
 - [`openapi.yaml`](openapi.yaml) — canonical HTTP contract
 - [`docs/websocket-protocol.md`](docs/websocket-protocol.md) — canonical WS wire contract (envelope, auth, reconnect, message types)
 - [`docs/api-reference.md`](docs/api-reference.md) — human-readable companion to the OpenAPI spec
+- [`docs/agent-interfaces.md`](docs/agent-interfaces.md) — the four interfaces an agent can reach the game through, and which doc governs each
 - [`docs/architecture.md`](docs/architecture.md) — thread model, server split, write-job queue
 - [`docs/spec/mcp-endpoint.md`](docs/spec/mcp-endpoint.md) + [`docs/adr/ADR-001-mcp-host.md`](docs/adr/ADR-001-mcp-host.md) — the in-mod MCP endpoint (`POST /mcp`); protocol core in `TimberbotMcp.cs`
 - [`docs/plan/roadmap-v2-mod-first.md`](docs/plan/roadmap-v2-mod-first.md) — current phase plan; `docs/audit/` — Phase 0 audit and contradiction log
@@ -23,14 +24,14 @@ When touching `wardens/`:
 - [`wardens/README.md`](wardens/README.md) — what the faction mod is, file map, how the tutorial and the chapters work, the map, the art
 - [`design/faction-wardens.md`](design/faction-wardens.md) — the arc and the two C# spikes; [`design/wardens-chapter-1-plan.md`](design/wardens-chapter-1-plan.md) — Chapter 1 design with status notes
 - [`design/wardens-play.md`](design/wardens-play.md) — how the Warden (the agent) plays: the stance, the Ledger, frames, the camera policy; [`wardens/WARDEN.md`](wardens/WARDEN.md) — the playbook the agent follows in-game
-- [`design/wardens-wasteland.md`](design/wardens-wasteland.md) — the shipped map and the `.timber` file format; [`design/wardens-campaign-maps.md`](design/wardens-campaign-maps.md) — research: how a campaign mod installs, selects and switches maps (one per level), what is verified and what the decompile must confirm; [`design/wardens-campaign-design.md`](design/wardens-campaign-design.md) — the campaign system design (components, `campaign.json`, `ILevelStarter`, rollout); [`design/wardens-campaign-concept.md`](design/wardens-campaign-concept.md) — the five-level campaign concept (the essential cut); [`design/wardens-campaign-arc.md`](design/wardens-campaign-arc.md) — the full ten-level arc (brainstorm, storyform, requirements brief); [`design/wardens-campaign-research-plan.md`](design/wardens-campaign-research-plan.md) — the research tracks and assumption register the arc still needs; [`design/wardens-campaign-story.md`](design/wardens-campaign-story.md) — the story as the game tells it: every card, line, Archive entry and reading, level by level, in the Wardens' voice; [`wardens/playtest/PLAYTEST.md`](wardens/playtest/PLAYTEST.md) — the in-game checklist and the MCP tool table; [`design/wardens-cutscenes.md`](design/wardens-cutscenes.md) — the cutscene system: the scene format (`Cutscenes/*.json`), the runner, the overlay, the triggers, the checker, and what the first run must answer
+- [`design/wardens-wasteland.md`](design/wardens-wasteland.md) — the shipped map and the `.timber` file format; [`design/wardens-campaign-maps.md`](design/wardens-campaign-maps.md) — research: how a campaign mod installs, selects and switches maps (one per level), what is verified and what the decompile must confirm; [`design/wardens-campaign-map-set.md`](design/wardens-campaign-map-set.md) — concept: the ten maps themselves, the contract each level's land must guarantee, the terrain primitives `gen_map.py` still needs, and the dry-water problem that gates three of them; [`design/wardens-campaign-design.md`](design/wardens-campaign-design.md) — the campaign system design (components, `campaign.json`, `ILevelStarter`, rollout); [`design/wardens-campaign-concept.md`](design/wardens-campaign-concept.md) — the five-level campaign concept (the essential cut); [`design/wardens-campaign-arc.md`](design/wardens-campaign-arc.md) — the full ten-level arc (brainstorm, storyform, requirements brief); [`design/wardens-campaign-research-plan.md`](design/wardens-campaign-research-plan.md) — the research tracks and assumption register the arc still needs; [`design/wardens-campaign-story.md`](design/wardens-campaign-story.md) — the story as the game tells it: every card, line, Archive entry and reading, level by level, in the Wardens' voice; [`wardens/playtest/PLAYTEST.md`](wardens/playtest/PLAYTEST.md) — the in-game checklist and the MCP tool table; [`design/wardens-cutscenes.md`](design/wardens-cutscenes.md) — the cutscene system: the scene format (`Cutscenes/*.json`), the runner, the overlay, the triggers, the checker, and what the first run must answer
 
 ## Quick Reference
 
 - **Build:** Open `timberbot/src/Timberbot.csproj` in an IDE with .NET support, or run `dotnet build` from that directory. The post-build target auto-deploys to the game's mod folder. Override the game DLL path with `-p:GameManagedDir=<path>` if the default doesn't match your install.
 - **Run (game side):** Launch Timberborn with the mod enabled. The HTTP server starts on `httpPort` (default `8085`) and the WebSocket server on `wsPort` (default `8086`). Player presses **Launch** in the widget to open the ready gate.
 - **Run (client side):** `tbot watch` is the long-running connector — it opens a single WebSocket to the mod. `tbot serve` is the Telegram bot mode — spawns an in-process MCP server (`127.0.0.1:8091` default) and routes agent output to Telegram (requires `TBOT_TELEGRAM_TOKEN` or `[serve.telegram].token` in `config.toml`; needs `pip install 'timberbot[serve]'`). `tbot listen` is a pure WS client for the game-event stream. `tbot <command>` and `tbot agent run` still work for one-shots. Install with `pipx install timberbot`.
-- **Tests:** Python unit tests via `python -m pytest python/tests/`; C# xUnit tests via `dotnet test timberbot/test/`.
+- **Tests:** Python unit tests via `uv run --project python --extra dev pytest python/tests/`; C# xUnit tests via `dotnet test timberbot/test/`. **The test project targets `net10.0`** (the mod itself is `netstandard2.1`), so an older SDK builds the mod fine but cannot run the tests — install the .NET 10 SDK, matching CI (`.github/workflows/dotnet-tests.yml`).
 - **Build (Wardens):** `dotnet build wardens/src/Wardens.csproj -c Release`. Every build bumps the patch version (`wardens/tools/bump_version.py`) and deploys to `Documents/Timberborn/Mods/Wardens`, copies the API docs and `WARDEN.md` into its `docs/`, and installs `Maps/*.timber` into `Documents/Timberborn/Maps`. Uses the git-ignored `wardens/src/Directory.Build.props` for the game path, or `-p:GameManagedDir=… -p:ModDir=… -p:MapsDir=…`.
 - **Release (Wardens):** `python wardens/tools/package.py` zips a local Release build into `dist/Wardens-v<version>.zip` (the mod folder, the map for `Documents/Timberborn/Maps`, install steps; `--list` previews); `python wardens/tools/bump_version.py --minor` marks a milestone and `wardens/CHANGELOG.md` records it; `python wardens/tools/gen_thumbnail.py --check` keeps the Mod Manager tile current.
 - **Run (Wardens):** enable **The Wardens** in the Mod Manager and **disable Timberbot API** (same code, same ports). New Game → The Wardens, tutorial on, map *[Custom] Wardens Wasteland*. Claude Code connects through `.mcp.json` (`http://127.0.0.1:8090/mcp`); the agent reads `manual` and lives on `frame`. Playtest scripts: `python wardens/playtest/mcp_smoke.py`, `uv run --project python wardens/playtest/smoke.py`.
@@ -49,7 +50,17 @@ When touching `wardens/`:
 └────────────────────────────────────────────┘         └────────────────────────────────────────┘
 ```
 
-The mod runs **inside** the Unity game process. It uses Timberborn's `Bindito` DI framework (not BepInEx or Harmony). All game DLLs are referenced with `Publicize="true"` to access internal APIs without reflection.
+The mod runs **inside** the Unity game process. It uses Timberborn's `Bindito` DI framework (not BepInEx or Harmony). All game DLLs are referenced with `Publicize="true"`, which removes the need for reflection in the common case — `internal` types and members are reachable as ordinary compiled calls.
+
+**Reflection is still used in a few places, and those are the highest drift risk in the mod.** Publicizing does not help where the member is resolved by name at runtime:
+
+| Site | What it reflects on |
+|---|---|
+| `TimberbotPlacement.cs:266-268` | prefab cost properties `GoodId` / `Id` / `Amount` |
+| `TimberbotPlacement.cs:1653-1679`, `1944-1970` | nav-mesh internals `_nodeIdService`, `_accessCoordinates`, `_navigationRangeService`, `GetRoadNodesInRange` |
+| `TimberbotReadV2.cs:1531-1543` | settlement-name discovery `SaveReference`, `SettlementReference`, `SettlementName` |
+
+These are string literals. The compiler cannot see them, so a game update renames one and the failure appears only at runtime. Prefer a publicized direct call; when you must reflect, add the member to the drift detector rather than leaving it to be found by a null reference in-game. See contradiction C11 in `docs/audit/contradictions.md`.
 
 ### Agent connector role
 
@@ -152,7 +163,9 @@ timberbot/
 │   │   ├── agent/               # Pluggable backends + runner
 │   │   ├── agent_prompts/       # Runtime prompts shipped as package data
 │   │   ├── formatters/          # Map, dashboard, table renderers
-│   │   ├── game_mcp/            # MCP server wrapping TimberbotClient as tools
+│   │   ├── game_mcp/            # FROZEN (ADR-007): FastMCP server wrapping TimberbotClient.
+│   │   │                        #   Kept as test tooling + the `tbot serve` path; not extended.
+│   │   │                        #   New MCP tools go in TimberbotMcp.cs, not here.
 │   │   ├── user_api/            # Telegram adapter + SessionManager for tbot serve
 │   │   └── connector/           # WS connector shared by watch + serve
 │   └── tests/                   # Unit + contract + integration suites
@@ -190,9 +203,14 @@ timberbot/
 - **The Timberbot copy.** `wardens/src/Timberbot/` is a verbatim copy of `timberbot/src/`; fix Timberbot bugs upstream and re-copy, do not fork them in the copy.
 
 ### Documentation
-- `docs/timberbot.md` — primary AI-agent operating guide. Read this if you're touching the in-game agent behavior or the prompts.
+- `docs/agent-interfaces.md` — **which of the four interfaces an agent is on** (CLI, in-mod MCP, frozen Python MCP, Wardens) and which doc governs each. Read this before answering "how does the agent do X?" — the answer differs per interface.
+- `docs/timberbot.md` — the operating guide for the **`tbot` CLI path**. Read this if you're touching CLI-driven agent behavior or the prompts.
+- `docs/mcp.md` — the in-mod MCP endpoint (`POST /mcp`), user-facing. Spec and conformance rules in `docs/spec/mcp-endpoint.md`.
 - `docs/events.md` — user-facing guide for consuming the WS event stream.
+- `docs/audit/contradictions.md` — **the code-wins log.** When a doc, comment or README claims something the code doesn't do, it's recorded here with `path:line` anchors and a confidence rating. Check it before trusting a surprising claim, and add a row rather than silently "fixing" a doc you haven't verified against code.
 - `python/src/timberbot/agent_prompts/timberbot.md` — system prompt shipped as `timberbot` package data and injected at runtime by `tbot agent run`.
+
+**Agent personas are defined twice.** `wirer`, `scout` and `auditor` exist once as markdown (`python/src/timberbot/agent_prompts/*.md`, used by `tbot agent run` / `tbot watch`) and once as dataclasses (`python/src/timberbot/connector/agent_spec.py`, used by `tbot serve` over ACP). Neither is generated from the other — change one, change both, or the two dispatch paths drift. The main agent is asymmetric: `tbot agent run` injects `agent_prompts/timberbot.md`, while `tbot serve` has no markdown at all and lives in `agent_spec.py:TIMBERBOT_SPEC`.
 
 `openapi.yaml`, `docs/websocket-protocol.md`, `docs/api-reference.md`, and `docs/architecture.md` are listed in [Read First](#read-first) above — they're load-bearing for any contract or threading change.
 
