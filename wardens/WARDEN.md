@@ -137,6 +137,12 @@ not how you see.
 - Say what you poisoned on the day you poisoned it, and record it (`campaign action=record`) the same day.
 - Never `campaign action=complete` or `action=reset`. Completion is detected from the tutorial line; those two
   are for testing.
+- **`campaign action=next` ends this colony.** It loads the next level's map, and nothing on this one
+  survives except the Ledger. Call it only after the human has said in chat that they want to move on —
+  the same rule as the camera. When the level completes, offer it and wait: *"Level 01 is done. Say the
+  word and I will start The Sump; or stay, there is no hurry."* If they stay, say nothing more about it.
+  The tool refuses while the level is unfinished unless you pass `force=true`, which you do only if they
+  asked for that too.
 - If you are not sure whether something is purpose or logistics, it is purpose.
 
 ## Chapter playbook

@@ -4,6 +4,42 @@ The patch number moves with every local build (`tools/bump_version.py`, run by t
 version marks a milestone (`bump_version.py --minor`) and gets an entry here. Nothing below has been
 verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first run must answer.
 
+## Unreleased
+
+### Added
+- **Level 02, *The Sump*** (`wardens/src/Maps/Wardens 02 The Sump.timber`, spec
+  `wardens/maps/wardens-02-the-sump.map.toml`). Badwater from the west, exactly one gorge worth
+  damming, a clean creek joining above it. Built by mapsmith and checked against the level's
+  contract, not the eye.
+- **Contracts in mapsmith** (`[contract]` beside `[checks]`): `single_gorge`, `confluence_upstream`,
+  `never_touch`, `unreachable`. `[checks]` asks whether the game will load the map; a contract asks
+  whether it is still the level it was meant to be, which is the thing that breaks silently when a
+  seed or a valley width changes. `mapsmith contracts` lists them.
+- **A campaign map index** (`wardens/maps/levels.toml`, `mapsmith levels --verify`): level id → map
+  name → spec, cross-checked against the `Levels` table in `WardensCampaign.cs`. A map name that
+  does not match makes the running game treat the map as a non-campaign one, silently; now the tools
+  and the tests catch it.
+- **Loading the next level's map from inside the game** (`WardensLevelTransition.cs`,
+  `WardensHandoff.cs`, `campaign action=next`). Three strategies behind one interface, chosen at
+  load and logged: a programmatic new game, a shipped save, and a handoff file the main menu picks
+  up. The transition is offered, never forced — `action=next` refuses while the level is unfinished
+  unless forced, and the playbook now says to ask the player first.
+- `avoid` on the `hill` terrain op: landscape after the water without filling in the channel. This
+  is what makes a gorge possible — the spurs are raised after the river carves.
+
+### Changed
+- The prototype spec that briefly claimed to be level 02 is now `prototype-two-streams.map.toml`.
+  The C# level table is the source: 02 is *The Sump*, 03 is *The Pods*.
+
+### State (the words in `.claude/skills/driving-iterations`)
+- The maps, the specs and the tools are **`checked`** (cloud): `pytest wardens/tools`,
+  `mapsmith check --level 02`, `mapsmith levels --verify` and `check_cutscenes.py` all clean.
+- Everything under `wardens/src/*.cs` is **`written`** — this was authored where there is no .NET SDK
+  and no game DLLs, so no compiler has seen it. Not `built`, not `tested`, not `verified`.
+- Nothing here has been loaded in Timberborn. The level-transition code reaches every unverified game
+  API by reflection and logs the exact member when one is missing, so the first build-and-run turns
+  `design/wardens-campaign-maps.md` §5 into findings with names in them.
+
 ## Unreleased (0.3.5): the campaign's first level
 
 - **Level 01 is a campaign level.** `Maps/Wardens Wasteland.timber` is now

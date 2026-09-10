@@ -11,6 +11,142 @@ is and how each part works), `wardens/CHANGELOG.md` (what each version added), `
 
 ---
 
+## 2026-09-10, night: level 02 and the level transition (out of plan order)
+
+**Plan:** none — the author asked directly for map design and "the functionality to load a map from
+within the mod whenever needed". That is WP7 plus `wardens-campaign-design.md` §4.4, taken ahead of
+WP1/WP2. **Goal:** level 02 exists as land with a machine-checked contract, and a running game can
+ask for the next level.
+
+**Status: the Python is `checked` (cloud). The C# is `written` — this container has no .NET SDK and
+no game DLLs, so nothing in `wardens/src` has been compiled.**
+
+### What I did
+
+Cloud container: Linux, Python 3.11, `uv`, no `dotnet`, no game DLLs, no Timberborn. Read
+`design/wardens-campaign-map-set.md`, `wardens-campaign-maps.md`, `wardens-campaign-design.md`,
+`wardens-campaign-arc.md`, the two newest HANDOVER entries, the iteration-04 plan's package table,
+and the sources `WardensCampaign.cs`, `WardensMapInstaller.cs`, `WardensMcpTools.cs`,
+`WardensConfigurator.cs`, `WardensMainMenuConfigurator.cs`, `TimberbotAutoLoad.cs`, `gen_map.py` and
+all of `wardens/tools/mapsmith`.
+
+Two decisions were put to the author as blocking questions before any work started, both answered:
+the two generators converge on **mapsmith** (`gen_map.py` keeps level 01's provenance), and the
+transition is **built now with reflection** for the unverified APIs rather than deferred.
+
+Changed, all on one branch, one pull request:
+
+- `wardens/tools/mapsmith/contracts.py` (new) and a `[contract]` spec table; `avoid` on the `hill` op.
+- `wardens/maps/wardens-02-the-sump.map.toml` (new) and `wardens/src/Maps/Wardens 02 The Sump.timber`.
+- `wardens/maps/levels.toml` (new) and `mapsmith levels --verify`.
+- `wardens/src/WardensLevelTransition.cs`, `WardensHandoff.cs`, `WardensReflect.cs`,
+  `WardensServiceLocator.cs` (all new); `campaign action=next`; the two configurators.
+- `wardens-02-the-pods.map.toml` -> `prototype-two-streams.map.toml` (WP7).
+
+### Evidence
+
+| Command | Result line |
+|---|---|
+| `uv run --project python --extra dev pytest -q .claude/skills/driving-iterations/scripts wardens/tools` | `116 passed in 2.54s` |
+| `python wardens/tools/mapsmith check --level 02` | `problems: none` (three contract notes) |
+| `python wardens/tools/mapsmith levels --verify` | `levels: consistent with WardensCampaign.cs` |
+| `python wardens/tools/check_cutscenes.py wardens/src` | `problems: none` |
+| `uv run --project python --extra dev ruff check --config python/pyproject.toml wardens/tools/mapsmith` | `All checks passed!` |
+| `uv run --project python --extra dev mypy --config-file python/pyproject.toml wardens/tools/mapsmith` | `Success: no issues found in 12 source files` |
+| `dotnet build wardens/src/Wardens.csproj -c Release` | **not run here** — no .NET SDK in this container |
+| `dotnet test wardens/test` | **not run here** — same |
+
+### Publish check
+
+Branch `claude/relaxed-noether-pu25ru`, PR #15 open against main.
+`git ls-remote origin claude/relaxed-noether-pu25ru` -> `c93ccab8936fb4cfa05c8c639a89ceaa79d7d096`.
+
+### What I found
+
+1. **A contract catches what an eye does not** (reproduced). The first Sump looked like a gorge map
+   and was not: `single_gorge` reported zero dammable narrows, because a `river` op's `valley` caps
+   run after the spur hills and flatten them (`terrain.py`, `op_river` after `op_hill`).
+   *Symptom:* every cross-section along the river measured bank = 2. *Source:* op order, read and
+   then measured with a cross-section dump. *Consequence:* the level has no dam decision, and the
+   map still loads. *Remedy:* the new `avoid` key on `op_hill`; spurs are raised after the river.
+2. **My own contract had the bug it exists to catch** (reproduced by a test). `contract_single_gorge`
+   reset the current run in the off-map and near-the-edge branches without flushing it.
+   *Consequence:* any gorge reaching the map border was discarded — which is most of them, since a
+   river that enters and leaves the map ends its last run there. *Remedy:* one `close_run()` every
+   branch goes through, plus `test_single_gorge_fails_when_there_is_nowhere_to_dam` and three others.
+3. **The level-numbering dispute was already settled in the C# table** (read), exactly as the
+   planning entry said. *Remedy:* the prototype spec is renamed and claims no level. WP7 is done.
+4. **`SaveReference`, `SettlementReference` and `UserDataFolder` are not guesses** (read):
+   `TimberbotAutoLoad.cs` lines 73-79 construct them and the Wardens csproj references those
+   assemblies (lines 91-92, 120). *Remedy:* the save strategy uses them directly; only the loader
+   *instance* goes through reflection.
+5. **Injecting the transition's dependencies is the one change that must not be made** (read).
+   Bindito resolves a configurator's bindings at scene load, so a dependency not bound in that
+   context takes down `WardensConfigurator` and with it the MCP server, the chat and the chapters.
+   *Remedy:* nothing new is injected; `WardensServiceLocator.cs` carries the reasoning so the next
+   session does not "simplify" it back.
+
+### Where the mod stands
+
+| Fact | Source |
+|---|---|
+| Level 02 has a map, a spec and a machine-checked contract | `wardens/maps/wardens-02-the-sump.map.toml`, the evidence table above |
+| Level 02's row still says `shipped: false` and has no ending tutorial, so completing it is not detectable | `WardensCampaign.cs`, `Levels` |
+| `campaign action=next` exists and refuses on an unfinished level unless `force=true` | `WardensMcpTools.cs`, `NextLevel` |
+| The transition never starts a level in this container; three strategies are tried in order, the fallback is a handoff file the main menu reads | `WardensLevelTransition.cs` |
+| No C# in this entry is past `written` | no .NET SDK here |
+| The *Continue campaign* main-menu button is still not built | `grep MainMenuPanel wardens/src` finds nothing |
+
+### What you should do, in this order
+
+Disposition of the previous entry's items: WP1, WP2, WP5, WP8 (cloud) **deferred** — the author
+asked for map design and the transition instead, and they are unchanged and still small; WP7
+**done** (finding 3); WP3, WP4, WP6 (game) **blocked** on the game machine as before; "five bots or
+thirteen" **still open**; stamping the mirrors with `doc-source`/`doc-hash` **deferred** to WP5 as
+that entry asked.
+
+**If you are at the game machine:** read `docs/plan/HANDOVER.md` (this entry) and
+`design/wardens-campaign-maps.md` §5. Run
+`dotnet build wardens/src/Wardens.csproj -c Release` — this is the first compiler any of the new C#
+has seen, so expect errors and treat them as the finding. Then start a game on
+`Wardens 01 First Light` and call `campaign action=next force=true` through the MCP server, and
+paste every `[Wardens] transition` and `[Wardens] handoff` line from `Player.log` into
+`wardens/playtest/PLAYTEST.md`. Each names the exact type, method or property that was missing;
+that list is the answer to §5 and is the deliverable of this package more than the transition is.
+
+**If you are in a cloud container:** WP1 and WP2 from the iteration-04 plan, untouched and still
+small, each its own branch and PR in the state words.
+
+### How you know it is done
+
+`dotnet build` result line is in a HANDOVER entry; one `campaign action=next` has produced either a
+started level or a named list of missing members; `design/wardens-campaign-maps.md` §5 has a table
+with answers in it instead of an open list; `AGENTS.md`'s state section stops calling the transition
+"not built".
+
+### Open questions I could not answer
+
+**Level 02 has no chapter table and no ending tutorial, so the campaign cannot detect that it is
+complete. Which comes first?**
+
+| Option | Cost | Risk | |
+|---|---|---|---|
+| Write level 02's chapter table and ending tutorial next, before any of it is verified in-game | ~a day; touches `WardensChapters.cs`, the tutorial generator and the loc rows | Tuning a chapter line for a map nobody has played tends to be redone after the first playtest | |
+| Verify level 01 end to end first (WP4), then write level 02's line with what that run taught | The transition stays untestable past "the map loads" until then | Level 02 sits half-built for an iteration | **recommended** |
+| Ship level 02 as a free-play map with no chapter line at all | Small | The campaign silently treats it as a non-campaign map, which is the failure `mapsmith levels --verify` was written to catch | |
+
+What settles it: the level-01 proof run (WP4). Until then the row stays `shipped: false`.
+
+### What I deliberately did not do
+
+I did not inject `ValidatingGameLoader` or `GameSceneLoader` anywhere (finding 5). I did not build
+the *Continue campaign* button: it needs the same unverified new-game path, and one unverified
+mechanism at a time is enough. I did not touch level 01's map, seed or name, or replace
+`gen_map.py`'s provenance of it with a mapsmith rebuild. I did not stamp the five documents; that is
+WP5's commit, as the previous entry asked.
+
+---
+
 ## 2026-09-10, night: the `driving-iterations` skill (iteration 04, no package worked)
 
 **Plan:** [`iteration-04-first-light-verified.md`](iteration-04-first-light-verified.md), unchanged

@@ -1,29 +1,23 @@
-# Wardens level 02, "The Pods" — the second map the campaign plan asks for
-# (design/wardens-campaign-maps.md §6.5: "clean water within reach, contaminated core").
+# A prototype map, not a campaign level.
 #
-#   python wardens/tools/mapsmith preview wardens/maps/wardens-02-the-pods.map.toml --step 2
-#   python wardens/tools/mapsmith build   wardens/maps/wardens-02-the-pods.map.toml
+#   python wardens/tools/mapsmith preview wardens/maps/prototype-two-streams.map.toml --step 2
 #
-# The design inverts level 1. There the colony had badwater everywhere and one distant spring;
-# here two clean streams run down the eastern ridge past the landing site, and the poison sits in
-# the middle of the map, in a contaminated crater the colony has to work around before it can work
-# on it. Scrap is scarcer and further out: the level is about water, not salvage.
+# Written to prove the spec vocabulary could describe a second, different map with no new Python:
+# two clean streams off an eastern ridge, a contaminated crater in the middle, scrap on the flats.
+# It was briefly named `wardens-02-the-pods` after `wardens-campaign-maps.md` §6.5, which disagreed
+# with the campaign's own level table about what level 02 is. That is settled now: the C# table in
+# `wardens/src/WardensCampaign.cs` is the source, level 02 is *The Sump*
+# (`wardens-02-the-sump.map.toml`), and level 03 is *The Pods* — a lake with a green island, which
+# this land is not. So it keeps the vocabulary-proof job and stops claiming a level.
 #
-# This spec exists as much to prove the vocabulary as to ship a level: it is a different map built
-# from the same eleven ops, with no new Python.
-#
-# NUMBERING IS UNRESOLVED, and this file does not settle it. Two design docs disagree:
-# `wardens-campaign-maps.md` §6.5 calls the second map "The Pods" (clean water within reach,
-# contaminated core), which is the brief this map is built to; `wardens-campaign-arc.md` §levels
-# puts "The Sump" (river gorge, one clean spring upstream) at 02 and "The Pods" (lake with poisoned
-# shores, a green island) at 03. The land here follows the maps doc. Rename the file and the `name`
-# once someone decides which doc wins — the map name is what the campaign service keys levels on
-# (`MapNameService.Name`), so it is worth getting right before anything reads it.
-name = "Wardens 02 The Pods"
+# Level 03 needs its own spec against its own contract (design/wardens-campaign-map-set.md §2): an
+# island that is land-disconnected from the start at every walkable Z. The `unreachable` contract in
+# `mapsmith contracts` is already written for it.
+name = "Wardens Prototype Two Streams"
 size = 96
 seed = 2200
 game_version = "0.7.10.0"
-description = "Wardens, level 2. Two clean streams off the eastern ridge, a contaminated crater in the middle, the pods scattered across the flats."
+description = "A prototype, not a campaign level: two clean streams off an eastern ridge and a contaminated crater in the middle."
 
 # --- the land ------------------------------------------------------------------------------------
 

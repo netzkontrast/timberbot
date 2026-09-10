@@ -48,6 +48,9 @@ namespace Wardens
         public WardensMapInstaller(MapRepository mapRepository)
         {
             _mapRepository = mapRepository;
+            // The level transition needs a map source and must not add a binding of its own to find
+            // one (WardensServiceLocator.cs says why). This is a service we are legitimately handed.
+            WardensServiceLocator.Register(mapRepository);
         }
 
         public void Load()

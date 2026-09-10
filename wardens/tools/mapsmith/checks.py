@@ -19,7 +19,7 @@ from .world import read_timber
 
 @dataclass(frozen=True)
 class Problem:
-    level: str      # "error" | "warning"
+    level: str      # "error" | "warning" | "note"
     message: str
 
     def __str__(self) -> str:
@@ -36,6 +36,10 @@ class Report(list):
         return [p for p in self if p.level == "warning"]
 
     @property
+    def notes(self) -> list[Problem]:
+        return [p for p in self if p.level == "note"]
+
+    @property
     def ok(self) -> bool:
         return not self.errors
 
@@ -45,10 +49,19 @@ class Report(list):
     def warn(self, message: str) -> None:
         self.append(Problem("warning", message))
 
+    def note(self, message: str) -> None:
+        """What a check *proved*, not what it found wrong.
+
+        A contract that passes silently is a contract nobody trusts: "single_gorge: one narrows at
+        48,60 (5 tiles)" is the evidence that the level is still the level. Notes never fail a run,
+        not even under --strict.
+        """
+        self.append(Problem("note", message))
+
     def summary(self) -> str:
-        if not self:
-            return "problems: none"
         lines = [str(p) for p in self]
+        if not self.errors and not self.warnings:
+            return "\n".join(lines + ["problems: none"]) if lines else "problems: none"
         return "\n".join(lines) + f"\n{len(self.errors)} error(s), {len(self.warnings)} warning(s)"
 
 

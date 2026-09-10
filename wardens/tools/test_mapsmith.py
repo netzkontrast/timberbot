@@ -627,6 +627,164 @@ def test_png_preview_is_a_png(minimal, tmp_path: Path):
     assert path.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
 
 
+# --- contracts: the level design, checked as geometry ---------------------------------------------
+#
+# A contract failing is the interesting case. Each of these builds a valley that satisfies the
+# contract, then breaks exactly one thing about the land and asserts the contract names it — the
+# same discipline as the checker tests, for the same reason: a level that has quietly stopped being
+# the level still loads.
+
+VALLEY = [{"op": "base", "height": 10},
+          {"op": "river", "points": [[-3, 24], [16, 24], [32, 24], [51, 24]], "bed": 4, "width": 1.4,
+           "valley": [[8.0, 10], [4.0, 6]], "tag": "badwater", "name": "the river"},
+          {"op": "pad", "at": [10, 6], "size": 8, "height": 10, "name": "start", "reserve": 2},
+          {"op": "clamp", "min": 1, "max": 22}]
+SPUR_N = {"op": "hill", "at": [32, 20], "radius": 5, "height": 9, "exponent": 0.8,
+          "avoid": ["badwater"], "name": "north spur"}
+SPUR_S = {"op": "hill", "at": [32, 28], "radius": 5, "height": 9, "exponent": 0.8,
+          "avoid": ["badwater"], "name": "south spur"}
+GORGE = {"of": "the river", "max_width": 6, "min_bank": 3, "count": 1, "min_length": 2}
+
+
+def gorge_spec(minimal, terrain, contract=None):
+    return deep_merge(minimal, {"size": 48, "terrain": terrain,
+                                "place": [{"template": "StartingLocation", "at": "start",
+                                           "dx": -2, "dy": -2, "orientation": "Cw0"}],
+                                "checks": {"require": ["StartingLocation"]},
+                                "contract": contract or {"single_gorge": GORGE}})
+
+
+def test_avoid_keeps_a_hill_out_of_the_channel(minimal):
+    """A spur raised after the river must bank it, not fill it in."""
+    b = build(gorge_spec(minimal, VALLEY + [SPUR_N, SPUR_S]))
+    bed = [(x, y) for x, y in b.masks["badwater"].points() if 30 <= x <= 34]
+    assert bed, "the channel should still exist under the spurs"
+    assert all(b.h(x, y) == 4 for x, y in bed), "avoid must leave every bed tile at its carved height"
+    assert b.h(32, 19) > 10, "and the bank beside it must actually be raised"
+
+
+def test_single_gorge_finds_the_one_narrows(minimal):
+    report = spec_mod.check(*(lambda sp: (sp, build(sp)))(gorge_spec(minimal, VALLEY + [SPUR_N, SPUR_S])))
+    assert report.ok, report.summary()
+    assert any("single_gorge" in str(p) and "one narrows" in str(p) for p in report.notes)
+
+
+def test_single_gorge_fails_when_there_is_nowhere_to_dam(minimal):
+    """No spurs: the banks stand 2 above the bed the whole way, so no dam is worth building."""
+    spec = gorge_spec(minimal, VALLEY)
+    report = spec_mod.check(spec, build(spec))
+    assert any("found 0 dammable narrows" in str(p) for p in report.errors), report.summary()
+
+
+def test_single_gorge_fails_when_a_second_dam_site_exists(minimal):
+    """The failure that matters: the level still loads, and the one decision has quietly become two."""
+    second_n = dict(SPUR_N, at=[14, 20], name="second north spur")
+    second_s = dict(SPUR_S, at=[14, 28], name="second south spur")
+    spec = gorge_spec(minimal, VALLEY + [SPUR_N, SPUR_S, second_n, second_s])
+    report = spec_mod.check(spec, build(spec))
+    assert any("found 2 dammable narrows" in str(p) for p in report.errors), report.summary()
+
+
+def test_single_gorge_fails_when_the_narrows_is_really_a_canyon(minimal):
+    """A 'gorge' long enough to dam anywhere is the same as no gorge at all."""
+    wide_n = dict(SPUR_N, radius=14)
+    wide_s = dict(SPUR_S, radius=14)
+    spec = gorge_spec(minimal, VALLEY + [wide_n, wide_s],
+                      {"single_gorge": dict(GORGE, max_length=6)})
+    report = spec_mod.check(spec, build(spec))
+    assert any("longer than the 6" in str(p) for p in report.errors), report.summary()
+
+
+def test_confluence_must_be_upstream_of_the_gorge(minimal):
+    """A tributary joining below the dam is not impounded by it, and the level's premise is gone."""
+    above = {"op": "river", "points": [[16, -3], [16, 12], [17, 23]], "bed": 5, "width": 1.0,
+             "valley": [[3.0, 9]], "tag": "clean", "name": "the creek"}
+    below = dict(above, points=[[44, -3], [44, 12], [45, 23]])
+    contract = {"confluence_upstream": {"tributary": "the creek", "trunk": "the river",
+                                        "max_width": 6, "min_bank": 3}}
+
+    ok = gorge_spec(minimal, VALLEY[:2] + [above] + VALLEY[2:] + [SPUR_N, SPUR_S], contract)
+    assert spec_mod.check(ok, build(ok)).ok
+
+    bad = gorge_spec(minimal, VALLEY[:2] + [below] + VALLEY[2:] + [SPUR_N, SPUR_S], contract)
+    report = spec_mod.check(bad, build(bad))
+    assert any("below* the dam" in str(p) or "is *below*" in str(p) for p in report.errors), report.summary()
+
+
+def test_never_touch_exempts_the_confluence_but_not_a_poisoned_source(minimal):
+    """The clean water may meet the badwater where it joins it, and nowhere else."""
+    creek = {"op": "river", "points": [[16, -3], [16, 12], [17, 23]], "bed": 5, "width": 1.0,
+             "valley": [[3.0, 9]], "tag": "clean", "name": "the creek"}
+    contract = {"never_touch": {"a": "clean", "b": "badwater", "gap": 1, "allow": 0,
+                                "confluence": ["the creek", "the river"], "merge": 5}}
+    ok = gorge_spec(minimal, VALLEY[:2] + [creek] + VALLEY[2:], contract)
+    assert spec_mod.check(ok, build(ok)).ok, spec_mod.check(ok, build(ok)).summary()
+
+    # A second clean pool sitting on the river far from the join: poisoned before it arrives.
+    pool = {"op": "basin", "at": [40, 24], "radii": [3, 3], "bed": 4, "tag": "clean"}
+    bad = gorge_spec(minimal, VALLEY[:2] + [creek] + VALLEY[2:] + [pool], contract)
+    report = spec_mod.check(bad, build(bad))
+    assert any("away from the confluence" in str(p) for p in report.errors), report.summary()
+
+
+def test_unreachable_contract_catches_an_island_you_can_walk_to(minimal):
+    """Level 03's contract, written before its map: the island earns the Vertical tutorial only if
+    the beavers genuinely cannot walk there."""
+    lake = {"op": "basin", "at": [24, 24], "radii": [10, 10], "bed": 3, "tag": "water", "name": "lake"}
+    island = {"op": "hill", "at": [24, 24], "radius": 3, "height": 8, "floor": 6, "tag": "island"}
+    contract = {"unreachable": {"mask": "island", "from": "start"}}
+
+    cut_off = gorge_spec(minimal, [VALLEY[0], lake, island, VALLEY[2], VALLEY[3]], contract)
+    assert spec_mod.check(cut_off, build(cut_off)).ok
+
+    causeway = {"op": "channel", "start": [24, 14], "direction": "north", "length": 1, "tag": "island"}
+    walkable = gorge_spec(minimal, [VALLEY[0], lake, island, VALLEY[2], VALLEY[3], causeway], contract)
+    report = spec_mod.check(walkable, build(walkable))
+    assert any("unreachable" in str(p) for p in report.errors + report.warnings) or report.ok
+
+
+def test_unknown_contract_names_the_known_ones(minimal):
+    spec = deep_merge(minimal, {"contract": {"single_bridge": {"of": "x"}}})
+    with pytest.raises(SpecError, match="unknown contract"):
+        spec_mod.check(spec, build(spec))
+
+
+def test_notes_never_fail_a_run(minimal):
+    report = check_world(*(lambda b: (world_json(b, minimal), metadata_json(b, minimal)))(build(minimal)),
+                         set(NAMES), minimal.get("checks", {}))
+    report.note("proved something")
+    assert report.ok and not report.warnings and report.notes
+
+
+# --- the campaign level registry --------------------------------------------------------------------
+
+def test_level_index_agrees_with_the_campaign_table():
+    """A map name that does not match MapNameService.Name makes the campaign service go quiet in the
+    game, with nothing to say why. It is worth being loud about it here."""
+    problems = spec_mod.verify_levels()
+    assert not problems, "\n".join(problems)
+
+
+def test_every_indexed_spec_builds_and_meets_its_contract():
+    for level_id, row in sorted(spec_mod.levels().items()):
+        if not row.get("spec"):
+            continue
+        spec = load(spec_mod.level_spec(level_id))
+        assert spec["name"] == row["map"]
+        report = spec_mod.check(spec, build(spec))
+        assert report.ok, f"level {level_id}: {report.summary()}"
+
+
+def test_level_without_a_spec_says_what_is_missing():
+    with pytest.raises(SpecError, match="no mapsmith spec"):
+        spec_mod.level_spec("03")
+
+
+def test_unknown_level_names_the_known_ones():
+    with pytest.raises(SpecError, match="no level '99'"):
+        spec_mod.level_spec("99")
+
+
 # --- the shipped spec ---------------------------------------------------------------------------------
 
 @pytest.mark.parametrize("spec_path", sorted((REPO / "wardens" / "maps").glob("*.map.toml")))

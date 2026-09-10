@@ -21,6 +21,24 @@ def _falloff(t: float, exponent: float) -> float:
     return max(0.0, min(1.0, t)) ** exponent
 
 
+def _protected(b: MapBuild, avoid) -> set[tuple[int, int]]:
+    """Cells a landscaping op must not touch, named by mask.
+
+    Ops run in order, and water is usually carved late so it cuts through the relief. But a gorge is
+    made by raising ground *beside* a channel that already exists, and a hill that also fills in the
+    channel is not a gorge. `avoid = "badwater"` lets an op run after the water without undoing it.
+    """
+    if not avoid:
+        return set()
+    names = [avoid] if isinstance(avoid, str) else list(avoid)
+    out: set[tuple[int, int]] = set()
+    for name in names:
+        if name not in b.masks:
+            raise SpecError(f"avoid: no mask {name!r}; known: {', '.join(sorted(b.masks)) or 'none'}")
+        out.update(b.masks[name].points())
+    return out
+
+
 def op_base(b: MapBuild, *, height: float = 6.0, **_) -> None:
     """Set every column to one height. Usually the first op."""
     b.height.cells = [float(height)] * len(b.height)
@@ -71,15 +89,21 @@ def op_rim(b: MapBuild, *, width: float = 10.0, height: float = 5.0, exponent: f
 
 
 def op_hill(b: MapBuild, *, at, radius: float = 12.0, height: float = 6.0, exponent: float = 1.5,
-            floor: float | None = None, name: str | None = None, tag: str | None = None, **_) -> None:
-    """A cone of ground rising to `height` above `floor` (or above whatever is there)."""
+            floor: float | None = None, name: str | None = None, tag: str | None = None,
+            avoid=None, **_) -> None:
+    """A cone of ground rising to `height` above `floor` (or above whatever is there).
+
+    `avoid = "badwater"` (or a list of masks) leaves those cells alone, so a hill raised after the
+    river carves becomes a bank instead of a landslide into the channel.
+    """
     cx, cy = b.resolve_point(at)
     size = b.size
     touched = Mask(size)
+    keep_clear = _protected(b, avoid)
     for y in range(max(0, int(cy - radius - 1)), min(size, int(cy + radius + 2))):
         for x in range(max(0, int(cx - radius - 1)), min(size, int(cx + radius + 2))):
             d = math.hypot(x - cx, y - cy)
-            if d > radius:
+            if d > radius or (x, y) in keep_clear:
                 continue
             lift = _falloff((radius - d) / radius, exponent) * height
             base = floor if floor is not None else b.height.at(x, y)

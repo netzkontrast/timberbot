@@ -33,7 +33,7 @@ not care (`wardens-campaign-maps.md` §2 A).
 | # | Map name | Level | Size | Cut | Reuses | New work |
 |---|---|---|---|---|---|---|
 | 01 | `Wardens 01 First Light` | First Light | 96 | ✅ | — | **done** (renamed, pinned, contract checked) |
-| 02 | `Wardens 02 The Sump` | The Sump | 96 | ✅ | river, spring, ruins | gorge, confluence |
+| 02 | `Wardens 02 The Sump` | The Sump | 96 | ✅ | river, spring, ruins | **done** (mapsmith spec + contract; not yet loaded in-game) |
 | 03 | `Wardens 03 The Pods` | The Pods | 96 | ✅ | river, ruins | lake basin, island |
 | 04 | `Wardens 04 The Delta` | The Delta | 112 | — | river, lake | braided channels, floodplain |
 | 05 | `Wardens 05 The Archive` | The Archive / Green | 128 | ✅ (as *Green*) | ruins, trees | town grid, dry valley |
@@ -71,6 +71,21 @@ the surface and in bounds. Nothing to do but rename the file and keep the seed p
 **Contract:** exactly one gorge ≤ 6 tiles wide with banks ≥ 3 above the bed; the confluence is upstream of it;
 no second crossing where a dam is cheaper; the spring's clean cells never touch a badwater cell before the
 confluence.
+
+**`checked` (2026-09-10, cloud; not yet loaded in the game)** as
+[`wardens/maps/wardens-02-the-sump.map.toml`](../wardens/maps/wardens-02-the-sump.map.toml),
+and that contract is now machine-checked rather than asserted — `mapsmith check --level 02` reports:
+
+```
+[note] single_gorge on 'the river': one narrows at 62,48 (12 tiles long)
+[note] confluence_upstream: joins at 32%, gorge at 51% — one dam holds both
+[note] never_touch: 'clean' keeps 1 tile(s) from 'badwater' (confluence at 39,44 exempt) — 0 stray contact(s)
+```
+
+The gorge is made by two spurs raised *after* the river carves, with `avoid` keeping them out of the
+channel: everywhere else the first dry tile beside the bed stands 2 above it, and at x 58-66 it stands
+5 to 9 above. That single number is the whole level. Still unverified: that the game loads it, and
+whether a 12-tile narrows reads as one obvious dam site to a player rather than to a checker.
 
 ### 03 — The Pods
 

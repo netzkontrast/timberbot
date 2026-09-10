@@ -1,0 +1,267 @@
+# Wardens level 02, "The Sump" — the second campaign level.
+#
+#   python wardens/tools/mapsmith preview --level 02 --step 2
+#   python wardens/tools/mapsmith build   --level 02
+#
+# The land's job (design/wardens-campaign-map-set.md §2, level 02): make one dam decision matter
+# more than everything else.
+#
+#   * A badwater river enters west and leaves east through EXACTLY ONE gorge — the only column of
+#     the map where a dam of buildable width spans bank to bank.
+#   * A clean spring feeds a side creek that joins the river ABOVE the gorge. Dam the gorge and you
+#     impound both; the level is won by diverting the badwater first.
+#   * A contaminated band along the whole river; a green terrace at the spring, the only trees.
+#
+# Those three sentences are checked as geometry by the [contract] table at the bottom of this file,
+# not left to the eye. A seed change or a widened valley that opens a second dammable narrows turns
+# this level back into a suggestion, and the map would still load.
+#
+# Level 01 is a basin you dig out of. This is a valley you are pushed along: walls north and south,
+# the river down the middle, and one place where the walls reach in far enough to dam.
+name = "Wardens 02 The Sump"
+size = 96
+seed = 1102
+game_version = "0.7.10.0"
+description = "Wardens, level 2. Badwater from the west, one gorge worth damming, and a clean creek joining above it. Keep the clean water clean."
+
+# --- the valley --------------------------------------------------------------------------------
+# A trough running west to east, walls north and south. The river is incised into the floor with a
+# wide, shallow valley, so its banks stand only ~2 above the bed almost everywhere: nowhere worth
+# damming. The two spurs below are what make the one place that is.
+
+[[terrain]]
+op = "base"
+height = 10
+
+[[terrain]]
+op = "noise"
+amplitude = 3.0
+contrast = 1.5
+octaves = [7, 15, 30]
+weights = [1.0, 0.45, 0.2]
+
+[[terrain]]                        # the north wall
+op = "hill"
+at = [48, -6]
+radius = 44
+height = 10
+exponent = 0.9
+name = "north wall"
+
+[[terrain]]                        # the south wall
+op = "hill"
+at = [48, 102]
+radius = 44
+height = 10
+exponent = 0.9
+name = "south wall"
+
+[[terrain]]
+op = "smooth"
+passes = 1
+strength = 0.4
+
+# --- the water ---------------------------------------------------------------------------------
+
+[[terrain]]                        # the badwater river: enters west, leaves east
+op = "river"
+points = [[-3, 44], [14, 46], [30, 43], [44, 47], [56, 48], [62, 48], [70, 49], [82, 47], [99, 50]]
+bed = 5
+width = 1.6
+valley = [[12.0, 11], [8.0, 9], [5.0, 7]]
+tag = "badwater"
+name = "the river"
+
+[[terrain]]                        # the clean creek, down off the north wall, joining at x ~ 41
+op = "river"
+points = [[24, -3], [26, 10], [30, 22], [34, 32], [38, 41], [41, 46]]
+bed = 6
+width = 1.1
+valley = [[3.6, 10], [2.2, 8]]
+tag = "clean"
+name = "the creek"
+
+# --- the gorge ------------------------------------------------------------------------------------
+# Two spurs reaching in from the walls, raised AFTER the river carves and told to leave the channel
+# alone (`avoid`). Everywhere else the first dry tile beside the bed sits ~2 above it; here it sits
+# ~8 above, and the crossing is a handful of tiles. That difference is the level.
+
+[[terrain]]
+op = "hill"
+at = [62, 44]
+radius = 6
+height = 10
+exponent = 0.8
+avoid = ["badwater", "clean"]
+name = "north spur"
+
+[[terrain]]
+op = "hill"
+at = [62, 52]
+radius = 6
+height = 10
+exponent = 0.8
+avoid = ["badwater", "clean"]
+name = "south spur"
+
+# --- the spring ------------------------------------------------------------------------------------
+
+[[terrain]]                        # the spring's terrace: the only green on the map
+op = "hill"
+at = [24, 8]
+radius = 11
+height = 4
+exponent = 1.2
+avoid = ["clean"]
+name = "spring terrace"
+
+[[terrain]]                        # the pad, on the north bank between the creek and the gorge
+op = "pad"
+at = [46, 28]
+size = 8
+height = 11
+name = "start"
+reserve = 3
+
+[[terrain]]
+op = "clamp"
+min = 3
+max = 22
+
+# --- sources -------------------------------------------------------------------------------------
+
+[[place]]
+template = "BadwaterSource"
+along = "the river"
+segment = [0.03, 0.07]             # the west edge, just inside the border
+count = 3
+strength = 4.0
+orientation = "Cw0"
+
+[[place]]
+template = "WaterSource"
+along = "the creek"
+segment = [0.04, 0.10]             # the spring, high on the north wall
+count = 2
+strength = 1.5
+orientation = "Cw0"
+
+[[place]]
+template = "StartingLocation"
+at = "start"
+dx = -2
+dy = -2
+orientation = "Cw0"
+
+# --- salvage -----------------------------------------------------------------------------------
+# Level 01 taught scavenging; here the scrap is the budget for a dam. The near field must be
+# walkable or the level cannot open, so it is named in the contract's reachable_scatter.
+
+[[scatter]]
+name = "the bank wrecks"
+templates = ["RuinColumnH1", "RuinColumnH2", "RuinColumnH3"]
+weights = [3, 3, 2]
+levels = [1, 2, 3]
+around = "start"
+radius = [6, 18]
+count = 10
+spacing = 3
+height_range = [7, 14]
+reachable_from = "start"
+away_from = { badwater = 3.0, clean = 2.0 }
+variants = ["A", "B", "C"]
+orientation = "Cw0"
+yield = { good = "ScrapMetal", amount_per_level = 15 }
+
+[[scatter]]
+name = "the gorge wrecks"          # right where the dam goes: the material is at the work site
+templates = ["RuinColumnH2", "RuinColumnH3"]
+weights = [1, 1]
+levels = [2, 3]
+around = [62, 40]
+radius = [4, 13]
+count = 7
+spacing = 3
+height_range = [7, 16]
+reachable_from = "start"
+away_from = { badwater = 2.5 }
+variants = ["A", "B", "C"]
+orientation = "Cw0"
+yield = { good = "ScrapMetal", amount_per_level = 15 }
+
+[[scatter]]
+name = "downstream of the gorge"   # past the dam site: a reason to cross once the gorge is held
+templates = ["RuinColumnH3", "RuinColumnH5"]
+weights = [1, 1]
+levels = [3, 5]
+around = [80, 60]
+radius = [4, 14]
+count = 7
+spacing = 3
+height_range = [6, 16]
+away_from = { badwater = 3.0 }
+variants = ["A", "B", "C"]
+orientation = "Cw0"
+yield = { good = "ScrapMetal", amount_per_level = 15 }
+
+[[scatter]]
+name = "underground ruins"
+template = "UndergroundRuins"
+around = [48, 48]
+radius = [14, 40]
+count = 7
+spacing = 4
+height_range = [9, 18]
+buried = 3
+margin = 4
+orientation = "Cw0"
+
+# --- the only green ------------------------------------------------------------------------------
+
+[[scatter]]
+name = "the spring terrace"
+templates = ["Birch", "Pine", "BlueberryBush"]
+weights = [45, 35, 20]
+around = "spring terrace"
+radius = [2, 12]
+count = 90
+spacing = 1
+margin = 2
+growth = [0.6, 1.0]
+away_from = { badwater = 12.0 }
+
+[[scatter]]
+name = "creek banks"               # thinning as the creek runs down towards the poisoned river
+templates = ["Birch", "Pine"]
+weights = [6, 4]
+around = [32, 26]
+radius = [2, 12]
+count = 30
+spacing = 2
+margin = 2
+growth = [0.6, 1.0]
+away_from = { badwater = 11.0 }
+
+# --- soil ------------------------------------------------------------------------------------------
+
+[soil]
+contamination = { from = "badwater", offset = 2.0, reach = 8.0 }
+moisture = { from = "clean", offset = 0.0, reach = 6.0, peak = 0.8 }
+
+# --- what must be true for this to load and be playable -----------------------------------------------
+
+[checks]
+require = ["StartingLocation", "BadwaterSource", "WaterSource"]
+require_at_least = { RuinColumnH1 = 2 }
+min_reachable = 1200
+reachable_scatter = ["the bank wrecks", "the gorge wrecks"]
+
+# --- what must be true for this to still be *The Sump* -------------------------------------------------
+# design/wardens-campaign-map-set.md §2, level 02, verbatim: "exactly one gorge <= 6 tiles wide with
+# banks >= 3 above the bed; the confluence is upstream of it; no second crossing where a dam is
+# cheaper; the spring's clean cells never touch a badwater cell before the confluence."
+
+[contract]
+single_gorge = { of = "the river", max_width = 6, min_bank = 3, count = 1, min_length = 2, max_length = 12 }
+confluence_upstream = { tributary = "the creek", trunk = "the river", max_width = 6, min_bank = 3 }
+never_touch = { a = "clean", b = "badwater", gap = 1, allow = 0, confluence = ["the creek", "the river"], merge = 5 }

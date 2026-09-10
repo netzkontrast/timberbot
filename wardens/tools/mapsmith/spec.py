@@ -28,6 +28,7 @@ else:  # pragma: no cover - only on 3.10
 from . import placement, terrain
 from .build import MapBuild, SpecError
 from .checks import Report, check_world
+from .contracts import check_contract
 from .world import metadata_json, world_json
 
 REQUIRED = ("name", "size")
@@ -82,6 +83,77 @@ def build(spec: dict) -> MapBuild:
 
 MEMBERS = {"world.json", "map_metadata.json", "version.txt", "map_thumbnail.jpg"}
 
+MAPS_DIR = Path(__file__).resolve().parents[2] / "maps"
+LEVELS_INDEX = MAPS_DIR / "levels.toml"
+CAMPAIGN_CS = Path(__file__).resolve().parents[2] / "src" / "WardensCampaign.cs"
+
+
+def levels() -> dict[str, dict]:
+    """The campaign's map index (`wardens/maps/levels.toml`), keyed by level id."""
+    if not LEVELS_INDEX.exists():
+        return {}
+    return tomllib.loads(LEVELS_INDEX.read_text(encoding="utf-8")).get("levels", {})
+
+
+def level_spec(level_id: str) -> Path:
+    """The spec file that builds a level's land, or a SpecError saying what is missing."""
+    table = levels()
+    row = table.get(level_id)
+    if row is None:
+        raise SpecError(f"no level {level_id!r} in {LEVELS_INDEX.name}; "
+                        f"have {', '.join(sorted(table)) or 'none'}")
+    if not row.get("spec"):
+        generator = row.get("generator") or "nothing yet"
+        raise SpecError(f"level {level_id} ({row.get('title', '?')}) has no mapsmith spec "
+                        f"(generator: {generator}). {row.get('note', '')}".strip())
+    path = MAPS_DIR / row["spec"]
+    if not path.exists():
+        raise SpecError(f"level {level_id}: {LEVELS_INDEX.name} points at {row['spec']}, which does not exist")
+    return path
+
+
+def campaign_cs_levels() -> dict[str, str]:
+    """Level id -> map name, parsed from the C# table. The comment there asks for one call per line."""
+    import re  # noqa: PLC0415 - only needed here
+    if not CAMPAIGN_CS.exists():
+        return {}
+    pattern = re.compile(r'new WardensLevel\(\s*"([^"]+)"\s*,\s*"([^"]+)"')
+    return {m.group(1): m.group(2) for m in pattern.finditer(CAMPAIGN_CS.read_text(encoding="utf-8"))}
+
+
+def verify_levels() -> list[str]:
+    """Disagreements between the map index, the C# campaign table, and the files on disk.
+
+    A map name that does not match `MapNameService.Name` makes the campaign service decide "not a
+    campaign level" and go quiet — no chapters, no completion, no toast, and nothing says why. That
+    failure is silent in the game, so it is worth being loud about here.
+    """
+    problems: list[str] = []
+    index, cs = levels(), campaign_cs_levels()
+    for level_id, row in sorted(index.items()):
+        want = cs.get(level_id)
+        if want is None:
+            problems.append(f"level {level_id} is in {LEVELS_INDEX.name} but not in WardensCampaign.cs")
+        elif want != row.get("map"):
+            problems.append(f"level {level_id}: {LEVELS_INDEX.name} says map {row.get('map')!r}, "
+                            f"WardensCampaign.cs says {want!r}")
+    for level_id, map_name in sorted(cs.items()):
+        if level_id not in index:
+            problems.append(f"level {level_id} ({map_name}) is in WardensCampaign.cs but not in {LEVELS_INDEX.name}")
+    for level_id, row in sorted(index.items()):
+        if not row.get("spec"):
+            continue
+        spec_path = MAPS_DIR / row["spec"]
+        if not spec_path.exists():
+            problems.append(f"level {level_id}: spec {row['spec']} does not exist")
+            continue
+        declared = tomllib.loads(spec_path.read_text(encoding="utf-8")).get("name")
+        if declared != row.get("map"):
+            problems.append(f"level {level_id}: {row['spec']} builds a map called {declared!r}, "
+                            f"but the level's map is {row.get('map')!r} — the campaign would not "
+                            f"recognise it")
+    return problems
+
 
 def groups_of(b: MapBuild) -> dict[str, list[tuple[int, int]]]:
     """Entities by the `name` of the rule that placed them."""
@@ -95,8 +167,10 @@ def groups_of(b: MapBuild) -> dict[str, list[tuple[int, int]]]:
 def check(spec: dict, b: MapBuild) -> Report:
     """Check a built spec. Unlike checking a bare `.timber`, this knows where the water is and which
     rule placed what, so the walkability checks are the strict ones."""
-    return check_world(world_json(b, spec), metadata_json(b, spec), set(MEMBERS),
-                       spec.get("checks", {}), water=b.water_cells(), groups=groups_of(b))
+    report = check_world(world_json(b, spec), metadata_json(b, spec), set(MEMBERS),
+                         spec.get("checks", {}), water=b.water_cells(), groups=groups_of(b))
+    check_contract(b, spec, report)     # the level design, checked as geometry
+    return report
 
 
 def walk_report(b: MapBuild, start: tuple[int, int] | None = None) -> str:

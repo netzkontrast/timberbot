@@ -11,6 +11,8 @@ print (placement keys, `[soil]`, `[checks]`, variants).
 - [`[[scatter]]`](#scatter)
 - [`[soil]`](#soil)
 - [`[checks]`](#checks)
+- [`[contract]`](#contract)
+- [The level registry](#the-level-registry)
 - [Variants](#variants)
 - [Python API](#python-api)
 
@@ -64,7 +66,7 @@ to a named mask) and most take `name` (register an anchor point).
 | `base` | `height` — flatten everything to one level. Start here. |
 | `noise` | `amplitude`, `contrast` (stretch around the midpoint), `octaves`, `weights`, `mode` (`add`/`set`/`max`). |
 | `rim` | `width`, `height`, `exponent` — raise the border into hills. |
-| `hill` | `at`, `radius`, `height`, `exponent`, `floor` (build up from a fixed level rather than the ground). |
+| `hill` | `at`, `radius`, `height`, `exponent`, `floor` (build up from a fixed level rather than the ground), `avoid` (mask or list of masks to leave untouched — how you raise a bank *after* the river carves without filling the channel). |
 | `river` | `points` (control points for a smooth curve), `bed`, `width`, `valley` (`[[dist, max_height], …]`), `tag`, `name`, `per_segment`. |
 | `basin` | `at`, `radii` (scalar or `[rx, ry]`), `bed`, `shore`, `shore_width`, `tag`, `name`. |
 | `crater` | `at`, `radius`, `depth` — sinks relative to the ground already there. |
@@ -167,6 +169,37 @@ They are not the same check, and the difference is not cosmetic:
 So a map can pass the file check and fail the spec check. Check the spec whenever you have it; the
 file check is for maps someone else wrote. Pass `--spec <spec>` alongside a `.timber` to at least
 apply the spec's `[checks]` table to it.
+
+## `[contract]`
+
+What must stay true of the ground for the level to still be the level. Each key is a contract name;
+the value is its parameters. `mapsmith contracts` prints them from the source, with the reasoning.
+
+| Contract | Asserts |
+|---|---|
+| `single_gorge` | Exactly `count` places along a watercourse are narrow enough (`max_width`) and banked enough (`min_bank`) to dam. `max_length` caps how long one may run — a 25-tile "gorge" means a dam anywhere is as good as anywhere else, which is the same as no decision. `min_length`, `ignore_ends` tune what counts. |
+| `confluence_upstream` | A `tributary` joins a `trunk` above the trunk's gorge, measured along the trunk's own path, so one dam impounds both. |
+| `never_touch` | Two masks (`a`, `b`) stay `gap` tiles apart, except within `merge` tiles of the `confluence` of two named watercourses. This is how "the spring's clean cells never touch badwater *before* the confluence" is stated. |
+| `unreachable` | A `mask` cannot be walked to `from` an anchor, with optional `min_area`/`max_area`. Written for level 03's island, which earns the Vertical tutorial only if the beavers genuinely cannot walk there. |
+
+Contracts add `note` findings when they pass — the evidence that the level is intact. Notes never
+fail a run, not even under `--strict`.
+
+## The level registry
+
+`wardens/maps/levels.toml` is the index: level id → map name → the spec that builds it.
+
+```bash
+mapsmith levels            # the table, plus any disagreement with WardensCampaign.cs
+mapsmith levels --verify   # exit 1 on disagreement
+mapsmith build --level 02
+mapsmith check  --level 02
+```
+
+`wardens/src/WardensCampaign.cs` stays the campaign (which levels exist, what ends them). The index
+says only where each level's land comes from, and `--verify` cross-checks the two — a spec whose
+`name` is not exactly the level's map name would make the running game treat it as a non-campaign
+map, silently.
 
 ## Variants
 

@@ -22,6 +22,10 @@ python3 wardens/tools/mapsmith preview wardens/maps/wardens-wasteland.map.toml -
 python3 wardens/tools/mapsmith build   wardens/maps/wardens-wasteland.map.toml
 python3 wardens/tools/mapsmith check   wardens/maps/wardens-wasteland.map.toml
 python3 wardens/tools/mapsmith ops     # every terrain verb and what it takes
+
+python3 wardens/tools/mapsmith levels          # the campaign map index, vs the C# level table
+python3 wardens/tools/mapsmith build --level 02
+python3 wardens/tools/mapsmith contracts       # the level-design assertions a spec can make
 ```
 
 Two things about the command line worth knowing before your first run:
@@ -240,6 +244,51 @@ written to tell you the fix:
 | `[error] 3 of 7 entities from 'near ruins' cannot be reached on foot` | A cluster listed in `[checks] reachable_scatter` is cut off. Move it to the colony's side, or drop it from the list if being cut off is the point. |
 | `[warning] only N of M tiles are walkable from the start` | Beavers climb one level unaided; the start is ringed by cliffs. |
 | `[warning] reachable_scatter names 'x', which is not a named rule` | A typo, or you are checking a `.timber` instead of the spec — rule names do not survive into the file. |
+
+## Contracts: the level design, checked as geometry
+
+`[checks]` answers "will the game load this, and can the colony move". A `[contract]` answers a
+different question — *is this still the level it was meant to be?*
+
+Timberborn has no objective system. A level cannot tell the player what to do and cannot stop them
+doing something else, so the only thing that reliably constrains play is the land
+(`design/wardens-campaign-map-set.md` §0). That makes the design a short list of properties the
+ground must guarantee: The Sump is "keep the clean water clean" only if there is exactly one place
+to dam and the badwater arrives above it. Those properties break silently — a seed change or a
+widened valley opens a second dam site, the map still loads, and nobody finds out until a playtest.
+
+```toml
+[contract]
+single_gorge = { of = "the river", max_width = 6, min_bank = 3, count = 1, max_length = 12 }
+confluence_upstream = { tributary = "the creek", trunk = "the river", max_width = 6, min_bank = 3 }
+never_touch = { a = "clean", b = "badwater", confluence = ["the creek", "the river"], merge = 5 }
+```
+
+A passing contract prints what it proved, because a contract that passes silently is one nobody
+trusts:
+
+```
+[note] single_gorge on 'the river': one narrows at 62,48 (12 tiles long)
+[note] confluence_upstream: joins at 32%, gorge at 51% — one dam holds both
+```
+
+`mapsmith contracts` lists them with their parameters. Write the contract *before* the terrain: it
+tells you when the land is right, and it is the only reviewer you have.
+
+## The campaign level registry
+
+`wardens/maps/levels.toml` maps a campaign level id to the spec that builds its land.
+`wardens/src/WardensCampaign.cs` remains the campaign itself — which levels exist and what each is
+called. `mapsmith levels` prints both and reports any disagreement.
+
+This matters more than it looks: the campaign service finds the level by matching
+`MapNameService.Name` against its table, so a spec whose `name` does not exactly equal the level's
+map name makes the game decide "not a campaign level" and go quiet — no chapters, no completion, no
+toast, and nothing saying why. `mapsmith levels --verify` fails on that mismatch; the same check
+runs in the test suite.
+
+Build a level by id rather than by path (`build --level 02`), so the index stays the thing that
+knows where a level's land comes from.
 
 ## Facts about the format worth not rediscovering
 

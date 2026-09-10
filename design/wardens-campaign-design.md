@@ -179,6 +179,16 @@ menu, consumed and deleted by `WardensHandoff` at the next menu load, exactly as
 
 ### 4.4 `ILevelStarter` and the three strategies (`WardensLevelTransition.cs`)
 
+> **`written` (2026-09-10, cloud)** as `wardens/src/WardensLevelTransition.cs`, `WardensHandoff.cs`,
+> `WardensReflect.cs` and `WardensServiceLocator.cs`, plus `campaign action=next`. `written` in the
+> sense the `driving-iterations` skill gives it: the change exists on a branch and **nothing has
+> compiled it** — the container had no .NET SDK and no game DLLs, so every line waits on a
+> game-machine build before it can be called anything more. The unverified APIs in the table below are reached by reflection rather than referenced, and
+> nothing new is injected — a Bindito dependency that turns out not to be bound in a context takes
+> the whole configurator down with it, and a campaign convenience is not worth the MCP server. Each
+> lookup that fails is logged with the member's name, so the first real run answers §5 of
+> `wardens-campaign-maps.md` with findings instead of leaving it open.
+
 ```csharp
 public interface ILevelStarter { bool CanStart(WardensLevel level); void Start(WardensLevel level, CampaignMode mode); }
 ```

@@ -1,0 +1,56 @@
+# The campaign's map index: which spec builds which level's land.
+#
+#   python wardens/tools/mapsmith levels                 # what exists, what is missing
+#   python wardens/tools/mapsmith build --level 02       # build one level by id
+#   python wardens/tools/mapsmith check  --level 02
+#
+# The C# table in `wardens/src/WardensCampaign.cs` (`WardensCampaignService.Levels`) is the campaign:
+# it says which levels exist, what each is called, and which tutorial ends it. This file says only
+# where each level's land comes from. `mapsmith levels --verify` reads both and reports any
+# disagreement, because a map name that does not match `MapNameService.Name` means the campaign
+# service silently decides "not a campaign level" and the whole chapter line goes quiet.
+#
+# `map` must equal the C# row's MapName exactly — it is the .timber file name and the key the
+# campaign is looked up by.
+
+[levels."01"]
+map = "Wardens 01 First Light"
+title = "First Light"
+spec = ""                                  # provenance is gen_map.py --level 01; see the note below
+generator = "gen_map.py"
+note = """Level 01 shipped from gen_map.py and has been loaded in the game. Its .timber is pinned:
+the map name, seed and size never change (AGENTS.md). `wardens-wasteland.map.toml` is the same
+design as a mapsmith spec and is kept as the port target, but it does not own the shipped file
+until someone has loaded a spec-built copy."""
+
+[levels."02"]
+map = "Wardens 02 The Sump"
+title = "The Sump"
+spec = "wardens-02-the-sump.map.toml"
+generator = "mapsmith"
+
+[levels."03"]
+map = "Wardens 03 The Pods"
+title = "The Pods"
+spec = ""
+generator = ""
+note = "Contract needs the island to be land-disconnected; see design/wardens-campaign-map-set.md §2."
+
+[levels."05"]
+map = "Wardens 05 The Archive"
+title = "The Archive"
+spec = ""
+generator = ""
+
+[levels."09"]
+map = "Wardens 09 The City"
+title = "The Ark"
+spec = ""
+generator = ""
+
+[levels."10"]
+map = "Wardens 10 Home"
+title = "Home"
+spec = ""
+generator = ""
+note = "Level 01's seed and heightfield with the contamination zeroed and the trees grown."
