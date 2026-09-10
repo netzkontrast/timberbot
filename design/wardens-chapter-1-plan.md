@@ -1,6 +1,6 @@
 # The Wardens — Chapter 1 plan: identity, starting buildings, gating, cutscene, art, UI
 
-> **Status:** plan (2026-09-03), grounded in the 1.1.2.4 blueprint dump and decompile. Builds on [`faction-wardens.md`](faction-wardens.md) (the arc) and [`model-catalog.md`](model-catalog.md) (what art exists). Nothing here is implemented yet; the v0.1 scaffold in `wardens/` is the base it lands on.
+> **Status:** plan (2026-09-03), grounded in the 1.1.2.4 blueprint dump and decompile. Builds on [`faction-wardens.md`](faction-wardens.md) (the arc) and [`model-catalog.md`](model-catalog.md) (what art exists). Most of it is implemented now (see the status notes at the end: §3 buildings generated, §5 Cold Boot, §4 chapter service, with the deviations recorded); what is not is Spike B and the custom art in §6.
 
 ## 1. What makes a Warden
 
@@ -166,22 +166,46 @@ Badwater loop added on request: Sludge Pump (the unlocked pump, badwater only), 
 Badwater, the early power source), Sludge Tank; tutorial stage "Power" before "Cruncher". Chapter 1 bar is
 now 13 buttons. Art direction for leaving the Iron Teeth look: `wardens-art-path.md`.
 
-## Status 2026-09-03, badtide cold-open
+## Status 2026-09-03, chapter unlock service
 
-§5's orbit now plays back **3 archived badtides** during the 14 s flight (new-game only, at
-1.5 s/5.5 s/9.5 s into the orbit), and a new stage `Wardens.ColdBoot.Badtides` sets it up right
-after "Wake". Mechanically: `WardensColdBoot` posts the real vanilla `HazardousWeatherSelectedEvent`
-/`Started`/`Ended` events for `BadtideWeather` 3 times (durations from `BadtideWeather
-.GetDurationAtCycle(1..3)`, the same call the real weather cycle uses) instead of fast-forwarding
-actual simulated days. Checked in the decompiled game code first: nothing reacts to those events
-except a notification toast, a sound cue, and `HazardousWeatherHistory`'s own bookkeeping — no
-water or contamination system does, those key off `WeatherService.IsHazardousWeather` over real
-elapsed cycles — so this gives the real toast + sound 3 times, seeds a real streak/history (feeding
-the normal badtide-chance math going forward) and satisfies `SurvivedFirstBadtideTrigger`, without
-needing to simulate days that never happened. Each firing also drops a line into the WARDENS UPLINK
-chat with its real logged duration. The MCP `cutscene` tool's replay path does not reseed history
-(`seedBadtideHistory` defaults false there), so re-running the shot for tuning is harmless.
+§4 is implemented as `wardens/src/WardensChapters.cs`, with two changes from the plan above. The gate is
+the tutorial line rather than the service's own goal checks (the ported tutorials already carry the
+"20 scrap in stock", "every bot charged" and "power the Cruncher" goals as steps, so a chapter opens
+when its tutorial finishes: `TutorialService`'s finished set, polled twice a second, no extra save
+state), and the chapters follow the tutorial order instead of the three-chapter table in §4.2: Badwater
+(after Scrap), Signal (after Working hours), Pods (after Storage), Power (after Housing), Green (after
+the first beaver). Padlock via `ScienceCost: 999999` as planned, `UnlockIgnoringCost` + the toolbar
+refresh Timberbot's unlock endpoint uses, toast + chat line on completion. Visible-but-locked (§4.1) is
+what ships; hiding buttons stays open. Tutorial off or `chapterGating: false` opens everything.
+Not yet verified in-game.
+
+## Status 2026-09-06, cutscenes
+
+§5 is now data: the Cold Boot is `wardens/src/Cutscenes/ColdBoot.json`, the three shots of the mockup in
+`wardens-ui/ColdBoot.dc.html` (high orbit, push in on the Core, settle on the gameplay angle, 22 s, one
+caption each, Skip), played by the runner in `WardensCutscenes.cs` with the overlay in
+`WardensCutsceneOverlay.cs`; `WardensColdBoot.cs` is retired. The cards still come from the tutorial
+stages (`Wardens.ColdBoot.Wake` / `.Directive`), which answers §9's last question only half-way: the
+overlay exists, and whether the Wake and Directive text should move into it is for the smoke run. The
+system, the format and the open questions: [`wardens-cutscenes.md`](wardens-cutscenes.md). Not yet
+verified in-game. The Core's light coming on (shot 2) is not implemented.
+
+## Status 2026-09-10, badtide cold-open
+
+The Cold Boot plays back **3 archived badtides**, one per shot of `Cutscenes/ColdBoot.json`
+(`"badtide": 1|2|3`), and a new stage `Wardens.ColdBoot.Badtides` sets it up right after "Wake".
+Mechanically: `WardensArchivedBadtides` posts the real vanilla `HazardousWeatherSelectedEvent`
+/`Started`/`Ended` events for `BadtideWeather` (durations from `BadtideWeather.GetDurationAtCycle(1..3)`,
+the same call the real weather cycle uses) instead of fast-forwarding actual simulated days. Checked in
+the decompiled game code first: nothing reacts to those events except a notification toast, a sound cue,
+and `HazardousWeatherHistory`'s own bookkeeping - no water or contamination system does, those key off
+`WeatherService.IsHazardousWeather` over real elapsed cycles - so this gives the real toast + sound 3
+times, seeds a real streak/history (feeding the normal badtide-chance math going forward) and satisfies
+`SurvivedFirstBadtideTrigger`, without needing to simulate days that never happened. Each firing also
+drops a line into the WARDENS UPLINK chat with its real logged duration. Replaying the scene through the
+MCP `cutscene` tool replays the badtides too, so tuning the shot does inflate the save's history - reset
+the save (or the scene) after a tuning run.
 
 Open thread from the same conversation: whether the *starting* resources/buildings should change to
 match a world that has already been through this (more Scrap on the map, a saltier opening economy,
-etc.) — not implemented, flagged for a follow-up design pass.
+etc.) - not implemented, flagged for a follow-up design pass.

@@ -9,7 +9,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>Wardens</AssemblyName>
     <RootNamespace>Wardens</RootNamespace>
-    <Version>0.2.13</Version>
+    <Version>0.3.2</Version>
     <LangVersion>9.0</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
@@ -22,6 +22,7 @@
     <GameManagedDir Condition="'$(GameManagedDir)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">$(HOME)/Library/Application Support/Steam/steamapps/common/Timberborn/Timberborn.app/Contents/Resources/Data/Managed</GameManagedDir>
     <GameManagedDir Condition="'$(GameManagedDir)' == '' and $([MSBuild]::IsOSPlatform('Linux'))">$(HOME)/.local/share/Steam/steamapps/common/Timberborn/Timberborn_Data/Managed</GameManagedDir>
     <ModDir Condition="'$(ModDir)' == ''">$(UserHome)/Documents/Timberborn/Mods/Wardens</ModDir>
+    <MapsDir Condition="'$(MapsDir)' == ''">$(UserHome)/Documents/Timberborn/Maps</MapsDir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -166,6 +167,9 @@
   <ItemGroup>
     <!-- Everything the game loads from the mod folder besides the DLL. -->
     <ModContent Include="**\*" Exclude="bin\**;obj\**;**\*.cs;Wardens.csproj;Directory.Build.props;manifest.json;settings.json;thumbnail.png;.gitignore;.leafcoats-import.txt" />
+    <!-- The wasteland map (tools/gen_map.py). Shipped inside the mod and, because the game reads
+         custom maps from Documents/Timberborn/Maps, also installed there on deploy. -->
+    <MapFiles Include="Maps\*.timber" />
   </ItemGroup>
 
   <!-- Every build is a new version (user rule): tools/bump_version.py bumps manifest.json,
@@ -182,13 +186,16 @@
     <!-- Timberbot + MCP settings; never overwrite the user's edited copy. -->
     <Copy SourceFiles="settings.json" DestinationFolder="$(ModDir)" Condition="!Exists('$(ModDir)\settings.json')" />
     <!-- Generated folders are replaced whole: a blueprint that no longer exists in src must not
-         survive in the deployed mod (a stale tutorial with missing loc keys crashes the load). -->
-    <RemoveDir Directories="$(ModDir)\Tutorials;$(ModDir)\Buildings;$(ModDir)\Collections;$(ModDir)\Recipes;$(ModDir)\Factions;$(ModDir)\Goods;$(ModDir)\Needs;$(ModDir)\Decals;$(ModDir)\WorkerOutfits;$(ModDir)\CharacterCustomizer;$(ModDir)\MaterialPatcher;$(ModDir)\GoodsVisualization;$(ModDir)\BlockObjectToolGroups;$(ModDir)\CustomBeaverByName;$(ModDir)\CustomBeaverNamesList;$(ModDir)\CustomBotByName" />
+         survive in the deployed mod (a stale tutorial with missing loc keys crashes the load). The
+         same for Cutscenes: a renamed scene must not leave a twin behind that fires on the same trigger. -->
+    <RemoveDir Directories="$(ModDir)\Tutorials;$(ModDir)\Buildings;$(ModDir)\Collections;$(ModDir)\Recipes;$(ModDir)\Cutscenes;$(ModDir)\Factions;$(ModDir)\Goods;$(ModDir)\Needs;$(ModDir)\Decals;$(ModDir)\WorkerOutfits;$(ModDir)\CharacterCustomizer;$(ModDir)\MaterialPatcher;$(ModDir)\GoodsVisualization;$(ModDir)\BlockObjectToolGroups;$(ModDir)\CustomBeaverByName;$(ModDir)\CustomBeaverNamesList;$(ModDir)\CustomBotByName" />
     <!-- RelativeDir, not RecursiveDir: the latter is relative to each glob's "**" and
          would flatten Factions\X.json to X.json, breaking the FactionSpec.BlueprintModifiers paths. -->
     <Copy SourceFiles="@(ModContent)" DestinationFiles="@(ModContent->'$(ModDir)\%(RelativeDir)%(Filename)%(Extension)')" />
     <MakeDir Directories="$(ModDir)\docs" />
-    <Copy SourceFiles="..\..\docs\api-reference.md;..\..\docs\events.md;..\..\docs\websocket-protocol.md" DestinationFolder="$(ModDir)\docs" />
+    <Copy SourceFiles="..\..\docs\api-reference.md;..\..\docs\events.md;..\..\docs\websocket-protocol.md;..\WARDEN.md" DestinationFolder="$(ModDir)\docs" />
+    <MakeDir Directories="$(MapsDir)" />
+    <Copy SourceFiles="@(MapFiles)" DestinationFolder="$(MapsDir)" />
     <Message Text="Deployed Wardens (with Timberbot) to $(ModDir)" Importance="high" />
   </Target>
 

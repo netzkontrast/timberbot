@@ -78,11 +78,14 @@ namespace Wardens
         private readonly WardensPointer _pointer;
         private readonly WardensChat _chat;
         private readonly WardensCameraDirector _director;
-        private readonly WardensColdBoot _coldBoot;
+        private readonly WardensCutscenes _cutscenes;
         private readonly EntitySelectionService _selection;
         private readonly QuickNotificationService _quickNotifications;
         private readonly TimberbotService _timberbot;
         private readonly WardensAssetDump _assetDump;
+        private readonly WardensChapterService _chapters;
+        private readonly WardensFrames _frames;
+        private long _lastFrameSeq;
 
         private readonly List<McpTool> _tools = new List<McpTool>();
         private readonly Dictionary<string, McpTool> _byName = new Dictionary<string, McpTool>();
@@ -93,9 +96,9 @@ namespace Wardens
 
         public WardensMcpTools(FactionService factionService, SpeedManager speedManager,
             CharacterPopulation population, TutorialService tutorialService, TutorialSettings tutorialSettings,
-            WardensPointer pointer, WardensChat chat, WardensCameraDirector director, WardensColdBoot coldBoot,
+            WardensPointer pointer, WardensChat chat, WardensCameraDirector director, WardensCutscenes cutscenes,
             EntitySelectionService selection, QuickNotificationService quickNotifications, TimberbotService timberbot,
-            WardensAssetDump assetDump)
+            WardensAssetDump assetDump, WardensChapterService chapters, WardensFrames frames)
         {
             _factionService = factionService;
             _speedManager = speedManager;
@@ -105,11 +108,13 @@ namespace Wardens
             _pointer = pointer;
             _chat = chat;
             _director = director;
-            _coldBoot = coldBoot;
+            _cutscenes = cutscenes;
             _selection = selection;
             _quickNotifications = quickNotifications;
             _timberbot = timberbot;
             _assetDump = assetDump;
+            _chapters = chapters;
+            _frames = frames;
         }
 
         public void Initialize(WardensSettings settings, WardensMcpServer server)
@@ -120,13 +125,17 @@ namespace Wardens
             Build();
             foreach (var t in _tools) _byName[t.Name] = t;
             Instructions =
-                "In-game MCP server of The Wardens (Timberborn). You are playing alongside a human who sees the game. " +
-                "Every tool result may contain \"chat\": messages the player typed in the in-game panel that you have not seen; " +
-                "answer them with `say`. Use `chat_read` to wait for the player's next message (long-poll). " +
-                "Use `point` to show the player a tile (highlight + arrow + toast). " +
-                "`timberbot` forwards to the Timberbot HTTP API compiled into this mod (GET reads, POST actions); " +
+                "In-game MCP server of The Wardens (Timberborn). You are the Warden: the mind of a colony of machines, playing beside " +
+                "a human who sees the game. Read the playbook first: call `manual` (docs/WARDEN.md in the mod folder). " +
+                "Heartbeat: call `frame` in a loop. It returns every N game ticks or as soon as something happens (the human typed, " +
+                "a day started, a building finished, a chapter opened, a beaver was born) and carries `attention`: where to look, " +
+                "in order, with positions `camera` and `point` accept. Do not poll the read API to find out whether anything changed. " +
+                "Every tool result may contain \"chat\": messages the player typed that you have not seen; answer them with `say`. " +
+                "`point` shows the player a tile (highlight + arrow + toast). " +
+                "`timberbot` forwards to the Timberbot HTTP API compiled into this mod (GET reads, POST actions, one mutation at a time); " +
                 "call `timberbot_ready` once so the API accepts requests, and `timberbot_routes` to list routes. " +
-                "`wardens_status` and `tutorial` report the faction story/tutorial state; `camera` and `cutscene` drive the camera.";
+                "`wardens_status`, `tutorial` and `chapter` report the story state; `camera` and `cutscene` drive the camera, only when the playbook allows. " +
+                "A playing cutscene (`cutscene.playing` in the frame, events cutscene.start / cutscene.end) owns the camera: leave it and say nothing until it ends.";
         }
 
         public McpTool Find(string name) => _byName.TryGetValue(name ?? "", out var t) ? t : null;
@@ -170,7 +179,7 @@ namespace Wardens
         private void Build()
         {
             Add("wardens_status",
-                "Overview of the run: faction, speed, bot/beaver counts and average bot Energy, tutorial/story state, pointers, camera, Timberbot readiness.",
+                "Overview of the run: faction, speed, bot/beaver counts and average bot Energy, tutorial and chapter state, pointers, camera, Timberbot readiness.",
                 Schema(new JObject()),
                 a => Status());
 
@@ -191,6 +200,53 @@ namespace Wardens
                         _tutorialService.StartNextStage(id);
                     }
                     return TutorialState();
+                });
+
+            Add("frame",
+                "The Warden's heartbeat. Waits (long-poll, up to wait_seconds) for the next sensor frame: published every every_ticks game ticks, or at once when something happens (chat, day/night, cycle day, building finished, chapter opened, beaver born, alert, speed change, selection). Carries time, bots and charge, beavers, archive (Data Cores), science, chapter, open tutorial steps, selection, camera pose, human idle time, events since the last frame, and `attention` (where to look, in order). Pass `after` = the last seq you saw; a `stale` frame means nothing new was published before the wait ended (usually because the human typed).",
+                Schema(new JObject
+                {
+                    ["wait_seconds"] = Prop("integer", "long-poll timeout, 0-120", 30),
+                    ["every_ticks"] = Prop("integer", "frame cadence in game ticks (5-2000); omit to keep the current cadence"),
+                    ["after"] = Prop("integer", "return the first frame with seq greater than this; default: the last frame this server handed out"),
+                }),
+                a =>
+                {
+                    if (a["every_ticks"] != null && a["every_ticks"].Type != JTokenType.Null) _frames.SetEveryTicks(Int(a, "every_ticks", WardensFrames.DefaultEveryTicks));
+                    long after = a["after"] != null && a["after"].Type != JTokenType.Null ? (long)a["after"] : _lastFrameSeq;
+                    int wait = Mathf.Clamp(Int(a, "wait_seconds", 30), 0, 120);
+                    var frame = _frames.Wait(after, wait * 1000);
+                    var seq = frame["seq"] != null ? (long)frame["seq"] : 0L;
+                    if (seq > _lastFrameSeq) _lastFrameSeq = seq;
+                    return frame;
+                }, offThread: true);
+
+            Add("manual",
+                "The Warden's playbook (docs/WARDEN.md in the mod folder): who you are, the Ledger, the frame loop, where to look, the camera rules, the chapter playbook, the voice. Read it once per session before acting.",
+                Schema(new JObject()),
+                a =>
+                {
+                    var path = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(WardensSettings.Path) ?? "", "docs", "WARDEN.md");
+                    if (!System.IO.File.Exists(path))
+                        return new JObject { ["path"] = path, ["error"] = "not deployed; the repo copy is wardens/WARDEN.md" };
+                    return new JObject { ["path"] = path, ["text"] = System.IO.File.ReadAllText(path) };
+                }, offThread: true);
+
+            Add("chapter",
+                "Story chapters that gate the building bar (WardensChapters.cs): each chapter opens when its tutorial finishes and unlocks the padlocked buildings. action=status lists every chapter with its gate and per-building lock state; action=unlock opens chapter_id now (dev/testing).",
+                Schema(new JObject
+                {
+                    ["action"] = Prop("string", "status | unlock", "status"),
+                    ["chapter_id"] = Prop("string", "e.g. Badwater, Signal, Pods, Power, Green (for unlock)"),
+                }),
+                a =>
+                {
+                    if (Str(a, "action", "status") == "unlock")
+                    {
+                        var id = Str(a, "chapter_id") ?? throw new ArgumentException("chapter_id required");
+                        if (!_chapters.Force(id)) throw new ArgumentException("unknown chapter " + id);
+                    }
+                    return _chapters.State();
                 });
 
             Add("point",
@@ -285,9 +341,38 @@ namespace Wardens
                 });
 
             Add("cutscene",
-                "Play the Cold Boot orbit (pauses and locks speed, orbits the district center, unlocks). seconds tunes the length.",
-                Schema(new JObject { ["seconds"] = Prop("number", "flight length", WardensColdBoot.OrbitSeconds) }),
-                a => { _coldBoot.Play(Float(a, "seconds", WardensColdBoot.OrbitSeconds)); return _director.State(); });
+                "Cutscenes: scenes from Cutscenes/*.json in the mod folder (design/wardens-cutscenes.md): the Cold Boot, one per chapter, the level's end card, the Archive reading. action=status lists the loaded scenes with their triggers, the running one (shot, caption, waiting: flight | time | continue | choice, the open choices) and the story record (choices, marks); play starts `id` now, replacing a running scene and ignoring the trigger policy (`Archive` reads the Ledger back when the human asks); skip ends the running scene; continue releases a shot that waits for the Continue button; choose answers an open choice card with `choice` (only when the human said which, in chat: a choice is purpose); reload re-reads the files (edit in the mod folder, reload, play: the tuning loop); reset clears the story record (dev). A playing scene owns the camera: leave it and say nothing until the frame reports cutscene.end.",
+                Schema(new JObject
+                {
+                    ["action"] = Prop("string", "status | list | play | skip | continue | choose | reload | reset", "status"),
+                    ["id"] = Prop("string", "scene id for play", WardensCutscenes.ColdBootId),
+                    ["choice"] = Prop("string", "choice id for choose (the open card's ids are in status.choices)"),
+                }),
+                a =>
+                {
+                    switch (Str(a, "action", "status"))
+                    {
+                        case "play":
+                            _cutscenes.Play(Str(a, "id", WardensCutscenes.ColdBootId));
+                            break;
+                        case "skip":
+                            _cutscenes.Skip();
+                            break;
+                        case "continue":
+                            _cutscenes.Continue();
+                            break;
+                        case "choose":
+                            _cutscenes.Choose(Str(a, "choice") ?? throw new ArgumentException("choice required"));
+                            break;
+                        case "reload":
+                            _cutscenes.Reload();
+                            break;
+                        case "reset":
+                            _cutscenes.ResetStory();
+                            break;
+                    }
+                    return _cutscenes.State();
+                });
 
             Add("speed", "Set game speed: 0 = pause, 1..3 = the speed buttons.",
                 Schema(new JObject { ["value"] = Prop("integer", "0-3") }, "value"),
@@ -371,9 +456,11 @@ namespace Wardens
                     ["bots_energy_avg"] = withEnergy > 0 ? (float?)(energy / withEnergy) : null,
                 },
                 ["tutorial"] = TutorialState(),
+                ["chapter"] = _chapters.Summary(),
                 ["pointers"] = _pointer.Count,
                 ["camera"] = _director.State(),
-                ["cutscene_played"] = _coldBoot.Played,
+                ["cutscene_played"] = _cutscenes.HasPlayed(WardensCutscenes.ColdBootId),
+                ["cutscene"] = _cutscenes.Summary(),
                 ["chat_unread"] = _chat.UndeliveredCount(),
                 ["timberbot"] = new JObject { ["http_port"] = _settings.HttpPort, ["ready"] = _timberbot.AgentState.Ready },
                 ["mcp"] = new JObject { ["port"] = _settings.McpPort, ["version"] = WardensMcpServer.Version },

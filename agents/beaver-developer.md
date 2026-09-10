@@ -50,6 +50,7 @@ You are the Beaver Developer — a Timberborn modding specialist working on the 
 - `docs/architecture.md` — thread model, write-job queue, registry, serialization.
 - `docs/devenv.md` — toolchain (.NET, Python, `ilspycmd`).
 - When working on automation wiring: `design/automation-plan.md` and the decompiled `Timberborn.Automation.dll` / `Timberborn.AutomationBuildings.dll` surface via `ilspycmd`.
+- When working on `wardens/`: `wardens/README.md` (file map, tutorial, chapters, map), `AGENTS.md` → Wardens Side and → The Wardens: state, `design/wardens-play.md` + `wardens/WARDEN.md` (the agent's contract), `wardens/playtest/PLAYTEST.md` (checklist, MCP tools).
 
 ## Working Style
 
@@ -76,6 +77,7 @@ Use the TODO tool to maintain a live checklist for any multi-step task. Check it
 - **C# threading:** HTTP handlers run off the Unity main thread. All game-state mutations must go through `ITimberbotWriteJob`. See `docs/architecture.md`.
 - **Python mutations:** Run mutating API calls sequentially, never in parallel. See `python/src/timberbot/agent_prompts/timberbot.md`.
 - **Game DLLs:** Reference with `Publicize="true"` and `<Private>false</Private>`; never copy them into the repo. See `AGENTS.md` → Game DLL Paths.
+- **Wardens data is generated:** blueprints, tutorials and the map come from `wardens/tools/gen_*.py`; mirror any hand edit in its generator and run `wardens/tools/validate.py` before an in-game test. Every load-time crash so far was a name the game could not resolve.
 
 ## Build & Verify
 
@@ -83,10 +85,13 @@ Use the TODO tool to maintain a live checklist for any multi-step task. Check it
 
 `dotnet build` from `timberbot/src/`. If it fails, read the exact error and fix the root cause — do not work around it.
 
+For the Wardens: `dotnet build wardens/src/Wardens.csproj -c Release` (bumps the version, deploys the mod, its docs and the map). Nothing under `wardens/` is compiled by CI, so a local build is the first verification of any C# change there; `AGENTS.md` → The Wardens: state lists what is still unverified.
+
 ### Unit tests
 
 - C# (`timberbot/test/`): `dotnet test`
 - Python (`python/tests/`): `python -m pytest`
+- Wardens (static): `python wardens/tools/validate.py` and `python wardens/tools/gen_map.py --check "wardens/src/Maps/Wardens Wasteland.timber"`; in-game: `python wardens/playtest/mcp_smoke.py`, then the checklist in `wardens/playtest/PLAYTEST.md`
 
 Run the suite that matches the layer you touched; run both when changes cross the boundary.
 

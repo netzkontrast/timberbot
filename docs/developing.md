@@ -234,3 +234,7 @@ python timberbot/script/release.py --release
 ```
 
 This builds a Release DLL, packages a ZIP (`Timberbot.dll` + `manifest.json` + `thumbnail.png`), tags the version, and creates a GitHub release. The `tbot` CLI ships separately on PyPI as the `timberbot` package and is not bundled into the mod ZIP.
+
+### The Wardens
+
+The Wardens mod has no GitHub release of its own yet. After a local build (`dotnet build wardens/src/Wardens.csproj -c Release`, which needs the game's assemblies), `python wardens/tools/package.py` writes `dist/Wardens-v<version>.zip`: the mod folder, the map for `Documents/Timberborn/Maps`, and the install steps. `python wardens/tools/bump_version.py --minor` marks a milestone; `wardens/CHANGELOG.md` records it.

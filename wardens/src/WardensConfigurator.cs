@@ -3,9 +3,9 @@
 // [Context("Game")]: runs when a game (new or loaded) is set up, not on the main menu.
 // The Timberbot API that is compiled into this mod registers itself through its own
 // TimberbotConfigurator / TimberbotAutoLoadConfigurator (src/Timberbot/), so nothing of it
-// is bound here. Faction-specific behaviour (bot start, Cold Boot) checks
-// FactionService.Current.Id == "Wardens" at runtime; the MCP server, chat panel, pointer and
-// camera director are faction-agnostic and load in every game.
+// is bound here. Faction-specific behaviour (bot start, cutscene triggers) checks
+// FactionService.Current.Id == "Wardens" at runtime; the MCP server, chat panel, pointer,
+// camera director and cutscene runner are faction-agnostic and load in every game.
 
 using Bindito.Core;
 using Timberborn.TemplateInstantiation;
@@ -21,11 +21,22 @@ namespace Wardens
             // Spike A: swap the beavers the game spawns at new-game for bots.
             Bind<WardensStartingPopulation>().AsSingleton();
 
-            // Agent-facing runtime: in-game MCP server, chat, pointer, camera, cutscene.
+            // Agent-facing runtime: in-game MCP server, chat, pointer, camera.
             Bind<WardensCameraDirector>().AsSingleton();
             Bind<WardensPointer>().AsSingleton();
             Bind<WardensChat>().AsSingleton();
-            Bind<WardensColdBoot>().AsSingleton();
+            // Story chapters: unlock the padlocked buildings as the tutorial line advances.
+            Bind<WardensChapterService>().AsSingleton();
+            // Cutscenes: Cutscenes/*.json played by one runner (the Cold Boot is the first scene);
+            // the overlay draws the letterbox, the captions and the choice cards; the story record
+            // (story.json) keeps the choices and marks. design/wardens-cutscenes.md.
+            Bind<WardensStoryState>().AsSingleton();
+            // The three badtides the wasteland logged before day 1, replayed by a shot's `badtide`.
+            Bind<WardensArchivedBadtides>().AsSingleton();
+            Bind<WardensCutsceneOverlay>().AsSingleton();
+            Bind<WardensCutscenes>().AsSingleton();
+            // The Warden's heartbeat: sensor frames per N game ticks for the MCP `frame` tool.
+            Bind<WardensFrames>().AsSingleton();
             Bind<WardensAssetDump>().AsSingleton();
             Bind<WardensMcpTools>().AsSingleton();
             Bind<WardensMcpServer>().AsSingleton();

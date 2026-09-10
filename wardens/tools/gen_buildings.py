@@ -20,6 +20,8 @@ Produces
   DistrictManagement/HaulingPost, Wellbeing/Deck                the ported tutorial's building set
   NaturalResources/Crops/SludgeReed/SludgeReed                cattail re-spec: land crop, ignores contamination
   Goods/Good.Biomass, collections, faction wiring, recipes, loc rows, csproj glob
+Chapter gating: buildings that src/WardensChapters.cs unlocks ship with ScienceCost CHAPTER_LOCK
+(vanilla's padlock) instead of 0; tools/validate.py checks both tables agree.
 Tutorials: tools/gen_tutorial.py, run after this script.
 """
 from __future__ import annotations
@@ -34,6 +36,9 @@ from pathlib import Path
 GAME_BLUEPRINTS = Path("F:/Steam/steamapps/common/Timberborn/Timberborn_Data/StreamingAssets/Modding/Blueprints.zip")
 SRC = Path(__file__).resolve().parents[1] / "src"
 FACTION = "Wardens"
+# Story gating (src/WardensChapters.cs): a building the chapter service unlocks ships with this
+# ScienceCost so the bar shows vanilla's padlock until its chapter opens. Never buildable by science.
+CHAPTER_LOCK = 999999
 
 _zip = zipfile.ZipFile(GAME_BLUEPRINTS)
 
@@ -101,7 +106,7 @@ building("Science/ChargingPost", "ChargingPost", post)
 cruncher = vanilla("Buildings/Science/Numbercruncher/Numbercruncher.IronTeeth")
 rename(cruncher, "Cruncher.Wardens")
 labeled(cruncher, "Cruncher")
-cost(cruncher, ("ScrapMetal", 20))
+cost(cruncher, ("ScrapMetal", 20), science=CHAPTER_LOCK)   # chapter Signal
 cruncher["MechanicalNodeSpec"] = {"PowerOutput": 0, "PowerInput": 120, "IsShaft": False}
 cruncher["ManufactorySpec"] = {"ProductionRecipeIds": ["SciencePointsNumbercruncher", "DataCore"]}
 cruncher["PlaceableBlockObjectSpec"]["ToolOrder"] = 10
@@ -111,7 +116,7 @@ building("Science/Cruncher", "Cruncher", cruncher)
 burner = vanilla("Buildings/Power/SteamEngine/SteamEngine.IronTeeth")
 rename(burner, "SludgeBurner.Wardens")
 labeled(burner, "SludgeBurner")
-cost(burner, ("ScrapMetal", 15))
+cost(burner, ("ScrapMetal", 15), science=CHAPTER_LOCK)   # chapter Power
 burner["MechanicalNodeSpec"] = {"PowerOutput": 200, "PowerInput": 0, "IsShaft": False}
 burner["GoodConsumingBuildingSpec"] = {"FullInventoryWorkHours": 50, "ConsumedGoods": [{"GoodId": "Biomass", "GoodPerHour": 0.2}]}
 burner["PollutingBuildingSpec"] = {"Radius": 2, "Strength": 0.6}
@@ -132,15 +137,15 @@ building("Storage/ScrapPile", "ScrapPile", pile)
 bed = vanilla("Buildings/Food/FarmHouse/FarmHouse.IronTeeth")
 rename(bed, "ReedBed.Wardens")
 labeled(bed, "ReedBed")
-cost(bed, ("ScrapMetal", 20))
+cost(bed, ("ScrapMetal", 20), science=CHAPTER_LOCK)   # chapter Badwater
 building("Food/ReedBed", "ReedBed", bed)
 
 # --- Badwater loop: the Wardens run on badwater ---------------------------------------------------------
-# Sludge Pump: the Iron Teeth deep badwater pump, unlocked from the start, bots may work it for free.
+# Sludge Pump: the Iron Teeth deep badwater pump, open from chapter Badwater, bots may work it for free.
 pump = vanilla("Buildings/Water/DeepBadwaterPump/DeepBadwaterPump.IronTeeth")
 rename(pump, "SludgePump.Wardens")
 labeled(pump, "SludgePump")
-cost(pump, ("ScrapMetal", 12))
+cost(pump, ("ScrapMetal", 12), science=CHAPTER_LOCK)   # chapter Badwater
 pump["WorkplaceSpec"]["DefaultWorkerType"] = "Bot"
 pump["WorkplaceSpec"]["WorkerTypeUnlockCosts"] = []
 pump["PlaceableBlockObjectSpec"]["ToolOrder"] = 10
@@ -151,7 +156,7 @@ building("Water/SludgePump", "SludgePump", pump)
 cell = vanilla("Buildings/Power/SteamEngine/SteamEngine.IronTeeth")
 rename(cell, "BadwaterCell.Wardens")
 labeled(cell, "BadwaterCell")
-cost(cell, ("ScrapMetal", 8))
+cost(cell, ("ScrapMetal", 8), science=CHAPTER_LOCK)   # chapter Power
 cell["MechanicalNodeSpec"] = {"PowerOutput": 100, "PowerInput": 0, "IsShaft": False}
 cell["GoodConsumingBuildingSpec"] = {"FullInventoryWorkHours": 40, "ConsumedGoods": [{"GoodId": "Badwater", "GoodPerHour": 0.4}]}
 cell["PollutingBuildingSpec"] = {"Radius": 1, "Strength": 0.3}
@@ -161,7 +166,7 @@ building("Power/BadwaterCell", "BadwaterCell", cell)
 
 tank = vanilla("Buildings/Storage/SmallTank/SmallTank.IronTeeth")
 rename(tank, "SludgeTank.Wardens")
-cost(tank, ("ScrapMetal", 6))
+cost(tank, ("ScrapMetal", 6), science=CHAPTER_LOCK)   # chapter Badwater
 building("Storage/SludgeTank", "SludgeTank", tank)
 
 # The faction's light: cyan illuminators on the Core and the Cruncher too.
@@ -191,7 +196,7 @@ def powered(d: dict, power_input: int) -> None:
 pod = vanilla("Buildings/Housing/BreedingPod/BreedingPod.IronTeeth")
 rename(pod, "BreedingPod.Wardens")
 labeled(pod, "WardensPod")
-cost(pod, ("ScrapMetal", 10))
+cost(pod, ("ScrapMetal", 10), science=CHAPTER_LOCK)   # chapter Pods
 pod["BreedingPodSpec"]["NutrientsPerCycle"] = [{"Id": "Biomass", "Amount": 1}]
 powered(pod, 100)
 building("Housing/BreedingPod", "BreedingPod", pod)
@@ -199,7 +204,7 @@ building("Housing/BreedingPod", "BreedingPod", pod)
 apod = vanilla("Buildings/Housing/AdvancedBreedingPod/AdvancedBreedingPod.IronTeeth")
 rename(apod, "AdvancedBreedingPod.Wardens")
 labeled(apod, "WardensAdvancedPod")
-cost(apod, ("ScrapMetal", 20), ("DataCore", 5))
+cost(apod, ("ScrapMetal", 20), ("DataCore", 5), science=CHAPTER_LOCK)   # chapter Green
 apod["BreedingPodSpec"]["NutrientsPerCycle"] = [{"Id": "Biomass", "Amount": 1}, {"Id": "Firmware", "Amount": 1}]
 powered(apod, 150)
 building("Housing/AdvancedBreedingPod", "AdvancedBreedingPod", apod)
@@ -239,7 +244,7 @@ building("Landscaping/Dam", "Dam", dam)
 rack = vanilla("Buildings/Storage/SmallWarehouse/SmallWarehouse.IronTeeth")
 rename(rack, "Rack.Wardens")
 labeled(rack, "Rack")
-cost(rack, ("ScrapMetal", 4))
+cost(rack, ("ScrapMetal", 4), science=CHAPTER_LOCK)   # chapter Badwater
 building("Storage/Rack", "Rack", rack)
 
 dock = vanilla("Buildings/DistrictManagement/HaulingPost/HaulingPost.IronTeeth")
@@ -374,6 +379,17 @@ rows = [
     ("NaturalResource.SludgeReed.FlavorDescription", "Thrives on contamination. Harvested for Biomass.", ""),
     ("Good.Biomass.DisplayName", "Biomass", "Wardens fuel"),
     ("Good.Biomass.PluralDisplayName", "Biomass", "Wardens fuel, plural"),
+    # Chapter toasts (src/WardensChapters.cs): Wardens.Chapter.<Id>.Title / .Unlocked
+    ("Wardens.Chapter.Badwater.Title", "Chapter 2: Badwater.", "Story chapter title"),
+    ("Wardens.Chapter.Badwater.Unlocked", "Scrap in hand. The Sludge Pump, Reed Bed, Sludge Tank and Crate Rack are now available.", "Chapter toast"),
+    ("Wardens.Chapter.Signal.Title", "Chapter 3: Signal.", "Story chapter title"),
+    ("Wardens.Chapter.Signal.Unlocked", "Shifts are set. The Cruncher is now available: power in, Science or Data Cores out.", "Chapter toast"),
+    ("Wardens.Chapter.Pods.Title", "Chapter 4: Pods.", "Story chapter title"),
+    ("Wardens.Chapter.Pods.Unlocked", "Stores are full. The Breeding Pod is now available. Built for someone else.", "Chapter toast"),
+    ("Wardens.Chapter.Power.Title", "Chapter 5: Power.", "Story chapter title"),
+    ("Wardens.Chapter.Power.Unlocked", "The pods are waiting. The Badwater Cell and the Sludge Burner are now available. Every hour of power is an hour of poison.", "Chapter toast"),
+    ("Wardens.Chapter.Green.Title", "Chapter 6: Green.", "Story chapter title"),
+    ("Wardens.Chapter.Green.Unlocked", "The first beaver is awake. The Advanced Breeding Pod is now available.", "Chapter toast"),
 ]
 loc = SRC / "Localizations/enUS.csv"
 existing = list(csv.reader(open(loc, encoding="utf-8", newline="")))

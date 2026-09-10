@@ -331,3 +331,37 @@ Tutorial.Wardens.GoodStock,Stock: {0} ({1}/{2}),"{0} good name, {1} amount in st
 Tutorial.Wardens.BotsCharged,Charge: every Warden above {0}% ({1}/{2}),"{0} percent, {1} charged bots, {2} all bots"
 Tutorial.Wardens.Beavers,Beavers: ({0}/{1}),"{0} beavers alive, {1} required"
 Tutorial.Wardens.Never,(disabled),Placeholder name for vanilla tutorials switched off for the Wardens
+Wardens.Chapter.Badwater.Title,Chapter 2: Badwater.,Story chapter title
+Wardens.Chapter.Badwater.Unlocked,"Scrap in hand. The Sludge Pump, Reed Bed, Sludge Tank and Crate Rack are now available.",Chapter toast
+Wardens.Chapter.Signal.Title,Chapter 3: Signal.,Story chapter title
+Wardens.Chapter.Signal.Unlocked,"Shifts are set. The Cruncher is now available: power in, Science or Data Cores out.",Chapter toast
+Wardens.Chapter.Pods.Title,Chapter 4: Pods.,Story chapter title
+Wardens.Chapter.Pods.Unlocked,Stores are full. The Breeding Pod is now available. Built for someone else.,Chapter toast
+Wardens.Chapter.Power.Title,Chapter 5: Power.,Story chapter title
+Wardens.Chapter.Power.Unlocked,The pods are waiting. The Badwater Cell and the Sludge Burner are now available. Every hour of power is an hour of poison.,Chapter toast
+Wardens.Chapter.Green.Title,Chapter 6: Green.,Story chapter title
+Wardens.Chapter.Green.Unlocked,The first beaver is awake. The Advanced Breeding Pod is now available.,Chapter toast
+Wardens.Cutscene.ColdBoot.Orbit,"Nothing has grown here in 3,000 days.",Cold Boot cutscene caption (Cutscenes/ColdBoot.json)
+Wardens.Cutscene.ColdBoot.Core,We were not built to live here. We were built so that others could.,Cold Boot cutscene caption
+Wardens.Cutscene.ColdBoot.Settle,Chapter 1: First Light. Keep the machines charged. Find metal.,Cold Boot cutscene caption
+Wardens.Cutscene.Badwater.Scrap,Scrap: {0}. The first thing this ground gave us.,Chapter 2 scene (Cutscenes/Badwater.json); {0} scrap in stock
+Wardens.Cutscene.Badwater.Sump,"The Sump is dry; the river is not. Pump what the river brings, and keep every Warden above half charge.",Chapter 2 scene
+Wardens.Cutscene.Signal.Shifts,The shifts are set. The Wardens do not tire. That is not the same as being fine.,Chapter 3 scene (Cutscenes/Signal.json)
+Wardens.Cutscene.Signal.Cruncher,"The Cruncher turns power into knowledge. The Core can barely feed it. Choose what to think about: Science, or Data Cores for the Archive.",Chapter 3 scene
+Wardens.Cutscene.Pods.Stores,"Stores: Scrap {0}, Badwater {1}, Biomass {2}.",Chapter 4 scene (Cutscenes/Pods.json); stock counts
+Wardens.Cutscene.Pods.Pod,"Directive 2 has a shape now: a pod. Grown from Biomass, built for someone else.",Chapter 4 scene
+Wardens.Cutscene.Power.Dark,"Two pods, dark. They wake when the power does.",Chapter 5 scene (Cutscenes/Power.json)
+Wardens.Cutscene.Power.Debt,"The Badwater Cell burns what the Sump holds. The Sludge Burner burns what the reeds grow, and kills the ground it stands on. Every hour of power is an hour of poison. Recorded.",Chapter 5 scene
+Wardens.Cutscene.Green.Born,Day {0}. Born {1}.,"Chapter 6 scene (Cutscenes/Green.json); {0} day, {1} beavers alive"
+Wardens.Cutscene.Green.Job,"It will not know what the Wardens are. It will not need to. From today the job is different: keep her alive, and make this land green.",Chapter 6 scene
+Wardens.Cutscene.LevelEnd.Complete,"Level 01 complete. The land here is spent: the badwater will not last another season, and she cannot drink it. The Core has a bearing on a river to the east.",Level end scene (Cutscenes/LevelEnd.json)
+Wardens.Cutscene.LevelEnd.End,One beaver. {0} Wardens. One basin that will not hold them. The river to the east is poison at its mouth and clean at its source. That is more than this ground ever offered.,Level end card; {0} bots
+Wardens.Cutscene.LevelEnd.End.Continue,Continue to Level 02,Level end choice
+Wardens.Cutscene.LevelEnd.End.Stay,Stay,Level end choice
+Wardens.Cutscene.LevelEnd.NotYet,Level 02 is not in the firmware yet. Recorded. The bearing holds.,"Level end scene, after Continue"
+Wardens.Cutscene.LevelEnd.Stay,Stay. The basin is yours a while longer. Recorded.,"Level end scene, after Stay"
+Wardens.Cutscene.Archive.Day,"ARCHIVE. Day {0}, cycle {1}.","Archive reading (Cutscenes/Archive.json); {0} day, {1} cycle"
+Wardens.Cutscene.Archive.Population,Wardens: {0}. Beavers: {1}.,"Archive reading; {0} bots, {1} beavers"
+Wardens.Cutscene.Archive.Stock,Data Cores: {0}. Science: {1}. Scrap: {2}.,"Archive reading; {0} Data Cores, {1} science points, {2} scrap"
+Wardens.Cutscene.Archive.Born,First beaver: day {0}. The road east: {1}.,"Archive reading; {0} the birthday mark or none, {1} the level-end choice or none"
+Wardens.Cutscene.Archive.Recorded,Recorded.,Archive reading

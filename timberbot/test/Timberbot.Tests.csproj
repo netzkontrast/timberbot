@@ -22,6 +22,9 @@
     <Compile Include="..\src\TimberbotPure.cs" Link="Shared\TimberbotPure.cs" />
     <Compile Include="..\src\TimberbotAgentState.cs" Link="Shared\TimberbotAgentState.cs" />
     <Compile Include="..\src\TimberbotWebSocketServer.cs" Link="Shared\TimberbotWebSocketServer.cs" />
+    <Compile Include="..\src\TimberbotErrors.cs" Link="Shared\TimberbotErrors.cs" />
+    <Compile Include="..\src\TimberbotMapText.cs" Link="Shared\TimberbotMapText.cs" />
+    <Compile Include="..\src\TimberbotMcp.cs" Link="Shared\TimberbotMcp.cs" />
   </ItemGroup>
 
   <!-- Ship openapi.yaml + TimberbotHttpServer.cs source next to the test assembly so

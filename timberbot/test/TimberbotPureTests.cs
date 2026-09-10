@@ -554,6 +554,42 @@ namespace Timberbot.Tests
             Assert.Equal(expected, TimberbotPure.NormalizeMode(input));
     }
 
+    public class ResolveServerModeTests
+    {
+        [Theory]
+        [InlineData("{\"mode\":\"autonomous\"}", "autonomous")]
+        [InlineData("{\"mode\":\"request\"}", "request")]
+        [InlineData("{\"mode\":\"Request\"}", "request")]
+        [InlineData("{\"mode\":\"garbage\"}", "autonomous")]
+        public void UsesTheReportedMode(string json, string expected) =>
+            Assert.Equal(expected, TimberbotPure.ResolveServerMode(JObject.Parse(json)));
+
+        // Regression: the widget booted assuming "autonomous" and fell back to
+        // it whenever the poll had no mode, while the mod defaults to
+        // "request". The fallback must be the mod default.
+        [Theory]
+        [InlineData("{}")]
+        [InlineData("{\"mode\":null}")]
+        [InlineData("{\"mode\":\"\"}")]
+        [InlineData("{\"mode\":\"   \"}")]
+        public void FallsBackToTheModDefault(string json)
+        {
+            Assert.Equal(TimberbotAgentState.DefaultMode, TimberbotPure.ResolveServerMode(JObject.Parse(json)));
+            Assert.Equal(TimberbotAgentState.ModeRequest, TimberbotPure.ResolveServerMode(JObject.Parse(json)));
+        }
+
+        [Fact]
+        public void NullStateFallsBackToTheModDefault() =>
+            Assert.Equal(TimberbotAgentState.DefaultMode, TimberbotPure.ResolveServerMode(null));
+
+        [Fact]
+        public void FreshAgentStateRoundTripsToTheDefaultMode()
+        {
+            var state = JObject.Parse(new TimberbotAgentState().ToStateResponseJson());
+            Assert.Equal(TimberbotAgentState.DefaultMode, TimberbotPure.ResolveServerMode(state));
+        }
+    }
+
     public class IsAgentStatusBusyTests
     {
         [Theory]
@@ -677,6 +713,21 @@ namespace Timberbot.Tests
             Assert.Equal("0.9", msg.Version);
             Assert.Equal("running", msg.AgentStatus);
             Assert.Equal(42L, msg.AckedRequestId);
+        }
+
+        // `tbot watch` stringifies request ids (`str(pendingRequest.id)`) and
+        // echoes them back as `acked_request_id`. The mod must still read them
+        // as the integer it issued, or the pending slot never clears.
+        [Theory]
+        [InlineData("\"17\"", 17L)]
+        [InlineData("17", 17L)]
+        [InlineData("null", 0L)]
+        public void ParseInboundMessage_Heartbeat_AcceptsStringAndNumericAckIds(string ackJson, long expected)
+        {
+            var msg = TimberbotPure.ParseInboundMessage(
+                "{\"type\":\"heartbeat\",\"payload\":{\"agent_status\":\"idle\",\"acked_request_id\":" + ackJson + "}}");
+            Assert.NotNull(msg);
+            Assert.Equal(expected, msg.AckedRequestId);
         }
 
         [Fact]

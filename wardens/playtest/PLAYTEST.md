@@ -5,11 +5,15 @@ that Claude Code connects to directly.
 
 ## One-time setup
 
-1. Build + deploy: `dotnet build wardens/src/Wardens.csproj -c Release`.
+1. Build + deploy: `dotnet build wardens/src/Wardens.csproj -c Release` (or install a packaged build:
+   `python wardens/tools/package.py` after the build writes `dist/Wardens-v<version>.zip`, whose `README.txt`
+   has the two copy steps).
 2. In Timberborn's Mod Manager enable **The Wardens** and **disable Timberbot API** (the same
    code is compiled into the Wardens; two copies fight over port 8085).
-3. New Game → faction **The Wardens**, tutorial toggle on → any map for now. The Cold Boot
-   orbit plays (14 s, paused), then the cards appear bottom-right.
+3. New Game → faction **The Wardens**, tutorial toggle on → map **[Custom] Wardens Wasteland** (the
+   build installs it to `Documents/Timberborn/Maps`; any map works if it is missing). The Cold Boot
+   cutscene plays (22 s, paused: letterbox, three captions, one orbit around the Core, Skip at the top
+   right); the tutorial cards are bottom-right throughout and the game stays paused afterwards.
 4. Save as settlement `Wardens`, save `smoke` so `tbot launch --settlement=Wardens --save=smoke` can
    reload it.
 
@@ -31,15 +35,18 @@ or call the MCP tool `timberbot_ready`.
 
 | Tool | Thread | What |
 |---|---|---|
-| `wardens_status` | main | faction, speed, bots/beavers + avg Energy, tutorial state, pointers, camera, ready gate |
+| `wardens_status` | main | faction, speed, bots/beavers + avg Energy, tutorial + chapter state, pointers, camera, ready gate |
 | `tutorial` | main | `status`, or `next` to force the next stage of a tutorial id |
+| `chapter` | main | `status`: every story chapter with its gating tutorial and per-building lock state; `unlock` forces `chapter_id` open |
+| `frame` | listener | long-poll for the next sensor frame: every `every_ticks` game ticks or on an event (chat, day, building, chapter, birth, alert, selection); carries `attention` (where to look) |
+| `manual` | listener | the Warden's playbook, `docs/WARDEN.md` from the mod folder |
 | `point` / `unpoint` | main | highlight + bobbing arrow + toast on a tile, optional camera pan |
 | `say` | main | message into the in-game WARDENS UPLINK panel (optional toast) |
 | `chat_read` | listener | long-poll (≤120 s) for the player's next chat message |
 | `chat_history` | listener | last N messages |
 | `selection` | main | what the player has selected (their way of pointing at something) |
 | `camera` | main | get / set / fly keyframes / stop |
-| `cutscene` | main | replay the Cold Boot orbit |
+| `cutscene` | main | `status` / `list` the scenes from `Cutscenes/*.json`, the running one and the story record; `play` `id` (default ColdBoot, replaces a running scene, ignores the trigger policy; `Archive` reads the Ledger back), `skip`, `continue`, `choose` `choice` (an open card), `reload` (edit in the mod folder, reload, play), `reset` (archive `story.json`) |
 | `speed` | main | 0 pause … 3 |
 | `timberbot` | listener | GET/POST passthrough to the compiled-in Timberbot API (loopback) |
 | `timberbot_ready` | main | open the ready gate in-process |
@@ -50,7 +57,10 @@ Every tool result may carry `chat`: player messages not yet delivered to the age
 
 ## Conversation loop (how the agent plays with you)
 
-1. Agent calls `chat_read` (waits up to 20 s), you type in the panel and press Enter.
+The full loop is `wardens/WARDEN.md`: the agent reads it with `manual`, then lives on `frame`, which
+wakes it every 60 game ticks or when something happens, and tells it where to look. The short form:
+
+1. Agent calls `frame` (or `chat_read`, waits up to 20 s), you type in the panel and press Enter.
 2. Agent answers with `say`, points with `point` when it talks about a place, acts through
    `timberbot` (`POST /api/building/place` etc.).
 3. You point back by selecting something in the game; the agent reads it with `selection`.
@@ -81,17 +91,72 @@ Every tool result may carry `chat`: player messages not yet delivered to the age
   Planter Rig (locked), Stairs (locked), Platform (locked), Dam, Crate Rack, Hauler Dock,
   Observation Deck, Scavenger Flag, Path). Placing the Cruncher next to the Core with a Power Shaft
   between them should light its illuminator (Core outputs 150 hp).
-- `python wardens/tools/validate.py` must print `problems: none` before every in-game test.
+- Chapters (`wardens/README.md`, "How the chapters work"): on a new game the padlock sits on the
+  Sludge Pump, Reed Bed, Sludge Tank, Crate Rack, Cruncher, both pods, Badwater Cell and Sludge
+  Burner; `chapter status` shows `next: Badwater`, `next_waits_for: Wardens.Scrap`. Finishing the
+  Scrap tutorial (or `tutorial next` through it) must clear the first four padlocks within a second,
+  show the "Chapter 2: Badwater." toast and put the same line in the chat panel; the Badwater and
+  Biomass tutorial then starts with its buildings buildable. Reloading the save keeps them unlocked
+  and shows no toast. To test a later building out of order use `chapter unlock chapter_id=Signal`
+  (or start with the tutorial off, which opens every chapter). `"chapterGating": false` in
+  `settings.json` does the same for every game.
+- `python wardens/tools/validate.py` must print `problems: none` before every in-game test (it includes
+  `check_cutscenes.py`, which also runs alone and without the game's files:
+  `python wardens/tools/check_cutscenes.py wardens/src`).
+- The map (`design/wardens-wasteland.md`): the game may show an "older version" notice on load (the file
+  claims 0.7.10 on purpose). Expect the Core on a flat pad with a dry basin east of it that the badwater
+  from the north edge fills during the first day; ruin columns to the north-west and south of the Core;
+  a pond with pines and birches on the hill in the north-east. If the map does not appear in the list,
+  check `Documents/Timberborn/Maps/Wardens Wasteland.timber` exists; if it fails to load, the log names
+  the singleton or template, and `python wardens/tools/gen_map.py --check "<file>"` rules out the
+  static causes.
 - A Charging Post next to the Core, connected by a shaft, is what keeps the bots alive; build it first.
 - The Forestry section must show plant buttons for the common trees (Planter Rig) and Sludge Reed
   (Reed Bed); a missing planter building for a plantable crashes the bottom bar at load.
 - Power budget to verify: Core 150 hp; Charging Post 50; Cruncher 120; Badwater Cell +100 (needs a Sludge
   Pump on badwater and a bot working it); Sludge Burner +200 once Reed Beds deliver Biomass.
 
+## Checks for cutscenes
+
+Design and open questions: `design/wardens-cutscenes.md` (§9 is this list, §12 what the run answers).
+
+- A new Wardens game (tutorial on): the letterbox comes up with the Uplink line "Cold Boot...", the
+  three captions follow each other (orbit 8 s, push in 8 s, settle 6 s) with the dots filling, the
+  camera orbits the Core once and ends where it started, the tutorial cards on the right stay clickable,
+  and afterwards the game is paused but not locked (the speed buttons work). The log has
+  `[Wardens] cutscenes: 1 loaded from ...` and `cutscene ColdBoot: start (trigger, 3 shots, 22 s)`.
+- Skip at any point: the overlay goes, the camera stops where it is, the game is paused and unlocked.
+- `cutscene status` while it plays shows `playing`, `id`, `shot`, `caption`, `waiting` (`flight`, `time`);
+  `wardens_status.cutscene_played` is true afterwards; `frame` carries `cutscene` and the events
+  `cutscene.start:ColdBoot` / `cutscene.end:ColdBoot`, with `attention[0].what == "cutscene"` while it plays.
+- On a loaded save nothing plays; `cutscene play` replays it (on any faction, any map); edit
+  `Documents/Timberborn/Mods/Wardens/Cutscenes/ColdBoot.json`, `cutscene reload`, `play`: the change shows.
+  A broken edit lands in `errors` and the other scenes still load.
+- Tutorial off, or `"cutscenes": false` in `settings.json`: nothing plays on a new game; `play` still works.
+- `chapter unlock chapter_id=Badwater` opens the chapter and plays `Badwater`: two shots around the Core,
+  the first caption with the scrap count filled in ("Scrap: 10. ..."), the second with a Continue button
+  (Return or Space also continues); the camera flies back to where it was. Signal, Pods (three stock
+  counts in the first caption) and Power the same way.
+- `chapter unlock chapter_id=Green` plays `Green` (the camera on the first beaver, or the Core when there
+  is none; "Day N. Born M.") and then `LevelEnd`: the level's end card with *Continue to Level 02* and
+  *Stay*. A click writes `Documents/Timberborn/Mods/Wardens/story.json` (`choices.LevelEnd.end`, and
+  `marks.birthday` from the Green scene), plays the matching closing shot, and `cutscene status` shows
+  the record under `story`. `cutscene choose choice=stay` answers a card from the agent's side.
+- `cutscene play id=Archive`: five cards with today's day and cycle, Wardens and beavers, Data Cores,
+  science and scrap, the birthday mark and the level-end choice (`none` until they exist), then
+  "Recorded."; Escape skips it (if the game's pause menu opens too, note it: the key goes, the button stays).
+- `cutscene reset` archives `story.json` as `story.<timestamp>.json`; the next Green plays the card again.
+- What to tune first: the zoom scale (`dzoom` ±0.15 is a placeholder), the tilt (`v` 60 and 35), whether
+  the letterbox collides with the tutorial panel, and whether the caption is centered (the game's
+  `text--centered` class) or needs a fixed width.
+
 ## Known gaps
 
 - Starting a **new game** from the API (faction + map + mode) is still missing.
 - No screenshot endpoint yet; the agent sees the world through the read API only.
+- Cutscenes: the game's UI stays visible under the letterbox; whether Escape reaches the overlay (and
+  whether it also opens the pause menu) is unverified; the scenes' zoom and angles are untuned; Level 02
+  does not exist, so *Continue to Level 02* only records the choice.
 - The Core does not charge bots itself (no vanilla building combines a workplace with an
   attraction); the Charging Post does, at 50 hp from the Core.
 - Sludge Reed skips the watered/contaminated components; whether growth needs soil moisture

@@ -237,6 +237,16 @@ namespace Timberbot
             return v == "request" ? "request" : "autonomous";
         }
 
+        // Mode as reported by /api/agent/state. Falls back to the mod default
+        // (TimberbotAgentState.DefaultMode) when the field is missing, so the
+        // widget never assumes a mode the server did not report. NormalizeMode
+        // alone is the wrong fallback here: it maps "" to "autonomous".
+        public static string ResolveServerMode(JObject state)
+        {
+            var raw = state?.Value<string>("mode");
+            return string.IsNullOrWhiteSpace(raw) ? TimberbotAgentState.DefaultMode : NormalizeMode(raw);
+        }
+
         // ValidateWebhookUrlFormat / SSRF guards were deleted alongside the
         // outbound HTTP webhook delivery loop in the WS rework (issue #28).
         // The WS broadcaster pushes to client-initiated connections, so

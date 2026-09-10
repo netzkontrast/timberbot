@@ -1,0 +1,47 @@
+{
+  "id": "Green",
+  "on": [
+    "chapter:Green"
+  ],
+  "pause": true,
+  "leave_paused": false,
+  "restore_camera": true,
+  "letterbox": true,
+  "skippable": true,
+  "shots": [
+    {
+      "id": "born",
+      "caption": "Wardens.Cutscene.Green.Born",
+      "args": [
+        "day",
+        "beavers"
+      ],
+      "seconds": 7,
+      "mark": "birthday",
+      "camera": [
+        {
+          "t": 7,
+          "anchor": "beaver",
+          "v": 35,
+          "dh": 30,
+          "dzoom": -0.2
+        }
+      ]
+    },
+    {
+      "id": "job",
+      "caption": "Wardens.Cutscene.Green.Job",
+      "seconds": 6,
+      "wait": "continue",
+      "camera": [
+        {
+          "t": 6,
+          "anchor": "beaver",
+          "v": 45,
+          "dh": 90,
+          "dzoom": 0.1
+        }
+      ]
+    }
+  ]
+}

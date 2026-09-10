@@ -1,0 +1,47 @@
+{
+  "id": "Pods",
+  "on": [
+    "chapter:Pods"
+  ],
+  "pause": true,
+  "leave_paused": false,
+  "restore_camera": true,
+  "letterbox": true,
+  "skippable": true,
+  "shots": [
+    {
+      "id": "stores",
+      "caption": "Wardens.Cutscene.Pods.Stores",
+      "args": [
+        "good:ScrapMetal",
+        "good:Badwater",
+        "good:Biomass"
+      ],
+      "seconds": 6,
+      "camera": [
+        {
+          "t": 6,
+          "anchor": "core",
+          "v": 55,
+          "dh": 45,
+          "dzoom": 0.1
+        }
+      ]
+    },
+    {
+      "id": "pod",
+      "caption": "Wardens.Cutscene.Pods.Pod",
+      "seconds": 6,
+      "wait": "continue",
+      "camera": [
+        {
+          "t": 6,
+          "anchor": "core",
+          "v": 40,
+          "dh": 110,
+          "dzoom": -0.1
+        }
+      ]
+    }
+  ]
+}

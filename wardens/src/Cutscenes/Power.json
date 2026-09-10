@@ -1,0 +1,42 @@
+{
+  "id": "Power",
+  "on": [
+    "chapter:Power"
+  ],
+  "pause": true,
+  "leave_paused": false,
+  "restore_camera": true,
+  "letterbox": true,
+  "skippable": true,
+  "shots": [
+    {
+      "id": "dark",
+      "caption": "Wardens.Cutscene.Power.Dark",
+      "seconds": 6,
+      "camera": [
+        {
+          "t": 6,
+          "anchor": "core",
+          "v": 45,
+          "dh": 50,
+          "dzoom": 0
+        }
+      ]
+    },
+    {
+      "id": "debt",
+      "caption": "Wardens.Cutscene.Power.Debt",
+      "seconds": 7,
+      "wait": "continue",
+      "camera": [
+        {
+          "t": 7,
+          "anchor": "core",
+          "v": 60,
+          "dh": 130,
+          "dzoom": 0.2
+        }
+      ]
+    }
+  ]
+}
