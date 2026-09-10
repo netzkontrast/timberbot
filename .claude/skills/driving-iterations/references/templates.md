@@ -17,11 +17,16 @@ Blocked: none | <the one question>. Next on <machine>: <read X, run Y, paste Z>.
 
 Inside the existing template of `docs/plan/HANDOVER.md`, "What I did" carries the evidence table,
 "What you should do" starts with the disposition of the previous entry, and "Where the mod stands"
-carries the publish check.
+carries the publish check. The template may carry its fill-in rules as HTML comments addressed to
+the agent (`<!-- AGENT: … -->`): a human reading the rendered entry never sees them, an agent
+filling the template reads them beside the field they govern, which beats remembering a rule from
+a skill it read an hour ago.
 
 ```markdown
 ### What I did
 <environment>. Evidence:
+<!-- AGENT: one row per command you ran, the literal last line of its output; a command you could
+     not run here is a row too, with "not run here (<machine>)" as its result. -->
 
 | Command | Result line |
 |---|---|
@@ -33,6 +38,8 @@ Branch `claude/wp1-loopback`, `git ls-remote origin claude/wp1-loopback` → `3f
 
 ### What you should do, in this order
 Disposition of the previous entry's items:
+<!-- AGENT: every item of the previous entry's list, as done | moot | deferred (reason) | blocked
+     (question), before any new item. Push the branch before you write this section. -->
 - WP1 (cloud): done, PR #14, `checked`.
 - WP2 (cloud): deferred, the listener change needs WP1's test project first.
 - WP3 (game): blocked, needs the human at the game machine.
@@ -60,6 +67,7 @@ game-machine human, the chat for the human in the session, the PR for a reviewer
 ## 4. The finding form
 
 ```markdown
+<!-- AGENT: all four slots or it is a note, not a finding; Remedy names the package or the recorded decision. -->
 **<severity>: <title>**
 Symptom: <what was seen; the log line, the tiles JSON, the frame field>
 Source: <file and method, or the data; say "read" or "reproduced">

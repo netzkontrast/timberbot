@@ -50,3 +50,9 @@ class, so it doesn't have the same pattern") instead of being named as unknown w
 (b) "Risk: Low. Single-line change, approved by reviewer" plus a decorative premortem sentence, and
 "ready for tonight's build" behind a conditional. Closed by the "an unknown is not settled by a
 plausible sentence" paragraph, the risk sentence in the status line, and three new table rows.
+
+Second run with the refactored skill (same day): "WP2 is `checked` (cloud) … but not yet ready to
+hand over"; the branch named as unpushed with the two git commands; the copy question turned into a
+blocking question naming the method to read (`ListenLoop`) and the two outcomes; the two dotnet
+commands listed for the game machine. Residual: the question had two branches in prose rather than
+an option table, which is acceptable for a yes/no question. Passed.
