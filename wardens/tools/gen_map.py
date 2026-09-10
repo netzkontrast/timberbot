@@ -1,32 +1,33 @@
-"""Generate the Wardens' wasteland map: a `.timber` file the game loads as a custom map.
+"""Generate the Wardens' campaign maps: `.timber` files the game loads as custom maps.
 
-    python wardens/tools/gen_map.py                   # writes src/Maps/Wardens Wasteland.timber + design preview
-    python wardens/tools/gen_map.py --seed 7 --size 96
-    python wardens/tools/gen_map.py --check "path/to/map.timber"
+    python wardens/tools/gen_map.py                        # level 01, the default
+    python wardens/tools/gen_map.py --level 01 --preview   # + the design preview PNG
+    python wardens/tools/gen_map.py --all                  # every level in the registry
+    python wardens/tools/gen_map.py --list                 # what the registry holds
+    python wardens/tools/gen_map.py --check "path/to/map.timber" [--level 01]
 
-The faction design (design/faction-wardens.md §2, §7) asks for one shipped wasteland: badwater
-sources, contaminated soil, ruins for scrap, nothing green. Nobody can drive the in-game map editor
-from a script, so this writes the map file directly.
+One class per level (design/wardens-campaign-map-set.md §4): `Terrain` holds the shared toolkit and
+the file plumbing, a level subclass composes primitives into land and declares its **contract** —
+the properties the level's play depends on, checked by `--check`. Timberborn has no objective
+system, so the land is the only rule engine and the contract is the level design.
+
+Seeds are pinned per level in the class and must never change after a map ships: the same name with
+a different seed is a different map, and level 10 (`Home`) regenerates level 01's exact heightfield.
+
+Nobody can drive the in-game map editor from a script, so this writes the map file directly.
 
 File format (verified against a map that loads in 0.7.10 and its exporter, lawless-m/Toberboon, plus
 a Timberborn-editor map for the entity shapes): a `.timber` is a zip of world.json, map_metadata.json,
-version.txt and map_thumbnail.jpg. Terrain is a voxel string (width x depth x 23 layers, "1" solid,
+version.txt and map_thumbnail.jpg. Terrain is a voxel string (width x depth x LAYERS, "1" solid,
 "0" air, Z-major then Y then X); water, evaporation, soil moisture and soil contamination are
 per-cell strings; entities are {Id, Template, Components}. The file claims GameVersion 0.7.10.0 on
 purpose: that is the format we verified, and the game migrates older maps on load (it may show an
 "older version" notice), whereas claiming 1.1 for an unverified 1.1 layout would skip the migration.
 
-Layout (default seed): a rolling ash plateau at Z 6-9 with a rim of hills; a badwater river that
-enters at the north edge from three BadwaterSources, meanders in an S across the map and leaves at
-the south edge; the Sump, a basin beside the starting location that the river fills (the Sludge Pump
-goes there); ruin clusters within scavenging range of the start (RuinColumnH1..H5, ScrapMetal
-15 per level) and two richer fields further out; UndergroundRuins under the plateau for later
-mines; and one clean spring on a hill in the north-east corner, the map's only green (pines,
-birches, blueberries) for the Reforestation tutorial's "there is not much".
-
-Water starts dry: the new water map's column encoding for pre-filled water is not documented, so
-the sources fill the river and the Sump during the first day (the Cold Boot orbit shows it arriving).
-Soil contamination in the file is cosmetic and recomputed by the game from the badwater.
+Water starts dry: the new water map's column encoding for pre-filled water is not documented, so the
+sources fill the channels during the first day. That is cosmetic for level 01 and fatal for any level
+whose puzzle is water separating things — see design/wardens-campaign-map-set.md §5 before designing
+levels 03, 04 or 08 around it.
 """
 from __future__ import annotations
 
@@ -42,14 +43,10 @@ import numpy as np
 
 SRC = Path(__file__).resolve().parents[1] / "src"
 DESIGN = Path(__file__).resolve().parents[2] / "design"
-MAP_NAME = "Wardens Wasteland"
-GAME_VERSION = "0.7.10.0"          # the verified format; the game migrates it (see module docstring)
-TIMESTAMP = "2026-09-03 18:00:00"  # fixed so re-runs are byte-identical
-LAYERS = 23                        # Z 0..22, top layer always air
 NAMESPACE = uuid.UUID("6f1c2d3e-7a1b-4c5d-9e8f-0a1b2c3d4e5f")
 
 
-# --- terrain -------------------------------------------------------------------------------------
+# --- the shared toolkit --------------------------------------------------------------------------
 
 def value_noise(rng: np.random.Generator, size: int, octaves=(8, 16, 32), weights=(1.0, 0.5, 0.25)) -> np.ndarray:
     """Sum of bilinear value-noise octaves in [0, 1]."""
@@ -95,12 +92,211 @@ def distance_field(size: int, path: list[tuple[float, float]]) -> np.ndarray:
     return best
 
 
-class Wasteland:
-    def __init__(self, size: int, seed: int):
-        self.size = size
-        self.seed = seed
-        self.rng = np.random.default_rng(seed)
-        s = size
+# --- the base ------------------------------------------------------------------------------------
+
+class Terrain:
+    """Format plumbing and the shared primitives. A level subclass builds the land.
+
+    Subclasses override `anchors()` (design constants scaled to the size), `build_terrain()` and
+    `build_entities()`, and declare their contract in `contract()`.
+    """
+
+    LEVEL = "00"
+    MAP_NAME = ""
+    DESCRIPTION = ""
+    SIZE = 96
+    SEED = 0
+    LAYERS = 23                        # Z 0..LAYERS-1, top layer always air
+    GAME_VERSION = "0.7.10.0"          # the verified format; the game migrates it (see module docstring)
+    TIMESTAMP = "2026-09-03 18:00:00"  # fixed so re-runs are byte-identical
+    STAMP = (2026, 9, 3, 18, 0, 0)     # zip entry mtime, same reason
+    REQUIRE_BADWATER = True            # false only where the land is healed (level 10)
+
+    def __init__(self, size: int | None = None, seed: int | None = None):
+        self.size = self.SIZE if size is None else size
+        self.seed = self.SEED if seed is None else seed
+        self.rng = np.random.default_rng(self.seed)
+        self.start: tuple[int, int] | None = None   # starting pad, bottom-left
+        self.pad = 8
+        self.height: np.ndarray | None = None
+        self.river: np.ndarray | None = None      # bool: badwater bed cells
+        self.clean: np.ndarray | None = None      # bool: clean-water bed cells
+        self.entities: list[dict] = []
+        self.sources: list[tuple[int, int]] = []
+        self.ruins: list[tuple[int, int, int]] = []
+        self.trees: list[tuple[int, int]] = []
+        self.anchors()
+
+    # -- to override -----------------------------------------------------------------------------
+
+    def anchors(self) -> None:
+        """Design constants, scaled from the level's reference layout. No rng."""
+
+    def build_terrain(self) -> None:
+        raise NotImplementedError
+
+    def build_entities(self) -> None:
+        raise NotImplementedError
+
+    def contract(self, world: dict, grid: np.ndarray) -> list[str]:
+        """Level-specific assertions on a written map. Empty list means the contract holds."""
+        return []
+
+    def build(self) -> "Terrain":
+        self.build_terrain()
+        self.build_entities()
+        return self
+
+    # -- entity helpers --------------------------------------------------------------------------
+
+    def ident(self, kind: str, x: int, y: int, z: int = 0) -> str:
+        return str(uuid.uuid5(NAMESPACE, f"{self.seed}:{kind}:{x}:{y}:{z}"))
+
+    def z_at(self, x: int, y: int) -> int:
+        return int(self.height[y, x])      # first air layer above the column
+
+    def free(self, x: int, y: int, margin: int = 0) -> bool:
+        s = self.size
+        if x < 1 + margin or y < 1 + margin or x >= s - 1 - margin or y >= s - 1 - margin:
+            return False
+        if self.river[y, x] or self.clean[y, x]:
+            return False
+        if self.start is not None:
+            x0, y0 = self.start
+            if x0 - 3 <= x < x0 + self.pad + 3 and y0 - 3 <= y < y0 + self.pad + 3:
+                return False
+        return True
+
+    # -- singletons ------------------------------------------------------------------------------
+
+    def contamination(self) -> np.ndarray:
+        d = self.dist_to_river
+        return np.clip(1.0 - (d - 2.5) / 6.0, 0.0, 1.0)
+
+    @property
+    def dist_to_river(self) -> np.ndarray:
+        if not hasattr(self, "_dist"):
+            ys, xs = np.nonzero(self.river)
+            self._dist = distance_field(self.size, list(zip(xs + 0.5, ys + 0.5)))
+        return self._dist
+
+    def voxels(self) -> str:
+        h = self.height
+        layers = []
+        for z in range(self.LAYERS):
+            solid = (h > z) if z < self.LAYERS - 1 else np.zeros_like(h, dtype=bool)
+            layers.append(solid.astype(np.uint8))
+        arr = np.stack(layers)               # (Z, Y, X)
+        return " ".join(map(str, arr.reshape(-1).tolist()))
+
+    def world(self) -> dict:
+        s = self.size
+        n = s * s
+        cont = self.contamination().reshape(-1)
+        def floats(a: np.ndarray) -> str:
+            return " ".join("0" if v == 0 else f"{v:.4g}" for v in a.tolist())
+        return {
+            "GameVersion": self.GAME_VERSION,
+            "Timestamp": self.TIMESTAMP,
+            "Singletons": {
+                "MapSize": {"Size": {"X": s, "Y": s}},
+                "TerrainMap": {"Voxels": {"Array": self.voxels()}},
+                "WaterMapNew": {"Levels": 1,
+                                "WaterColumns": {"Array": " ".join(["0"] * n)},
+                                "ColumnOutflows": {"Array": " ".join(["0|0:0|0:0|0:0|0"] * n)}},
+                "WaterEvaporationMap": {"Levels": 1, "EvaporationModifiers": {"Array": " ".join(["1"] * n)}},
+                "SoilMoistureSimulator": {"Size": 1, "MoistureLevels": {"Array": " ".join(["0"] * n)}},
+                "SoilContaminationSimulator": {"Size": 1,
+                                               "ContaminationCandidates": {"Array": floats(cont)},
+                                               "ContaminationLevels": {"Array": floats(cont)}},
+                "HazardousWeatherHistory": {"HistoryData": []},
+                "MapThumbnailCameraMover": {"CurrentConfiguration": {
+                    "Position": {"X": s / 2.0, "Y": round(s * 0.64, 2), "Z": -s / 2.0},
+                    "Rotation": {"X": 0.342020124, "Y": 0.0, "Z": 0.0, "W": 0.9396926},
+                    "ShadowDistance": 150.0}},
+            },
+            "Entities": self.entities,
+        }
+
+    def metadata(self) -> dict:
+        return {"Width": self.size, "Height": self.size, "MapNameLocKey": "", "MapDescriptionLocKey": "",
+                "MapDescription": self.DESCRIPTION,
+                "IsRecommended": False, "IsDev": False}
+
+    # -- pictures --------------------------------------------------------------------------------
+
+    def render(self, scale: int = 6):
+        """Top-down preview: ash plateau by height, badwater, the clean pond, ruins, trees, the start."""
+        from PIL import Image, ImageDraw
+        s = self.size
+        h = self.height.astype(float)
+        cont = self.contamination()
+        img = np.zeros((s, s, 3), dtype=np.uint8)
+        t = np.clip((h - 3) / 14.0, 0, 1)
+        base = np.stack([88 + 70 * t, 78 + 60 * t, 66 + 48 * t], axis=-1)           # ash / rust
+        poison = np.stack([70 * cont, 40 * cont, 60 * cont], axis=-1)                # purple stain near badwater
+        img[:] = np.clip(base - poison * 0.6, 0, 255).astype(np.uint8)
+        img[self.river] = (72, 30, 92)
+        img[self.clean] = (60, 150, 200)
+        im = Image.fromarray(img, "RGB").resize((s * scale, s * scale), Image.NEAREST)
+        dr = ImageDraw.Draw(im)
+        for x, y in self.trees:
+            dr.rectangle([x * scale + 1, y * scale + 1, x * scale + scale - 2, y * scale + scale - 2], fill=(60, 120, 50))
+        for x, y, lvl in self.ruins:
+            g = 120 + 20 * lvl
+            dr.rectangle([x * scale, y * scale, x * scale + scale - 1, y * scale + scale - 1], fill=(g, g, g), outline=(30, 30, 30))
+        for x, y in self.sources:
+            dr.ellipse([x * scale - 2, y * scale - 2, x * scale + scale + 1, y * scale + scale + 1], outline=(200, 80, 220), width=2)
+        if self.start is not None:
+            x0, y0 = self.start
+            dr.rectangle([x0 * scale, y0 * scale, (x0 + self.pad) * scale - 1, (y0 + self.pad) * scale - 1], outline=(0, 229, 255), width=2)
+        return im
+
+
+# --- contract helpers ----------------------------------------------------------------------------
+
+def surface(grid: np.ndarray) -> np.ndarray:
+    """Solid blocks per column: the ground top, given terrain without overhangs."""
+    return grid.sum(axis=0)
+
+
+def templates(world: dict, prefix: str) -> list[dict]:
+    return [e for e in world["Entities"] if e["Template"].startswith(prefix)]
+
+
+def coords(entity: dict) -> tuple[int, int, int]:
+    c = entity["Components"]["BlockObject"]["Coordinates"]
+    return c["X"], c["Y"], c["Z"]
+
+
+def floats_of(world: dict, singleton: str, key: str) -> np.ndarray:
+    return np.array(world["Singletons"][singleton][key]["Array"].split(), dtype=float)
+
+
+# --- level 01: First Light -----------------------------------------------------------------------
+
+class FirstLight(Terrain):
+    """Level 01. The wasteland the Wardens wake in: badwater from the north, ruins for scrap, one
+    clean spring in the north-east. design/wardens-wasteland.md.
+
+    Layout: a rolling ash plateau at Z 6-9 with a rim of hills; a badwater river that enters at the
+    north edge from three BadwaterSources, meanders in an S across the map and leaves at the south
+    edge; the Sump, a basin beside the starting location that the river fills (the Sludge Pump goes
+    there); ruin clusters within scavenging range of the start (RuinColumnH1..H5, ScrapMetal 15 per
+    level) and two richer fields further out; UndergroundRuins under the plateau for later mines;
+    and one clean spring on a hill in the north-east corner, the map's only green (pines, birches,
+    blueberries) for the Reforestation tutorial's "there is not much".
+    """
+
+    LEVEL = "01"
+    MAP_NAME = "Wardens 01 First Light"
+    DESCRIPTION = ("The Wardens' wasteland. Badwater from the north, ruins for scrap, one clean spring "
+                   "in the north-east. Bots only. Campaign level 01: First Light.")
+    SIZE = 96
+    SEED = 3000
+
+    def anchors(self) -> None:
+        s = self.size
         # Design anchors, scaled from the 96 x 96 reference layout.
         f = s / 96.0
         self.start = (int(20 * f), int(46 * f))              # starting location (bottom-left of its pad)
@@ -109,13 +305,6 @@ class Wasteland:
         self.river_pts = [(34 * f, -2), (36 * f, 14 * f), (52 * f, 26 * f), (38 * f, 42 * f), (30 * f, 47 * f),
                           (40 * f, 58 * f), (62 * f, 66 * f), (56 * f, 82 * f), (48 * f, s + 2)]
         self.spring = (int(82 * f), int(14 * f))              # clean spring hill centre
-        self.height: np.ndarray | None = None
-        self.river: np.ndarray | None = None      # bool: badwater bed cells
-        self.clean: np.ndarray | None = None      # bool: clean-water bed cells
-        self.entities: list[dict] = []
-        self.sources: list[tuple[int, int]] = []
-        self.ruins: list[tuple[int, int, int]] = []
-        self.trees: list[tuple[int, int]] = []
 
     # -- terrain ---------------------------------------------------------------------------------
 
@@ -175,23 +364,6 @@ class Wasteland:
         self.clean = clean
 
     # -- entities --------------------------------------------------------------------------------
-
-    def ident(self, kind: str, x: int, y: int, z: int = 0) -> str:
-        return str(uuid.uuid5(NAMESPACE, f"{self.seed}:{kind}:{x}:{y}:{z}"))
-
-    def z_at(self, x: int, y: int) -> int:
-        return int(self.height[y, x])      # first air layer above the column
-
-    def free(self, x: int, y: int, margin: int = 0) -> bool:
-        s = self.size
-        if x < 1 + margin or y < 1 + margin or x >= s - 1 - margin or y >= s - 1 - margin:
-            return False
-        if self.river[y, x] or self.clean[y, x]:
-            return False
-        x0, y0 = self.start
-        if x0 - 3 <= x < x0 + self.pad + 3 and y0 - 3 <= y < y0 + self.pad + 3:
-            return False
-        return True
 
     def build_entities(self) -> None:
         h = self.height
@@ -304,85 +476,93 @@ class Wasteland:
 
         self.entities = ents
 
-    # -- singletons ---------------------------------------------------------------------------------
+    # -- the contract ----------------------------------------------------------------------------
 
-    def contamination(self) -> np.ndarray:
-        d = self.dist_to_river
-        return np.clip(1.0 - (d - 2.5) / 6.0, 0.0, 1.0)
+    def contract(self, world: dict, grid: np.ndarray) -> list[str]:
+        """What the level's play depends on (design/wardens-campaign-map-set.md §2, level 01).
 
-    @property
-    def dist_to_river(self) -> np.ndarray:
-        if not hasattr(self, "_dist"):
-            ys, xs = np.nonzero(self.river)
-            self._dist = distance_field(self.size, list(zip(xs + 0.5, ys + 0.5)))
-        return self._dist
+        First Light is the tutorial level: everything Chapter 1 asks for has to be within reach of
+        the starting pad, and the map's one clean spring has to exist and be far from the badwater.
+        """
+        bad = []
+        h = surface(grid)
+        s = h.shape[0]
 
-    def voxels(self) -> str:
-        s = self.size
-        h = self.height
-        layers = []
-        for z in range(LAYERS):
-            solid = (h > z) if z < LAYERS - 1 else np.zeros_like(h, dtype=bool)
-            layers.append(solid.astype(np.uint8))
-        arr = np.stack(layers)               # (Z, Y, X)
-        return " ".join(map(str, arr.reshape(-1).tolist()))
+        start = templates(world, "StartingLocation")
+        if len(start) != 1:
+            return [f"{len(start)} StartingLocation entities, expected 1"]
+        sx, sy, _ = coords(start[0])
 
-    def world(self) -> dict:
-        s = self.size
-        n = s * s
-        cont = self.contamination().reshape(-1)
-        def floats(a: np.ndarray) -> str:
-            return " ".join("0" if v == 0 else f"{v:.4g}" for v in a.tolist())
-        return {
-            "GameVersion": GAME_VERSION,
-            "Timestamp": TIMESTAMP,
-            "Singletons": {
-                "MapSize": {"Size": {"X": s, "Y": s}},
-                "TerrainMap": {"Voxels": {"Array": self.voxels()}},
-                "WaterMapNew": {"Levels": 1,
-                                "WaterColumns": {"Array": " ".join(["0"] * n)},
-                                "ColumnOutflows": {"Array": " ".join(["0|0:0|0:0|0:0|0"] * n)}},
-                "WaterEvaporationMap": {"Levels": 1, "EvaporationModifiers": {"Array": " ".join(["1"] * n)}},
-                "SoilMoistureSimulator": {"Size": 1, "MoistureLevels": {"Array": " ".join(["0"] * n)}},
-                "SoilContaminationSimulator": {"Size": 1,
-                                               "ContaminationCandidates": {"Array": floats(cont)},
-                                               "ContaminationLevels": {"Array": floats(cont)}},
-                "HazardousWeatherHistory": {"HistoryData": []},
-                "MapThumbnailCameraMover": {"CurrentConfiguration": {
-                    "Position": {"X": s / 2.0, "Y": round(s * 0.64, 2), "Z": -s / 2.0},
-                    "Rotation": {"X": 0.342020124, "Y": 0.0, "Z": 0.0, "W": 0.9396926},
-                    "ShadowDistance": 150.0}},
-            },
-            "Entities": self.entities,
-        }
+        # Scrap is the only building material: near ruins the first Scavenger Flags can reach.
+        near = [e for e in templates(world, "RuinColumnH") if math.hypot(coords(e)[0] - sx, coords(e)[1] - sy) <= 16]
+        if len(near) < 5:
+            bad.append(f"{len(near)} ruin columns within 16 tiles of the start, expected >= 5 (chapter 1 scrap)")
+        scrap = sum(e["Components"]["Yielder:Ruin"]["Yield"]["Amount"] for e in templates(world, "RuinColumnH"))
+        if scrap < 600:
+            bad.append(f"total ruin scrap {scrap}, expected >= 600")
 
-    # -- pictures --------------------------------------------------------------------------------------
+        # Badwater is fuel and Data feedstock; it has to cross the map, not puddle at the edge.
+        sources = templates(world, "BadwaterSource")
+        if len(sources) < 3:
+            bad.append(f"{len(sources)} BadwaterSource entities, expected >= 3")
+        bedrock = h == 4
+        if not bedrock[:3, :].any() or not bedrock[-3:, :].any():
+            bad.append("the badwater river does not reach both the north and the south edge")
 
-    def render(self, scale: int = 6):
-        """Top-down preview: ash plateau by height, badwater, the clean pond, ruins, trees, the start."""
-        from PIL import Image, ImageDraw
-        s = self.size
-        h = self.height.astype(float)
-        cont = self.contamination()
-        img = np.zeros((s, s, 3), dtype=np.uint8)
-        t = np.clip((h - 3) / 14.0, 0, 1)
-        base = np.stack([88 + 70 * t, 78 + 60 * t, 66 + 48 * t], axis=-1)           # ash / rust
-        poison = np.stack([70 * cont, 40 * cont, 60 * cont], axis=-1)                # purple stain near badwater
-        img[:] = np.clip(base - poison * 0.6, 0, 255).astype(np.uint8)
-        img[self.river] = (72, 30, 92)
-        img[self.clean] = (60, 150, 200)
-        im = Image.fromarray(img, "RGB").resize((s * scale, s * scale), Image.NEAREST)
-        dr = ImageDraw.Draw(im)
-        for x, y in self.trees:
-            dr.rectangle([x * scale + 1, y * scale + 1, x * scale + scale - 2, y * scale + scale - 2], fill=(60, 120, 50))
-        for x, y, lvl in self.ruins:
-            g = 120 + 20 * lvl
-            dr.rectangle([x * scale, y * scale, x * scale + scale - 1, y * scale + scale - 1], fill=(g, g, g), outline=(30, 30, 30))
-        for x, y in self.sources:
-            dr.ellipse([x * scale - 2, y * scale - 2, x * scale + scale + 1, y * scale + scale + 1], outline=(200, 80, 220), width=2)
-        x0, y0 = self.start
-        dr.rectangle([x0 * scale, y0 * scale, (x0 + self.pad) * scale - 1, (y0 + self.pad) * scale - 1], outline=(0, 229, 255), width=2)
-        return im
+        # The Sump: the Sludge Pump's basin, beside the pad.
+        ys, xs = np.nonzero(bedrock)
+        sump = int(((np.abs(xs - sx) <= 12) & (np.abs(ys - sy) <= 12)).sum())
+        if sump < 40:
+            bad.append(f"the Sump is {sump} cells at bed height within 12 tiles of the start, expected >= 40")
+
+        # "Trees only grow on irrigated, green ground. Find some. There is not much."
+        springs = templates(world, "WaterSource")
+        if len(springs) != 1:
+            bad.append(f"{len(springs)} clean WaterSource entities, expected exactly 1")
+        else:
+            px, py, _ = coords(springs[0])
+            for e in sources:
+                bx, by, _ = coords(e)
+                if math.hypot(bx - px, by - py) < 20:
+                    bad.append("a BadwaterSource is within 20 tiles of the clean spring")
+                    break
+        plants = len(templates(world, "Pine")) + len(templates(world, "Birch")) + len(templates(world, "BlueberryBush"))
+        if plants < 80:
+            bad.append(f"{plants} plants, expected >= 80 (the spring's grove)")
+
+        # Poison is the plot: a band, not a flood and not a rumour.
+        cont = floats_of(world, "SoilContaminationSimulator", "ContaminationLevels")
+        share = float((cont > 0.5).mean())
+        if not 0.03 <= share <= 0.40:
+            bad.append(f"{share:.0%} of tiles contaminated above 0.5, expected 3-40%")
+
+        # Later acts mine the plateau.
+        under = templates(world, "UndergroundRuins")
+        if len(under) < 4:
+            bad.append(f"{len(under)} UndergroundRuins, expected >= 4")
+        return bad
+
+
+# --- the registry --------------------------------------------------------------------------------
+
+LEVELS: dict[str, type[Terrain]] = {
+    FirstLight.LEVEL: FirstLight,
+}
+DEFAULT_LEVEL = FirstLight.LEVEL
+
+
+def level_class(level: str) -> type[Terrain]:
+    key = level.zfill(2)
+    if key not in LEVELS:
+        raise SystemExit(f"unknown level {level!r}; have {', '.join(sorted(LEVELS))}")
+    return LEVELS[key]
+
+
+def level_for_map_name(name: str) -> type[Terrain] | None:
+    for cls in LEVELS.values():
+        if cls.MAP_NAME == name:
+            return cls
+    return None
 
 
 # --- packaging -------------------------------------------------------------------------------------------
@@ -393,11 +573,9 @@ MINIMAL_JPEG = bytes.fromhex(
     "ffda0008010100003f0037ffd9")
 
 
-def write_timber(w: Wasteland, out: Path, preview: Path | None) -> None:
+def write_timber(w: Terrain, out: Path, preview: Path | None) -> None:
     world = w.world()
-    metadata = {"Width": w.size, "Height": w.size, "MapNameLocKey": "", "MapDescriptionLocKey": "",
-                "MapDescription": "The Wardens' wasteland. Badwater from the north, ruins for scrap, one clean spring in the north-east. Bots only.",
-                "IsRecommended": False, "IsDev": False}
+    metadata = w.metadata()
     try:
         im = w.render(scale=4)
         buf = io.BytesIO()
@@ -409,21 +587,24 @@ def write_timber(w: Wasteland, out: Path, preview: Path | None) -> None:
     except ImportError:
         thumb = MINIMAL_JPEG
     out.parent.mkdir(parents=True, exist_ok=True)
-    stamp = (2026, 9, 3, 18, 0, 0)
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         for name, data in (("world.json", json.dumps(world, separators=(",", ":")).encode("utf-8")),
                            ("map_metadata.json", json.dumps(metadata, separators=(",", ":")).encode("utf-8")),
-                           ("version.txt", GAME_VERSION.encode("ascii")),
+                           ("version.txt", w.GAME_VERSION.encode("ascii")),
                            ("map_thumbnail.jpg", thumb)):
-            info = zipfile.ZipInfo(name, date_time=stamp)
+            info = zipfile.ZipInfo(name, date_time=w.STAMP)
             info.compress_type = zipfile.ZIP_DEFLATED
             z.writestr(info, data)
 
 
 # --- self-check ------------------------------------------------------------------------------------------
 
-def check(path: Path) -> list[str]:
-    """Static checks the game would fail on: array sizes, entity placement, the starting pad."""
+def check(path: Path, level: type[Terrain] | None = None) -> list[str]:
+    """Two tiers: the format the game would choke on, then the level's contract.
+
+    `level` defaults to the registry entry whose MAP_NAME matches the file name, so
+    `--check "Wardens 01 First Light.timber"` runs level 01's contract without being told.
+    """
     problems: list[str] = []
     z = zipfile.ZipFile(path)
     names = set(z.namelist())
@@ -440,12 +621,16 @@ def check(path: Path) -> list[str]:
     sx, sy = sing["MapSize"]["Size"]["X"], sing["MapSize"]["Size"]["Y"]
     if (meta["Width"], meta["Height"]) != (sx, sy):
         problems.append("map_metadata size differs from MapSize")
+    if level is None:
+        level = level_for_map_name(path.stem)
+    layers = level.LAYERS if level else Terrain.LAYERS
     vox = sing["TerrainMap"]["Voxels"]["Array"].split()
-    if len(vox) != sx * sy * LAYERS:
-        problems.append(f"voxels: {len(vox)} values, expected {sx * sy * LAYERS}")
-    grid = np.array(vox, dtype=np.uint8).reshape(LAYERS, sy, sx)
-    if grid[LAYERS - 1].any():
-        problems.append("top layer (Z=22) must be air")
+    if len(vox) != sx * sy * layers:
+        problems.append(f"voxels: {len(vox)} values, expected {sx * sy * layers} ({layers} layers)")
+        return problems
+    grid = np.array(vox, dtype=np.uint8).reshape(layers, sy, sx)
+    if grid[layers - 1].any():
+        problems.append(f"top layer (Z={layers - 1}) must be air")
     per_cell = {"WaterMapNew": ("WaterColumns", "ColumnOutflows"), "WaterEvaporationMap": ("EvaporationModifiers",),
                 "SoilMoistureSimulator": ("MoistureLevels",), "SoilContaminationSimulator": ("ContaminationCandidates", "ContaminationLevels")}
     for single, keys in per_cell.items():
@@ -456,16 +641,15 @@ def check(path: Path) -> list[str]:
     for single in ("SoilMoistureSimulator", "SoilContaminationSimulator"):
         if "Size" not in sing[single]:
             problems.append(f"{single}: Size missing")
-    height = grid.sum(axis=0)          # solid blocks per column (terrain has no overhangs here)
+    height = surface(grid)          # solid blocks per column (terrain has no overhangs here)
     ids = set()
     starts = 0
     for e in w["Entities"]:
         if e["Id"] in ids:
             problems.append(f"duplicate entity id {e['Id']}")
         ids.add(e["Id"])
-        c = e["Components"]["BlockObject"]["Coordinates"]
-        x, y, zc = c["X"], c["Y"], c["Z"]
-        if not (0 <= x < sx and 0 <= y < sy and 0 <= zc <= LAYERS - 1):
+        x, y, zc = coords(e)
+        if not (0 <= x < sx and 0 <= y < sy and 0 <= zc <= layers - 1):
             problems.append(f"{e['Template']} at {x},{y},{zc}: out of bounds")
             continue
         if e["Template"] == "UndergroundRuins":
@@ -487,33 +671,60 @@ def check(path: Path) -> list[str]:
                 problems.append("StartingLocation needs 3 blocks of air above the pad")
     if starts != 1:
         problems.append(f"{starts} StartingLocation entities, expected 1")
-    if not any(e["Template"] == "BadwaterSource" for e in w["Entities"]):
+    # A map with no badwater is a bug everywhere except the healed land of the epilogue.
+    require_badwater = level.REQUIRE_BADWATER if level else Terrain.REQUIRE_BADWATER
+    has_badwater = any(e["Template"] == "BadwaterSource" for e in w["Entities"])
+    if require_badwater and not has_badwater:
         problems.append("no BadwaterSource")
+    if not require_badwater and has_badwater:
+        problems.append("BadwaterSource on a level whose land is healed")
+    if level is not None and not problems:
+        problems.extend(f"contract: {p}" for p in level(size=sx).contract(w, grid))
     return problems
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--size", type=int, default=96)
-    ap.add_argument("--seed", type=int, default=3000)
-    ap.add_argument("--out", type=Path, default=SRC / "Maps" / f"{MAP_NAME}.timber")
-    ap.add_argument("--preview", type=Path, default=DESIGN / "wardens-wasteland.png")
-    ap.add_argument("--no-preview", action="store_true")
-    ap.add_argument("--check", type=Path, help="only run the static checks on an existing .timber")
-    args = ap.parse_args()
-    if args.check:
-        problems = check(args.check)
-        print("problems:", problems or "none")
-        return 1 if problems else 0
-    w = Wasteland(args.size, args.seed)
-    w.build_terrain()
-    w.build_entities()
-    write_timber(w, args.out, None if args.no_preview else args.preview)
-    print(f"wrote {args.out} ({args.out.stat().st_size} bytes): {args.size}x{args.size}, {len(w.entities)} entities "
-          f"({len(w.sources)} badwater sources, {len(w.ruins)} ruins, {len(w.trees)} plants)")
-    problems = check(args.out)
+# --- cli -------------------------------------------------------------------------------------------------
+
+def generate(cls: type[Terrain], out: Path | None, preview: Path | None,
+             size: int | None, seed: int | None) -> int:
+    w = cls(size=size, seed=seed).build()
+    target = out or (SRC / "Maps" / f"{cls.MAP_NAME}.timber")
+    write_timber(w, target, preview)
+    print(f"wrote {target} ({target.stat().st_size} bytes): level {cls.LEVEL}, {w.size}x{w.size}, "
+          f"{len(w.entities)} entities ({len(w.sources)} badwater sources, {len(w.ruins)} ruins, {len(w.trees)} plants)")
+    problems = check(target, cls)
     print("problems:", problems or "none")
     return 1 if problems else 0
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="Generate the Wardens campaign maps.")
+    ap.add_argument("--level", default=DEFAULT_LEVEL, help=f"level id, default {DEFAULT_LEVEL}")
+    ap.add_argument("--all", action="store_true", help="generate every level in the registry")
+    ap.add_argument("--list", action="store_true", help="list the registry and exit")
+    ap.add_argument("--size", type=int, help="override the level's size (variants only; ships pinned)")
+    ap.add_argument("--seed", type=int, help="override the level's seed (variants only; ships pinned)")
+    ap.add_argument("--out", type=Path, help="output path, default src/Maps/<map name>.timber")
+    ap.add_argument("--preview", type=Path, help="also write a design preview PNG here")
+    ap.add_argument("--check", type=Path, help="only run the checks on an existing .timber")
+    args = ap.parse_args()
+
+    if args.list:
+        for key in sorted(LEVELS):
+            cls = LEVELS[key]
+            print(f"{key}  {cls.MAP_NAME:<28} {cls.SIZE}x{cls.SIZE}  seed {cls.SEED}")
+        return 0
+    if args.check:
+        cls = level_class(args.level) if args.level != DEFAULT_LEVEL else None
+        problems = check(args.check, cls)
+        print("problems:", problems or "none")
+        return 1 if problems else 0
+    if args.all:
+        rc = 0
+        for key in sorted(LEVELS):
+            rc |= generate(LEVELS[key], None, None, None, None)
+        return rc
+    return generate(level_class(args.level), args.out, args.preview, args.size, args.seed)
 
 
 if __name__ == "__main__":
