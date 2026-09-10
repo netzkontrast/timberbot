@@ -1,0 +1,93 @@
+{
+  "id": "Archive",
+  "on": [],
+  "pause": true,
+  "leave_paused": false,
+  "restore_camera": true,
+  "letterbox": true,
+  "skippable": true,
+  "shots": [
+    {
+      "id": "day",
+      "caption": "Wardens.Cutscene.Archive.Day",
+      "args": [
+        "day",
+        "cycle"
+      ],
+      "seconds": 2,
+      "wait": "continue",
+      "camera": [
+        {
+          "t": 6,
+          "anchor": "core",
+          "v": 55,
+          "dh": 40,
+          "dzoom": 0.15
+        }
+      ]
+    },
+    {
+      "id": "population",
+      "caption": "Wardens.Cutscene.Archive.Population",
+      "args": [
+        "bots",
+        "beavers"
+      ],
+      "seconds": 2,
+      "wait": "continue",
+      "camera": [
+        {
+          "t": 6,
+          "anchor": "core",
+          "v": 55,
+          "dh": 80,
+          "dzoom": 0.15
+        }
+      ]
+    },
+    {
+      "id": "stock",
+      "caption": "Wardens.Cutscene.Archive.Stock",
+      "args": [
+        "archive",
+        "science",
+        "good:ScrapMetal"
+      ],
+      "seconds": 2,
+      "wait": "continue",
+      "camera": [
+        {
+          "t": 6,
+          "anchor": "core",
+          "v": 55,
+          "dh": 120,
+          "dzoom": 0.15
+        }
+      ]
+    },
+    {
+      "id": "born",
+      "caption": "Wardens.Cutscene.Archive.Born",
+      "args": [
+        "mark:birthday",
+        "choice:LevelEnd.end"
+      ],
+      "seconds": 2,
+      "wait": "continue"
+    },
+    {
+      "id": "recorded",
+      "caption": "Wardens.Cutscene.Archive.Recorded",
+      "seconds": 3,
+      "camera": [
+        {
+          "t": 3,
+          "anchor": "core",
+          "v": 55,
+          "dh": 150,
+          "dzoom": 0.15
+        }
+      ]
+    }
+  ]
+}

@@ -96,6 +96,35 @@ and the level's ending.
 >
 > The river to the east is poison at its mouth and clean at its source. That is more than this ground ever offered.
 
+### The scenes (shipped, `wardens/src/Cutscenes/`, rows `Wardens.Cutscene.*`)
+
+The cutscene system ([`wardens-cutscenes.md`](wardens-cutscenes.md)) stages the moments above that
+the toasts only announce. One caption per shot; `{0}` is filled from the game when the shot plays.
+
+| Scene, shot | Caption |
+|---|---|
+| ColdBoot, orbit | Nothing has grown here in 3,000 days. |
+| ColdBoot, core | We were not built to live here. We were built so that others could. |
+| ColdBoot, settle | Chapter 1: First Light. Keep the machines charged. Find metal. |
+| Badwater, scrap | Scrap: {0}. The first thing this ground gave us. |
+| Badwater, sump | The Sump is dry; the river is not. Pump what the river brings, and keep every Warden above half charge. |
+| Signal, shifts | The shifts are set. The Wardens do not tire. That is not the same as being fine. |
+| Signal, cruncher | The Cruncher turns power into knowledge. The Core can barely feed it. Choose what to think about: Science, or Data Cores for the Archive. |
+| Pods, stores | Stores: Scrap {0}, Badwater {1}, Biomass {2}. |
+| Pods, pod | Directive 2 has a shape now: a pod. Grown from Biomass, built for someone else. |
+| Power, dark | Two pods, dark. They wake when the power does. |
+| Power, debt | The Badwater Cell burns what the Sump holds. The Sludge Burner burns what the reeds grow, and kills the ground it stands on. Every hour of power is an hour of poison. Recorded. |
+| Green, born | Day {0}. Born {1}. *(marks `birthday`)* |
+| Green, job | It will not know what the Wardens are. It will not need to. From today the job is different: keep her alive, and make this land green. |
+| LevelEnd, complete | the `Level.01.Complete` line above |
+| LevelEnd, end | One beaver. {0} Wardens. One basin that will not hold them. The river to the east is poison at its mouth and clean at its source. That is more than this ground ever offered. *(choices: Continue to Level 02, Stay; recorded under `LevelEnd.end`)* |
+| LevelEnd, not_yet | Level 02 is not in the firmware yet. Recorded. The bearing holds. *(after Continue)* |
+| LevelEnd, stay | Stay. The basin is yours a while longer. Recorded. *(after Stay)* |
+| Archive (on request) | ARCHIVE. Day {0}, cycle {1}. / Wardens: {0}. Beavers: {1}. / Data Cores: {0}. Science: {1}. Scrap: {2}. / First beaver: day {0}. The road east: {1}. / Recorded. |
+
+The register test of §15 applies to every row; the level-05 reading and the level-10 epilogue
+will be scene files of the same kind, with their `{0}` filled from the campaign's history.
+
 ## 4. Level 02: The Sump
 
 The land: a river of badwater enters from the west and leaves east through a gorge. Far upstream, a

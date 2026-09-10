@@ -345,7 +345,14 @@ namespace Wardens
             // where to look, in order
             var attention = new JArray();
             if (_cutscenes.Playing)
-                attention.Add(new JObject { ["what"] = "cutscene", ["why"] = "a scene is playing: say nothing, leave the camera" });
+            {
+                bool choice = (string)frame["cutscene"]["waiting"] == WardensCutsceneScript.WaitChoice;
+                attention.Add(new JObject
+                {
+                    ["what"] = "cutscene",
+                    ["why"] = choice ? "a choice card is open: the human answers it, not you" : "a scene is playing: say nothing, leave the camera",
+                });
+            }
             if (_chat.UndeliveredCount() > 0)
                 attention.Add(new JObject { ["what"] = "chat", ["why"] = "the human spoke; answer first" });
             foreach (var b in low)

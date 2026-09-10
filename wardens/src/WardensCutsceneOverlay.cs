@@ -1,14 +1,17 @@
-// WardensCutsceneOverlay.cs. Letterbox, caption, step dots, Skip and Continue.
+// WardensCutsceneOverlay.cs. Letterbox, caption, step dots, Skip, Continue, choice buttons.
 //
 // The mockup is design/wardens-ui/ColdBoot.dc.html: two black bars, one caption above the bottom
 // bar under a cyan rule, a dot per shot, Skip at the top right. Built the way WardensChat and
 // TimberbotPanel are built (UI Toolkit, VisualElementInitializer for the game's styles,
 // UILayout.AddAbsoluteItem; TimberbotPanel's modal overlay is the precedent for a root with zero
 // insets). The root and the bars ignore pointer events so the game's own panels (the tutorial cards
-// on the right) stay visible and clickable while a scene plays; only the two buttons pick.
+// on the right) stay visible and clickable while a scene plays; only the buttons pick.
 // The runner (WardensCutscenes) owns the state and calls in; this class only draws and reports
-// clicks. Text alignment goes through the game's `text--centered` class rather than
-// style.unityTextAlign, whose TextAnchor type lives in a Unity module the csproj does not reference.
+// clicks and keys. Keys: the root takes focus while a scene shows (the way the chat's text field
+// takes it while typing), Escape reports Skip, Return and Space report Continue; whether the game's
+// own pause menu also reacts to Escape is one of the things the first run tells. Text alignment
+// goes through the game's `text--centered` class rather than style.unityTextAlign, whose TextAnchor
+// type lives in a Unity module the csproj does not reference.
 
 using System;
 using System.Collections.Generic;
@@ -39,12 +42,16 @@ namespace Wardens
         private VisualElement _stack;
         private Label _caption;
         private VisualElement _dots;
+        private VisualElement _choices;
         private NineSliceButton _continue;
         private NineSliceButton _skip;
         private readonly List<VisualElement> _dotList = new List<VisualElement>();
+        private bool _skippable;
+        private bool _waitingForContinue;
 
         public event Action SkipClicked;
         public event Action ContinueClicked;
+        public event Action<string> ChoiceClicked;
         public bool Visible { get; private set; }
 
         public WardensCutsceneOverlay(UILayout layout, VisualElementInitializer veInit)
@@ -65,6 +72,7 @@ namespace Wardens
 
         public void Show(bool letterbox, bool skippable, int shots)
         {
+            _skippable = skippable;
             _top.style.display = letterbox ? DisplayStyle.Flex : DisplayStyle.None;
             _bottom.style.display = letterbox ? DisplayStyle.Flex : DisplayStyle.None;
             _skip.style.display = skippable ? DisplayStyle.Flex : DisplayStyle.None;
@@ -87,11 +95,13 @@ namespace Wardens
                 _dotList.Add(dot);
             }
             _dots.style.display = shots > 1 ? DisplayStyle.Flex : DisplayStyle.None;
-            _continue.style.display = DisplayStyle.None;
+            SetWaitingForContinue(false);
+            SetChoices(null);
             _caption.text = "";
             _root.style.display = DisplayStyle.Flex;
             Visible = true;
             if (_root.parent != null) _root.BringToFront();
+            _root.Focus();
         }
 
         public void SetShot(int index, string caption)
@@ -99,12 +109,40 @@ namespace Wardens
             _caption.text = caption ?? "";
             _caption.style.display = string.IsNullOrEmpty(caption) ? DisplayStyle.None : DisplayStyle.Flex;
             for (int i = 0; i < _dotList.Count; i++) StyleDot(_dotList[i], i <= index);
-            _continue.style.display = DisplayStyle.None;
+            SetWaitingForContinue(false);
+            SetChoices(null);
         }
 
         public void SetWaitingForContinue(bool waiting)
         {
+            _waitingForContinue = waiting;
             _continue.style.display = waiting ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        /// One button per (id, text); null or empty clears the row.
+        public void SetChoices(List<KeyValuePair<string, string>> choices)
+        {
+            _choices.Clear();
+            if (choices == null || choices.Count == 0)
+            {
+                _choices.style.display = DisplayStyle.None;
+                return;
+            }
+            foreach (var choice in choices)
+            {
+                var id = choice.Key;
+                var button = new NineSliceButton { text = choice.Value ?? id };
+                button.AddToClassList("button-game");
+                button.AddToClassList("game-text-normal");
+                button.style.height = 28;
+                button.style.marginLeft = 6;
+                button.style.marginRight = 6;
+                button.style.paddingLeft = 14;
+                button.style.paddingRight = 14;
+                button.clicked += () => ChoiceClicked?.Invoke(id);
+                _choices.Add(button);
+            }
+            _choices.style.display = DisplayStyle.Flex;
         }
 
         public void Hide()
@@ -124,6 +162,8 @@ namespace Wardens
             _root.style.right = 0;
             _root.style.bottom = 0;
             _root.pickingMode = PickingMode.Ignore;
+            _root.focusable = true;
+            _root.RegisterCallback<KeyDownEvent>(OnKeyDown);
 
             _top = MakeBar();
             _top.style.top = 0;
@@ -132,7 +172,7 @@ namespace Wardens
             _bottom.style.bottom = 0;
             _root.Add(_bottom);
 
-            // The caption column sits just above the bottom bar: rule, caption, dots, Continue.
+            // The caption column sits just above the bottom bar: rule, caption, dots, choices, Continue.
             _stack = new VisualElement();
             _stack.style.position = Position.Absolute;
             _stack.style.left = 0;
@@ -169,6 +209,14 @@ namespace Wardens
             _dots.pickingMode = PickingMode.Ignore;
             _stack.Add(_dots);
 
+            _choices = new VisualElement();
+            _choices.style.flexDirection = FlexDirection.Row;
+            _choices.style.justifyContent = Justify.Center;
+            _choices.style.marginTop = 12;
+            _choices.pickingMode = PickingMode.Ignore;
+            _choices.style.display = DisplayStyle.None;
+            _stack.Add(_choices);
+
             _continue = new NineSliceButton { text = "Continue" };
             _continue.AddToClassList("button-game");
             _continue.AddToClassList("game-text-normal");
@@ -190,6 +238,21 @@ namespace Wardens
             _skip.style.paddingRight = 12;
             _skip.clicked += () => SkipClicked?.Invoke();
             _root.Add(_skip);
+        }
+
+        private void OnKeyDown(KeyDownEvent evt)
+        {
+            if (!Visible) return;
+            if (evt.keyCode == KeyCode.Escape)
+            {
+                if (_skippable) SkipClicked?.Invoke();
+                evt.StopPropagation();
+            }
+            else if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter || evt.keyCode == KeyCode.Space)
+            {
+                if (_waitingForContinue) ContinueClicked?.Invoke();
+                evt.StopPropagation();
+            }
         }
 
         private static VisualElement MakeBar()

@@ -3,30 +3,37 @@
 // design/wardens-cutscenes.md. Scenes are Cutscenes/*.json in the mod folder (WardensCutsceneScript
 // is the format). One runner plays them on the main thread: it pauses and locks the speed, shows
 // the overlay (WardensCutsceneOverlay), flies the camera through WardensCameraDirector one shot at
-// a time, places pointers, toasts and Uplink lines, and hands the game back, in every path, through
-// Finish(), with the speed unlock in a finally (a scene that throws must not leave the game locked
-// at speed 0, the rule the old WardensColdBoot followed).
+// a time, fills the captions' {0}.. from the game (`args`), places pointers, highlights, toasts and
+// Uplink lines, records marks and choices in the story record (WardensStoryState), skips shots whose
+// `when` condition does not hold, and hands the game back, in every path, through Finish(), with
+// the speed unlock in a finally (a scene that throws must not leave the game locked at speed 0,
+// the rule the old WardensColdBoot followed).
 //
 // Triggers: NewGameInitializedEvent (new_game), the chapter service's ChapterOpened event
 // (chapter:<Id>) and the finished tutorial set polled twice a second (tutorial:<Id>, first poll
 // silent), all under the policy the Cold Boot had: Wardens faction, tutorial on, and
 // "cutscenes": true in settings.json. Triggered scenes are queued and started on the next
-// UpdateSingleton, one at a time. The MCP `cutscene` tool bypasses the policy: play, skip,
-// continue, reload are the tuning loop. No save state: every trigger is an event a loaded save
-// does not re-post.
+// UpdateSingleton, one at a time, in file-name order when one trigger fires several. The MCP
+// `cutscene` tool bypasses the policy: play, skip, continue, choose, reload are the tuning loop.
+// No save state of its own: every trigger is an event a loaded save does not re-post; the story
+// record (choices, marks) is the one thing that persists, in story.json.
 
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
+using Timberborn.Beavers;
 using Timberborn.BlockSystem;
 using Timberborn.Bots;
 using Timberborn.Characters;
 using Timberborn.Common;
 using Timberborn.Coordinates;
+using Timberborn.GameCycleSystem;
 using Timberborn.GameDistricts;
 using Timberborn.GameFactionSystem;
 using Timberborn.Localization;
 using Timberborn.QuickNotificationSystem;
+using Timberborn.ResourceCountingSystem;
+using Timberborn.ScienceSystem;
 using Timberborn.SelectionSystem;
 using Timberborn.SingletonSystem;
 using Timberborn.TimeSystem;
@@ -42,6 +49,8 @@ namespace Wardens
         public const string FolderName = "Cutscenes";
         public const float RestoreSeconds = 1.5f;
         private const float PollSeconds = 0.5f;
+        private const string DataCoreId = "DataCore";
+        private const string None = "none";
 
         private readonly EventBus _eventBus;
         private readonly FactionService _factionService;
@@ -51,6 +60,9 @@ namespace Wardens
         private readonly DistrictCenterRegistry _districts;
         private readonly EntitySelectionService _selection;
         private readonly CharacterPopulation _population;
+        private readonly IDayNightCycle _dayNightCycle;
+        private readonly GameCycleService _cycles;
+        private readonly ScienceService _science;
         private readonly ILoc _loc;
         private readonly QuickNotificationService _quickNotifications;
         private readonly WardensCameraDirector _director;
@@ -58,6 +70,7 @@ namespace Wardens
         private readonly WardensChat _chat;
         private readonly WardensCutsceneOverlay _overlay;
         private readonly WardensChapterService _chapters;
+        private readonly WardensStoryState _story;
 
         private readonly List<CutsceneScene> _scenes = new List<CutsceneScene>();
         private readonly Dictionary<string, CutsceneScene> _byId = new Dictionary<string, CutsceneScene>(StringComparer.OrdinalIgnoreCase);
@@ -85,9 +98,10 @@ namespace Wardens
 
         public WardensCutscenes(EventBus eventBus, FactionService factionService, TutorialSettings tutorialSettings,
             TutorialService tutorialService, SpeedManager speedManager, DistrictCenterRegistry districts,
-            EntitySelectionService selection, CharacterPopulation population, ILoc loc,
-            QuickNotificationService quickNotifications, WardensCameraDirector director, WardensPointer pointer,
-            WardensChat chat, WardensCutsceneOverlay overlay, WardensChapterService chapters)
+            EntitySelectionService selection, CharacterPopulation population, IDayNightCycle dayNightCycle,
+            GameCycleService cycles, ScienceService science, ILoc loc, QuickNotificationService quickNotifications,
+            WardensCameraDirector director, WardensPointer pointer, WardensChat chat, WardensCutsceneOverlay overlay,
+            WardensChapterService chapters, WardensStoryState story)
         {
             _eventBus = eventBus;
             _factionService = factionService;
@@ -97,6 +111,9 @@ namespace Wardens
             _districts = districts;
             _selection = selection;
             _population = population;
+            _dayNightCycle = dayNightCycle;
+            _cycles = cycles;
+            _science = science;
             _loc = loc;
             _quickNotifications = quickNotifications;
             _director = director;
@@ -104,6 +121,7 @@ namespace Wardens
             _chat = chat;
             _overlay = overlay;
             _chapters = chapters;
+            _story = story;
         }
 
         public bool Playing => _scene != null;
@@ -115,8 +133,9 @@ namespace Wardens
         public void Load()
         {
             _eventBus.Register(this);
-            _overlay.SkipClicked += () => Skip();
-            _overlay.ContinueClicked += () => Continue();
+            _overlay.SkipClicked += () => Guard(() => Skip(), "skip");
+            _overlay.ContinueClicked += () => Guard(() => Continue(), "continue");
+            _overlay.ChoiceClicked += id => Guard(() => Choose(id), "choose");
             _chapters.ChapterOpened += OnChapterOpened;
             bool wardens = _factionService.Current?.Id == WardensStartingPopulation.FactionId;
             bool setting = WardensSettings.Load().Cutscenes;
@@ -124,6 +143,13 @@ namespace Wardens
             LoadScenes();
             Debug.Log($"[Wardens] cutscenes: {_scenes.Count} loaded from {_folder}, triggers={_triggersEnabled} " +
                       $"(wardens={wardens}, setting={setting}, tutorial={!_tutorialSettings.DisableTutorial})");
+        }
+
+        // A UI callback must not throw into UI Toolkit: log and carry on.
+        private static void Guard(Action action, string what)
+        {
+            try { action(); }
+            catch (Exception ex) { Debug.LogWarning($"[Wardens] cutscene {what}: {ex.Message}"); }
         }
 
         // ---- triggers (main thread) -----------------------------------------------------------
@@ -186,6 +212,7 @@ namespace Wardens
             var shot = _scene.Shots[_shot];
             if (!_flightDone) return;
             if (Time.unscaledTime - _shotStart < shot.Seconds) return;
+            if (shot.WaitForChoice && !_continued) return;          // the choice card is up; the pick ends the shot
             if (shot.WaitForContinue && !_continued)
             {
                 _overlay.SetWaitingForContinue(true);
@@ -217,8 +244,31 @@ namespace Wardens
         public bool Continue()
         {
             if (_scene == null) return false;
+            var shot = _scene.Shots[_shot];
+            if (shot.WaitForChoice) return false;                    // a choice card needs a choice, not Continue
             _continued = true;
             _overlay.SetWaitingForContinue(false);
+            return true;
+        }
+
+        /// Answers the open choice card; the pick is recorded under the shot's choice key.
+        public bool Choose(string id)
+        {
+            if (_scene == null) return false;
+            var shot = _scene.Shots[_shot];
+            if (!shot.WaitForChoice || _continued) return false;
+            CutsceneChoice found = null;
+            foreach (var c in shot.Choices) if (c.Id == id) found = c;
+            if (found == null)
+            {
+                var ids = new List<string>();
+                foreach (var c in shot.Choices) ids.Add(c.Id);
+                throw new ArgumentException($"no choice '{id}' in {_scene.Id}/{shot.Id}; choices: {string.Join(", ", ids)}");
+            }
+            _story.SetChoice(shot.ChoiceKey, found.Id);
+            _continued = true;
+            _overlay.SetChoices(null);
+            Debug.Log($"[Wardens] cutscene {_scene.Id}/{shot.Id}: chose {found.Id} ({shot.ChoiceKey})");
             return true;
         }
 
@@ -227,6 +277,8 @@ namespace Wardens
             LoadScenes();
             return State();
         }
+
+        public string ResetStory() => _story.Reset();
 
         private void Start(CutsceneScene scene, string why)
         {
@@ -256,14 +308,34 @@ namespace Wardens
             }
         }
 
+        // Starts the first shot at or after `index` whose `when` holds; ends the scene when none is left.
         private void StartShot(int index)
         {
-            _shot = index;
-            var shot = _scene.Shots[index];
+            int i = index;
+            while (i < _scene.Shots.Count && !Applies(_scene.Shots[i]))
+            {
+                Debug.Log($"[Wardens] cutscene {_scene.Id}/{_scene.Shots[i].Id}: skipped (when {_scene.Shots[i].When.ChoiceKey})");
+                i++;
+            }
+            if (i >= _scene.Shots.Count)
+            {
+                Finish(skipped: false);
+                return;
+            }
+            _shot = i;
+            var shot = _scene.Shots[i];
             _shotStart = Time.unscaledTime;
             _continued = false;
             _flightDone = true;
-            _overlay.SetShot(index, CaptionText(shot));
+            if (shot.Mark != null) _story.SetMark(shot.Mark, _dayNightCycle.DayNumber);
+            _overlay.SetShot(i, CaptionText(shot.Caption, shot.Text, shot.Args));
+            if (shot.WaitForChoice)
+            {
+                var choices = new List<KeyValuePair<string, string>>();
+                foreach (var c in shot.Choices)
+                    choices.Add(new KeyValuePair<string, string>(c.Id, CaptionText(c.Caption, c.Text, null)));
+                _overlay.SetChoices(choices);
+            }
             if (shot.Camera.Count > 0)
             {
                 var frames = new List<WardensCameraDirector.Keyframe>(shot.Camera.Count);
@@ -272,13 +344,22 @@ namespace Wardens
                 int token = ++_flightToken;
                 _director.Fly(frames, () => { if (token == _flightToken) _flightDone = true; });
             }
-            if (shot.Point != null) TryPoint(shot);
+            if (shot.Point != null) TryPoint(shot, shot.Point, arrow: true);
+            if (shot.Highlight != null) TryPoint(shot, shot.Highlight, arrow: false);
             if (!string.IsNullOrEmpty(shot.Toast))
             {
                 try { _quickNotifications.SendNotification(shot.Toast); }
                 catch (Exception ex) { Debug.LogWarning("[Wardens] cutscene toast: " + ex.Message); }
             }
             if (!string.IsNullOrEmpty(shot.Say)) _chat.SystemSays(shot.Say);
+        }
+
+        private bool Applies(CutsceneShot shot)
+        {
+            if (shot.When == null) return true;
+            var chosen = _story.Choice(shot.When.ChoiceKey);
+            if (shot.When.Is != null) return chosen == shot.When.Is;
+            return chosen != shot.When.IsNot;
         }
 
         // Every path out of a scene: the last shot, Skip, an exception. The speed unlock is in the
@@ -304,7 +385,7 @@ namespace Wardens
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[Wardens] cutscene {scene.Id}: teardown: {ex.Message}");
+                Debug.LogWarning($"[Wardens] cutscene {scene.Id}: finish: {ex.Message}");
             }
             finally
             {
@@ -322,6 +403,78 @@ namespace Wardens
             }
             _played.Add(scene.Id);
             Debug.Log($"[Wardens] cutscene {scene.Id}: {(skipped ? "skipped" : "finished")} at shot {_shot + 1}/{scene.Shots.Count}");
+        }
+
+        // ---- captions and args ----------------------------------------------------------------
+
+        private string CaptionText(string key, string literal, List<string> args)
+        {
+            var values = new object[args != null ? args.Count : 0];
+            for (int i = 0; i < values.Length; i++) values[i] = ArgValue(args[i]);
+            if (!string.IsNullOrEmpty(key))
+            {
+                try { return values.Length > 0 ? _loc.T(key, values) : _loc.T(key); }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"[Wardens] cutscene caption {key}: {ex.Message}");
+                    return key;
+                }
+            }
+            if (string.IsNullOrEmpty(literal)) return "";
+            if (values.Length == 0) return literal;
+            try { return string.Format(literal, values); }
+            catch (FormatException) { return literal; }
+        }
+
+        // day | cycle | cycle_day | bots | beavers | archive | science | good:<Id> | choice:<key> | mark:<name>
+        private object ArgValue(string arg)
+        {
+            try
+            {
+                switch (arg)
+                {
+                    case "day": return _dayNightCycle.DayNumber;
+                    case "cycle": return (int)_cycles.Cycle;
+                    case "cycle_day": return _cycles.CycleDay;
+                    case "bots": return CountCharacters(bots: true);
+                    case "beavers": return CountCharacters(bots: false);
+                    case "archive": return Stock(DataCoreId);
+                    case "science": return _science.SciencePoints;
+                }
+                if (arg.StartsWith(WardensCutsceneScript.ArgGoodPrefix, StringComparison.Ordinal))
+                    return Stock(arg.Substring(WardensCutsceneScript.ArgGoodPrefix.Length));
+                if (arg.StartsWith(WardensCutsceneScript.ArgChoicePrefix, StringComparison.Ordinal))
+                    return _story.Choice(arg.Substring(WardensCutsceneScript.ArgChoicePrefix.Length)) ?? None;
+                if (arg.StartsWith(WardensCutsceneScript.ArgMarkPrefix, StringComparison.Ordinal))
+                {
+                    var mark = _story.Mark(arg.Substring(WardensCutsceneScript.ArgMarkPrefix.Length));
+                    return mark != null ? (object)mark.Value : None;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[Wardens] cutscene arg {arg}: {ex.Message}");
+            }
+            return "?";
+        }
+
+        private int CountCharacters(bool bots)
+        {
+            int n = 0;
+            foreach (var c in _population.Characters)
+                if ((c.GetComponent<Bot>() != null) == bots) n++;
+            return n;
+        }
+
+        private int Stock(string goodId)
+        {
+            int total = 0;
+            foreach (var dc in _districts.AllDistrictCenters)
+            {
+                var counter = dc.GetComponent<DistrictResourceCounter>();
+                if (counter != null) total += counter.GetResourceCount(goodId).AllStock;
+            }
+            return total;
         }
 
         // ---- anchors --------------------------------------------------------------------------
@@ -352,6 +505,10 @@ namespace Wardens
                     foreach (var c in _population.Characters)
                         if (c.GetComponent<Bot>() != null) return c.Transform.position;
                     return _startPose.Target;
+                case CutsceneAnchor.Beaver:
+                    foreach (var c in _population.Characters)
+                        if (c.GetComponent<Beaver>() != null) return c.Transform.position;
+                    return _startPose.Target;
                 case CutsceneAnchor.Grid:
                     return CoordinateSystem.GridToWorldCentered(
                         new Vector3Int(Mathf.RoundToInt(x), Mathf.RoundToInt(y), Mathf.RoundToInt(z)));
@@ -375,9 +532,8 @@ namespace Wardens
             return null;
         }
 
-        private void TryPoint(CutsceneShot shot)
+        private void TryPoint(CutsceneShot shot, CutscenePointer p, bool arrow)
         {
-            var p = shot.Point;
             Vector3Int? coords = null;
             switch (p.Anchor)
             {
@@ -397,28 +553,18 @@ namespace Wardens
             }
             if (coords == null)
             {
-                Debug.Log($"[Wardens] cutscene {_scene.Id}/{shot.Id}: pointer anchor {WardensCutsceneScript.AnchorName(p.Anchor)} not found, skipped");
+                Debug.Log($"[Wardens] cutscene {_scene.Id}/{shot.Id}: {(arrow ? "pointer" : "highlight")} anchor {WardensCutsceneScript.AnchorName(p.Anchor)} not found, skipped");
                 return;
             }
             var at = coords.Value + new Vector3Int(p.OffsetX, p.OffsetY, p.OffsetZ);
             try
             {
-                _pointer.Point(at, p.Message, p.Seconds ?? Mathf.Max(1f, shot.Seconds), p.Color, false);
+                _pointer.Point(at, arrow ? p.Message : null, p.Seconds ?? Mathf.Max(1f, shot.Seconds), p.Color, false, arrow);
             }
             catch (Exception ex)
             {
                 Debug.LogWarning("[Wardens] cutscene pointer: " + ex.Message);
             }
-        }
-
-        private string CaptionText(CutsceneShot shot)
-        {
-            if (!string.IsNullOrEmpty(shot.Caption))
-            {
-                try { return _loc.T(shot.Caption); }
-                catch { return shot.Caption; }
-            }
-            return shot.Text ?? "";
         }
 
         // ---- the files ------------------------------------------------------------------------
@@ -482,6 +628,7 @@ namespace Wardens
             var shot = _scene.Shots[_shot];
             if (!_flightDone) return "flight";
             if (Time.unscaledTime - _shotStart < shot.Seconds) return "time";
+            if (shot.WaitForChoice && !_continued) return WardensCutsceneScript.WaitChoice;
             if (shot.WaitForContinue && !_continued) return WardensCutsceneScript.WaitContinue;
             return null;
         }
@@ -497,6 +644,12 @@ namespace Wardens
                 ["shots"] = _scene != null ? (int?)_scene.Shots.Count : null,
                 ["waiting"] = Waiting(),
             };
+            if (_scene != null && _scene.Shots[_shot].WaitForChoice && !_continued)
+            {
+                var ids = new JArray();
+                foreach (var c in _scene.Shots[_shot].Choices) ids.Add(c.Id);
+                o["choices"] = ids;
+            }
             return o;
         }
 
@@ -508,8 +661,9 @@ namespace Wardens
             {
                 var shot = _scene.Shots[_shot];
                 state["shot_id"] = shot.Id;
-                state["caption"] = CaptionText(shot);
+                state["caption"] = CaptionText(shot.Caption, shot.Text, shot.Args);
                 state["elapsed"] = Time.unscaledTime - _shotStart;
+                if (shot.WaitForChoice) state["choice_key"] = shot.ChoiceKey;
             }
             state["played"] = new JArray(_played);
             state["queued"] = new JArray(_queue);
@@ -520,7 +674,18 @@ namespace Wardens
             {
                 var shots = new JArray();
                 foreach (var shot in scene.Shots)
-                    shots.Add(new JObject { ["id"] = shot.Id, ["seconds"] = shot.Seconds, ["wait"] = shot.WaitForContinue ? WardensCutsceneScript.WaitContinue : WardensCutsceneScript.WaitTime, ["keyframes"] = shot.Camera.Count });
+                {
+                    var s = new JObject
+                    {
+                        ["id"] = shot.Id,
+                        ["seconds"] = shot.Seconds,
+                        ["wait"] = shot.WaitForChoice ? WardensCutsceneScript.WaitChoice : shot.WaitForContinue ? WardensCutsceneScript.WaitContinue : WardensCutsceneScript.WaitTime,
+                        ["keyframes"] = shot.Camera.Count,
+                    };
+                    if (shot.WaitForChoice) s["choice_key"] = shot.ChoiceKey;
+                    if (shot.When != null) s["when"] = shot.When.ChoiceKey + (shot.When.Is != null ? " is " + shot.When.Is : " is not " + shot.When.IsNot);
+                    shots.Add(s);
+                }
                 scenes.Add(new JObject
                 {
                     ["id"] = scene.Id,
@@ -534,6 +699,7 @@ namespace Wardens
                 });
             }
             state["scenes"] = scenes;
+            state["story"] = _story.ToJson();
             state["errors"] = new JArray(_errors);
             return state;
         }

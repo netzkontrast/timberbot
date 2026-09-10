@@ -28,7 +28,9 @@ namespace Wardens
             // Story chapters: unlock the padlocked buildings as the tutorial line advances.
             Bind<WardensChapterService>().AsSingleton();
             // Cutscenes: Cutscenes/*.json played by one runner (the Cold Boot is the first scene);
-            // the overlay draws the letterbox and the captions. design/wardens-cutscenes.md.
+            // the overlay draws the letterbox, the captions and the choice cards; the story record
+            // (story.json) keeps the choices and marks. design/wardens-cutscenes.md.
+            Bind<WardensStoryState>().AsSingleton();
             Bind<WardensCutsceneOverlay>().AsSingleton();
             Bind<WardensCutscenes>().AsSingleton();
             // The Warden's heartbeat: sensor frames per N game ticks for the MCP `frame` tool.

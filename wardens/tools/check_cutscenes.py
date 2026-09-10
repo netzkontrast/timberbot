@@ -4,11 +4,12 @@
     python wardens/tools/check_cutscenes.py wardens/src     # the source tree
 
 The rules are WardensCutsceneScript.Parse's (design/wardens-cutscenes.md §3) plus the names only the
-mod knows: caption loc keys against Localizations/enUS*.csv, chapter triggers against the table in
-src/WardensChapters.cs, tutorial triggers against Tutorials/*.blueprint.json, and unknown fields
-(the parser ignores them; a typo such as "captoin" would otherwise play as a shot without text).
-Needs no game files, so it runs in any checkout; validate.py calls check() and merges the problems.
-Exit code 1 when there are problems.
+mod knows: caption loc keys against Localizations/enUS*.csv (and their {0}.. placeholders against the
+shot's `args`), chapter triggers against the table in src/WardensChapters.cs, tutorial triggers
+against Tutorials/*.blueprint.json, `when` conditions against the choice keys some shot defines, and
+unknown fields (the parser ignores them; a typo such as "captoin" would otherwise play as a shot
+without text). Needs no game files, so it runs in any checkout; validate.py calls check() and merges
+the problems. Exit code 1 when there are problems.
 """
 from __future__ import annotations
 
@@ -22,17 +23,23 @@ DEFAULT_MOD = Path.home() / "Documents/Timberborn/Mods/Wardens"
 CHAPTERS_CS = Path(__file__).resolve().parents[1] / "src" / "WardensChapters.cs"
 FOLDER = "Cutscenes"
 
-ANCHORS = {"start", "core", "selection", "bot", "grid", "world"}
+ANCHORS = {"start", "core", "selection", "bot", "beaver", "grid", "world"}
 POINTER_ANCHORS = {"core", "grid", "selection"}          # the anchors with grid coordinates
 WAITS = {"time", "continue"}
+ARG_NAMES = {"day", "cycle", "cycle_day", "bots", "beavers", "archive", "science"}
+ARG_PREFIXES = ("good:", "choice:", "mark:")
 SCENE_FIELDS = {"id", "on", "pause", "leave_paused", "restore_camera", "letterbox", "skippable", "say", "shots"}
 SCENE_BOOLS = ("pause", "leave_paused", "restore_camera", "letterbox", "skippable")
-SHOT_FIELDS = {"id", "caption", "text", "seconds", "wait", "camera", "point", "toast", "say"}
+SHOT_FIELDS = {"id", "caption", "text", "args", "seconds", "wait", "camera", "point", "highlight", "toast", "say",
+               "mark", "choices", "choice_key", "when"}
 KEYFRAME_FIELDS = {"t", "anchor", "x", "y", "z", "offset", "h", "v", "zoom", "dh", "dv", "dzoom"}
 POINTER_FIELDS = {"anchor", "x", "y", "z", "offset", "message", "seconds", "color"}
+CHOICE_FIELDS = {"id", "caption", "text"}
+WHEN_FIELDS = {"choice", "is", "is_not"}
 TRIGGER_NEW_GAME = "new_game"
 TRIGGER_CHAPTER = "chapter:"
 TRIGGER_TUTORIAL = "tutorial:"
+PLACEHOLDER = re.compile(r"\{(\d+)\}")
 
 
 def read_chapters(path: Path = CHAPTERS_CS) -> list[tuple[str, str, list[str]]]:
@@ -43,14 +50,19 @@ def read_chapters(path: Path = CHAPTERS_CS) -> list[tuple[str, str, list[str]]]:
     return [(cid, tutorial, re.findall(r'"([^"]+)"', names)) for cid, tutorial, names in entries]
 
 
-def read_loc_keys(mod: Path) -> set[str]:
-    keys: set[str] = set()
+def read_loc_texts(mod: Path) -> dict[str, str]:
+    """Loc key -> text from the mod's Localizations/enUS*.csv (the vanilla table is validate.py's job)."""
+    texts: dict[str, str] = {}
     for p in (mod / "Localizations").glob("enUS*.csv"):
         with open(p, encoding="utf-8-sig", newline="") as fh:
             for row in csv.reader(fh):
                 if row:
-                    keys.add(row[0])
-    return keys
+                    texts[row[0]] = row[1] if len(row) > 1 else ""
+    return texts
+
+
+def read_loc_keys(mod: Path) -> set[str]:
+    return set(read_loc_texts(mod))
 
 
 def read_tutorial_ids(mod: Path) -> set[str]:
@@ -68,6 +80,18 @@ def read_tutorial_ids(mod: Path) -> set[str]:
 
 def _is_number(v) -> bool:
     return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+def _is_arg(name) -> bool:
+    if not isinstance(name, str):
+        return False
+    return name in ARG_NAMES or any(name.startswith(p) and len(name) > len(p) for p in ARG_PREFIXES)
+
+
+def placeholders(text: str) -> int:
+    """How many args a text needs: the highest {n} plus one, or 0."""
+    found = [int(m) for m in PLACEHOLDER.findall(text)]
+    return max(found) + 1 if found else 0
 
 
 def _check_keyframe(k, where: str, out: list[str]) -> None:
@@ -119,18 +143,43 @@ def _check_pointer(p, where: str, out: list[str]) -> None:
     _check_offset(p, where, out)
 
 
-def _check_shot(s, where: str, loc: set[str], out: list[str]) -> None:
+def _check_text(s: dict, where: str, loc: set[str], texts: dict[str, str], out: list[str]) -> None:
+    """caption (a loc key) or text (a literal), and the args its {0}.. placeholders need."""
+    args = s.get("args", [])
+    if not isinstance(args, list) or not all(isinstance(a, str) for a in args):
+        out.append(f"{where}.args: not an array of strings")
+        args = []
+    for a in args:
+        if not _is_arg(a):
+            out.append(f"{where}.args: {a!r} ({' | '.join(sorted(ARG_NAMES))} | good:<Id> | choice:<key> | mark:<name>)")
+    caption = s.get("caption")
+    text = None
+    if isinstance(caption, str):
+        if caption not in loc:
+            out.append(f"{where}.caption: loc key missing: {caption}")
+        else:
+            text = texts.get(caption)
+    elif isinstance(s.get("text"), str):
+        text = s["text"]
+    if text is not None:
+        need = placeholders(text)
+        if need != len(args):
+            out.append(f"{where}: {need} placeholder(s) in the text, {len(args)} args")
+
+
+def _check_shot(s, where: str, loc: set[str], texts: dict[str, str], choice_keys: set[str] | None, out: list[str]) -> None:
     if not isinstance(s, dict):
         out.append(f"{where}: not an object")
         return
     for f in sorted(set(s) - SHOT_FIELDS):
         out.append(f"{where}.{f}: unknown field")
-    for f in ("id", "caption", "text", "toast", "say"):
+    for f in ("id", "caption", "text", "toast", "say", "mark", "choice_key"):
         if f in s and not isinstance(s[f], str):
             out.append(f"{where}.{f}: not a string")
-    caption = s.get("caption")
-    if isinstance(caption, str) and caption not in loc:
-        out.append(f"{where}.caption: loc key missing: {caption}")
+    for f in ("mark", "choice_key"):
+        if isinstance(s.get(f), str) and not s[f]:
+            out.append(f"{where}.{f}: empty")
+    _check_text(s, where, loc, texts, out)
     if "seconds" in s and (not _is_number(s["seconds"]) or s["seconds"] < 0):
         out.append(f"{where}.seconds: not a number >= 0")
     if s.get("wait", "time") not in WAITS:
@@ -141,14 +190,71 @@ def _check_shot(s, where: str, loc: set[str], out: list[str]) -> None:
     else:
         for i, k in enumerate(camera):
             _check_keyframe(k, f"{where}.camera[{i}]", out)
-    if "point" in s:
-        _check_pointer(s["point"], f"{where}.point", out)
+    for f in ("point", "highlight"):
+        if f in s:
+            _check_pointer(s[f], f"{where}.{f}", out)
+    choices = s.get("choices", [])
+    if not isinstance(choices, list):
+        out.append(f"{where}.choices: not an array")
+    else:
+        seen: set[str] = set()
+        for i, c in enumerate(choices):
+            cw = f"{where}.choices[{i}]"
+            if not isinstance(c, dict):
+                out.append(f"{cw}: not an object")
+                continue
+            for f in sorted(set(c) - CHOICE_FIELDS):
+                out.append(f"{cw}.{f}: unknown field")
+            cid = c.get("id")
+            if not isinstance(cid, str) or not cid:
+                out.append(f"{cw}.id: required")
+            elif cid in seen:
+                out.append(f"{where}.choices: duplicate id '{cid}'")
+            else:
+                seen.add(cid)
+            if "caption" not in c and "text" not in c:
+                out.append(f"{cw}: caption or text required")
+            _check_text(c, cw, loc, texts, out)
+    if "when" in s:
+        w = s["when"]
+        if not isinstance(w, dict):
+            out.append(f"{where}.when: not an object")
+        else:
+            for f in sorted(set(w) - WHEN_FIELDS):
+                out.append(f"{where}.when.{f}: unknown field")
+            key = w.get("choice")
+            if not isinstance(key, str) or not key:
+                out.append(f"{where}.when.choice: required")
+            elif choice_keys is not None and key not in choice_keys:
+                out.append(f"{where}.when.choice: no shot records a choice under {key!r}")
+            if ("is" in w) == ("is_not" in w):
+                out.append(f"{where}.when: exactly one of is | is_not")
+            for f in ("is", "is_not"):
+                if f in w and not isinstance(w[f], str):
+                    out.append(f"{where}.when.{f}: not a string")
 
 
-def check_scene(d, stem: str, loc: set[str], chapters: set[str], tutorials: set[str]) -> list[str]:
-    """Problems in one parsed scene file; `stem` is the file name without .json."""
+def choice_keys_of(d, stem: str) -> set[str]:
+    """The choice keys a scene's shots record picks under (default <Scene>.<shot id or index>)."""
+    keys: set[str] = set()
+    if not isinstance(d, dict) or not isinstance(d.get("shots"), list):
+        return keys
+    sid = d.get("id") if isinstance(d.get("id"), str) else stem
+    for i, s in enumerate(d["shots"]):
+        if isinstance(s, dict) and isinstance(s.get("choices"), list) and s["choices"]:
+            key = s.get("choice_key")
+            shot_id = s.get("id") if isinstance(s.get("id"), str) else str(i)
+            keys.add(key if isinstance(key, str) and key else f"{sid}.{shot_id}")
+    return keys
+
+
+def check_scene(d, stem: str, loc: set[str], chapters: set[str], tutorials: set[str],
+                texts: dict[str, str] | None = None, choice_keys: set[str] | None = None) -> list[str]:
+    """Problems in one parsed scene file; `stem` is the file name without .json. `texts` (loc key ->
+    text) enables the placeholder count check; `choice_keys` (from every scene) the `when` check."""
     out: list[str] = []
     where = f"{stem}.json"
+    texts = texts or {}
     if not isinstance(d, dict):
         return [f"{where}: not a JSON object"]
     for f in sorted(set(d) - SCENE_FIELDS):
@@ -185,7 +291,7 @@ def check_scene(d, stem: str, loc: set[str], chapters: set[str], tutorials: set[
         out.append(f"{where}: shots: at least one shot required")
     else:
         for i, s in enumerate(shots):
-            _check_shot(s, f"{where}: shots[{i}]", loc, out)
+            _check_shot(s, f"{where}: shots[{i}]", loc, texts, choice_keys, out)
     return out
 
 
@@ -193,8 +299,9 @@ def check(mod: Path, loc: set[str] | None = None, tutorials: set[str] | None = N
           chapters: set[str] | None = None, chapters_cs: Path = CHAPTERS_CS) -> list[str]:
     """Problems across every Cutscenes/*.json in `mod`. The name tables are read from the mod
     (and the C# chapter table) when the caller does not pass them."""
+    texts = read_loc_texts(mod)
     if loc is None:
-        loc = read_loc_keys(mod)
+        loc = set(texts)
     if tutorials is None:
         tutorials = read_tutorial_ids(mod)
     if chapters is None:
@@ -203,15 +310,19 @@ def check(mod: Path, loc: set[str] | None = None, tutorials: set[str] | None = N
     if not folder.is_dir():
         return [f"{FOLDER}/: folder missing in {mod}"]
     problems: list[str] = []
-    seen_ids: dict[str, str] = {}
+    parsed: list[tuple[Path, str, object]] = []
     for p in sorted(folder.glob("*.json")):
         stem = p.name[:-len(".json")]
         try:
-            d = json.loads(p.read_text(encoding="utf-8-sig"))
+            parsed.append((p, stem, json.loads(p.read_text(encoding="utf-8-sig"))))
         except (json.JSONDecodeError, UnicodeDecodeError) as exc:
             problems.append(f"{p.name}: {exc}")
-            continue
-        problems += check_scene(d, stem, loc, chapters, tutorials)
+    choice_keys: set[str] = set()
+    for _, stem, d in parsed:
+        choice_keys |= choice_keys_of(d, stem)
+    seen_ids: dict[str, str] = {}
+    for p, stem, d in parsed:
+        problems += check_scene(d, stem, loc, chapters, tutorials, texts, choice_keys)
         sid = d.get("id") if isinstance(d, dict) else None
         if isinstance(sid, str) and sid:
             if sid in seen_ids:

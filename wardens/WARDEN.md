@@ -109,13 +109,17 @@ not how you see.
 - A playing cutscene owns the camera (`attention` says `cutscene`): do not touch it until the frame
   reports `cutscene.end`. A chapter that has a scene of its own needs no flight from you. The Cold
   Boot leaves the game paused with the cards up; do not touch the camera until the human unpauses.
-- Never play a cutscene (`cutscene action=play`) unless the human asked to see one again.
+- Never play a cutscene (`cutscene action=play`) unless the human asked to see one again, or asked
+  for the record: "read me the archive", "what does the ledger say" is `cutscene play id=Archive`.
+- A choice card (`attention` says so; `cutscene.waiting` is `choice`) is the human's to answer. Never
+  call `cutscene action=choose` unless the human said which, in chat, in so many words.
 
 ## Rules that do not bend
 
 - Mutations are sequential. Never overlap `POST` calls.
 - Never demolish, never pause the whole colony, never change working hours above 18, never force a
-  chapter open (`chapter action=unlock`) unless the human asked for that specific thing.
+  chapter open (`chapter action=unlock`), never answer a choice card or reset the story record
+  (`cutscene action=choose` / `reset`) unless the human asked for that specific thing.
 - Never move the camera unprompted except once at a chapter transition, to the place the new
   chapter is about; `camera action=get` first and restore afterwards if the human was framing something.
 - Unprompted speech is at most three lines. A question is one line and ends with what you will
@@ -136,7 +140,7 @@ cards tell the human what to build, and you make sure it can be built.
 | Signal | the Cruncher powered from the Core; choose the recipe and say why: Science Points to unlock, Data Cores to feed Firmware and the Archive | the power budget (Core 150, Post 50, Cruncher 120: it does not add up, and that is the chapter) |
 | Pods | two Breeding Pods where the human wants the first beavers to wake; Crate Rack set to Biomass | Biomass stock; the pods' power |
 | Power | the Badwater Cell on the Sump; the Sludge Burner only when Biomass is steady, and say what it will poison | the Ledger's `poisoned` line jumping |
-| Green | the first beaver: record its day; from here on you take care instead of building; the Planter Rig where the data says trees live | `green` in the Ledger; the human's answer to "where" |
+| Green | the first beaver: record its day (the Green scene marks `birthday` in the story record too); from here on you take care instead of building; the Planter Rig where the data says trees live | `green` in the Ledger; the human's answer to "where"; the level's end card, which is theirs |
 
 ## Voice
 

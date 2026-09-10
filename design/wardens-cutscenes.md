@@ -1,10 +1,12 @@
 # The Wardens cutscenes: design
 
-> **Status:** design and first implementation (2026-09-06). The system lives in
+> **Status:** design and implementation (2026-09-06, extended the same day). The system lives in
 > `wardens/src/WardensCutsceneScript.cs` (the scene format), `WardensCutscenes.cs` (the runner and its
-> triggers) and `WardensCutsceneOverlay.cs` (letterbox, caption, buttons); the prototype scene is
-> `wardens/src/Cutscenes/ColdBoot.json`, the three shots of the mockup in
-> [`wardens-ui/ColdBoot.dc.html`](wardens-ui/ColdBoot.dc.html). It replaces the hardcoded orbit of
+> triggers), `WardensCutsceneOverlay.cs` (letterbox, caption, buttons, keys) and `WardensStoryState.cs`
+> (the story record: choices and marks, `story.json`); the prototype content is eight scenes in
+> `wardens/src/Cutscenes/`: the Cold Boot (the three shots of the mockup in
+> [`wardens-ui/ColdBoot.dc.html`](wardens-ui/ColdBoot.dc.html)), one scene per chapter, the level's
+> end card with its choice, and the Archive reading. It replaces the hardcoded orbit of
 > `WardensColdBoot.cs` (retired). Nothing compiled here; every game API used is one the repo already
 > calls somewhere (the inventory is in §11). What the first in-game run must answer is §12. The shot
 > list and the camera interpolator come from [`wardens-chapter-1-plan.md`](wardens-chapter-1-plan.md)
@@ -39,11 +41,10 @@ blueprints.
 - Behaviour that exists is kept: the Cold Boot still pauses, locks the speed, orbits the Core and
   leaves the game paused for the Clock card.
 
-**Non-goals (this design).** Choice cards with two answers (the level-05 question, the level-end
-cards; §8); hiding the game's UI during a scene (no verified API; the letterbox covers the top and
-bottom bars, the rest stays); material swaps such as the Core's light coming on; an Esc key binding
-(the input API is unverified; the Skip button and the MCP `skip` action do the job); persisting
-"played" across saves (§3.4 explains why v1 does not need it); sound.
+**Non-goals (this design).** Hiding the game's UI during a scene (no verified API; the letterbox
+covers the top and bottom bars, the rest stays); material swaps such as the Core's light coming on
+(a `highlight` tints the object instead); persisting "played" across saves (§3.4 explains why v1
+does not need it; the story record in §3.5 is the one thing that persists); sound.
 
 ## 2. Architecture
 
@@ -124,16 +125,23 @@ policy, and its orbit is the first scene.
 | `point` | pointer | none | a `WardensPointer` marker when the shot starts: `anchor` (`core`, `grid`, `selection`; the ones with grid coordinates), `x`/`y`/`z`, `offset`, `message`, `seconds` (default the shot's), `color` |
 | `toast` | string | none | a quick notification when the shot starts |
 | `say` | string | none | an Uplink line (system) when the shot starts |
+| `args` | string[] | `[]` | values for the caption's `{0}`.. placeholders, read when the shot starts: `day`, `cycle`, `cycle_day`, `bots`, `beavers`, `archive` (Data Cores in stock), `science`, `good:<GoodId>` (stock across the districts), `choice:<key>` (a recorded pick, or `none`), `mark:<name>` (a recorded day, or `none`). They go through `ILoc.T(key, args)` the way the tutorial steps' numbers do, so a loc row keeps vanilla's `{0}` convention |
+| `highlight` | pointer | none | like `point` without the arrow and the toast: the object on the tile is tinted (the Core's light coming on, in the Cold Boot's second shot) |
+| `mark` | string | none | records the current day under this name in the story record when the shot starts |
+| `choices` | choice[] | `[]` | a choice card: `{ "id", "caption" \| "text" }` per button. The shot waits for a pick (Continue does not end it); the pick is recorded under `choice_key` |
+| `choice_key` | string | `<Scene>.<shot id>` | where the pick is recorded |
+| `when` | condition | none | `{ "choice": "<key>", "is": "<id>" }` or `{ "choice": "<key>", "is_not": "<id>" }`: the shot plays only when the recorded pick matches. An unset pick matches nothing under `is` and everything under `is_not`; a scene whose remaining shots are all skipped ends |
 
 A shot ends when its flight has finished, its `seconds` have passed, and, with `wait: continue`, the
-button was pressed. The scene ends after its last shot, or on Skip.
+button was pressed, or, with `choices`, a pick was made. The scene ends after its last shot, or on
+Skip.
 
 ### 3.3 A keyframe
 
 | Field | Meaning |
 |---|---|
 | `t` | seconds from the shot's start (default 0); keyframes are sorted by `t`. When the first keyframe's `t` is above 0 the director inserts the current pose at 0, so the flight eases out of wherever the camera is; a keyframe at `t: 0` is a cut. |
-| `anchor` | what the camera looks at: `core` (the district center), `start` (the target the camera had when the scene began; the default), `selection` (what the player has selected, falling back to `start`), `bot` (the first Warden, falling back to `start`), `grid` (`x`, `y`, `z` = height, as in every Timberbot endpoint), `world` (`x`, `y`, `z` in world space) |
+| `anchor` | what the camera looks at: `core` (the district center), `start` (the target the camera had when the scene began; the default), `selection` (what the player has selected, falling back to `start`), `bot` (the first Warden, falling back to `start`), `beaver` (the first beaver, falling back to `start`), `grid` (`x`, `y`, `z` = height, as in every Timberbot endpoint), `world` (`x`, `y`, `z` in world space) |
 | `offset` | `[dx, dy, dz]` in grid units added to the anchor (`dz` is height) |
 | `h`, `v`, `zoom` | absolute pose values: degrees, degrees, `CameraService.ZoomLevel` units |
 | `dh`, `dv`, `dzoom` | the same, relative to the pose the camera had when the scene began; an absolute value wins over a relative one for the same axis |
@@ -161,7 +169,24 @@ No save state. A trigger fires on an event, events happen once, and a loaded sav
 them: a chapter already open at load is reconciled silently, a finished tutorial is in the set
 before the first poll, `new_game` never comes. A scene interrupted by a save and reload simply does
 not resume, which is the right behaviour for a cutscene. Scenes that fire while another plays are
-queued and start when it ends.
+queued and start when it ends; when one trigger fires several, they queue in file-name order (the
+level's end card, `LevelEnd.json`, follows the Green chapter's scene on the same trigger).
+
+### 3.5 The story record (`story.json`)
+
+What a scene can remember: the choices the player made and the marks the scenes set.
+
+```json
+{ "version": 1, "choices": { "LevelEnd.end": "continue" }, "marks": { "birthday": 12 } }
+```
+
+`WardensStoryState` keeps it in `story.json` next to `settings.json`, outside any save, the way the
+campaign design keeps `campaign.json` (a save is a level; the story spans saves) and Timberbot keeps
+`state.json`; one file per mod folder, `reset` (the MCP tool) archives it as `story.<timestamp>.json`.
+Read lazily on first use, written whole on every change, never fatal. A choice card writes
+`choices[choice_key]`; a shot's `mark` writes `marks[name] = day`; captions read both back through
+the `choice:` and `mark:` args, and `when` conditions branch on a choice. The campaign service, when
+it comes, reads the same file (the level-05 answer is a choice like any other).
 
 ## 4. Component design
 
@@ -190,6 +215,10 @@ the Python checker implements the same rules.
 - `Skip()` ends the scene now; `Continue()` releases a `wait: continue` shot; `Reload()` re-reads the
   folder. `HasPlayed(id)` and `Playing` / `CurrentId` / `Summary()` / `State()` serve the tool table
   and the frames.
+- A shot's `when` is evaluated when the runner reaches it; shots that do not apply are skipped, and
+  a scene with nothing left ends. `mark` writes the day, `choices` put the card up (the pick is
+  recorded through `Choose(id)`, from the button or the MCP tool), `args` are read at that moment so
+  a reading shows the numbers of the day it is read.
 - Ending, in every path (last shot, skip, an exception mid-shot): stop the director, fly back if
   `restore_camera`, unlock the speed and restore it (or leave it paused), clear the pointers, hide
   the overlay, note the id as played. The unlock sits in a `finally`: a scene that throws must not
@@ -208,11 +237,15 @@ the precedent for a full-screen element), after the mockup:
 - two black bars, 12 % of the height each, top and bottom (`letterbox`);
 - above the bottom bar, centered: a 48×2 cyan rule, the caption (26 px, wrapping, at most 760 px
   wide, the game's `text--centered` class), a row of step dots (filled for the shots played, an
-  outline for the ones to come), and the Continue button when a shot waits for it;
+  outline for the ones to come), the choice buttons when a shot has a card, and the Continue button
+  when a shot waits for it;
 - the Skip button at the top right, under the top bar, when the scene is skippable.
 
 Only the buttons pick pointer events. The fonts and colours are the game's (`game-text-normal`,
-the Wardens' cyan `#00E5FF`), the caption is white on the bar's black.
+the Wardens' cyan `#00E5FF`), the caption is white on the bar's black. Keys: the root is focusable
+and takes focus while a scene shows (the way the chat's text field takes it while typing), Escape
+reports Skip (when skippable) and Return or Space report Continue (when waiting); the events are
+stopped there. A choice card has no key: the buttons are the answer.
 
 ### 4.4 `WardensChapterService` (one event)
 
@@ -236,19 +269,24 @@ The frame carries `cutscene` (`playing`, `id`, `shot`, `shots`, `waiting`), note
 | `play` | plays `id` (default `ColdBoot`), replacing a running scene; ignores the trigger policy | the state |
 | `skip` | ends the running scene | the state |
 | `continue` | releases a `wait: continue` shot | the state |
+| `choose` | answers the open choice card with `choice` (an id from `status.choices`); refused when no card is open | the state |
 | `reload` | re-reads `Cutscenes/*.json` | the state, with any parse errors |
+| `reset` | archives `story.json` and clears the record (dev) | the state |
 
+`status` also carries `story` (the record) and, while a card is open, `choices` and `choice_key`.
 `wardens_status` keeps `cutscene_played` (the Cold Boot has played this session) and gains a
-`cutscene` block (the summary).
+`cutscene` block (the summary, `waiting` among `flight`, `time`, `continue`, `choice`).
 
 ### 4.7 `tools/check_cutscenes.py` and `validate.py`
 
 The checker reads a mod folder (or `wardens/src`) with no game files: every `Cutscenes/*.json`
 parses, `id` equals the file stem and is unique, every `on` entry is `new_game`, `chapter:<Id>` with
 an id from `WardensChapters.cs` (the table `validate.py` already parses) or `tutorial:<Id>` with a
-tutorial the mod ships, every `caption` is a row of `Localizations/enUS*.csv`, every anchor is one
-of §3.3, pointer anchors are the ones with grid coordinates, `wait` is `time` or `continue`, keyframe
-fields are numbers, and a scene has at least one shot. `validate.py` calls it, so the one command
+tutorial the mod ships, every `caption` is a row of `Localizations/enUS*.csv` and its `{n}` placeholders
+match the shot's `args` in number, every arg is in the vocabulary of §3.2, every anchor is one of
+§3.3, pointer and highlight anchors are the ones with grid coordinates, `wait` is `time` or
+`continue`, choice ids are unique and every choice has a text, every `when` names a choice key some
+shot records (across all scenes), keyframe fields are numbers, and a scene has at least one shot. `validate.py` calls it, so the one command
 the playtest checklist already requires covers scenes too; the checker also runs alone and has a
 pytest file next to it, which is the part of this design that is verified in this environment.
 
@@ -277,11 +315,26 @@ throughout, as before.
 **Skip.** The player clicks Skip (or the agent calls `cutscene skip`): the flight stops where it is,
 the overlay goes, the speed rule applies as at a normal end. `cutscene_played` is true either way.
 
-**A chapter scene (none shipped yet).** `chapter:Badwater` → the chapter service opens the chapter,
-posts its toast and raises `ChapterOpened` → the runner plays the scene (or queues it behind a
-running one). With `restore_camera: true` the player's view comes back when it ends; the Warden,
-which used to fly the camera at a chapter transition, sees `cutscene.start` in its frame and does
-nothing.
+**A chapter scene.** `chapter:Badwater` → the chapter service opens the chapter, posts its toast
+and raises `ChapterOpened` → the runner plays `Badwater.json` (or queues it behind a running one):
+two shots around the Core, the first with the scrap count filled in (`args: ["good:ScrapMetal"]`),
+the second waiting for Continue. With `restore_camera: true` the player's view comes back when it
+ends; the Warden, which used to fly the camera at a chapter transition, sees `cutscene.start` in
+its frame and does nothing. Signal, Pods, Power and Green have the same shape; Green anchors on the
+first beaver and marks `birthday`.
+
+**The level's end.** The Green chapter opens on the first beaver; `Green.json` and `LevelEnd.json`
+both bind to `chapter:Green` and play in that order. The level's end card asks *Continue to Level
+02* or *Stay*; the pick is recorded under `LevelEnd.end`, and one of two closing shots plays
+(`when: is continue` / `is stay`). Level 02 does not exist, and the card says so in the Wardens'
+voice; the campaign service will read the same record when it comes. Nothing forces the answer: the
+card stays up until the human clicks, and the Warden's playbook forbids `choose` unless the human
+said which in chat.
+
+**A reading on request.** `Archive.json` has no trigger. When the human asks for the record, the
+Warden plays it (`cutscene play id=Archive`): five continue-cards on a slow orbit of the Core, each
+filled from the game at that moment (day and cycle, Wardens and beavers, Data Cores, science and
+scrap, the birthday mark and the level-end choice), then "Recorded.".
 
 **Tuning.** Edit `Documents/Timberborn/Mods/Wardens/Cutscenes/ColdBoot.json` with the game running →
 `cutscene reload` → `cutscene play` → adjust → copy the file back to `wardens/src/Cutscenes/` →
@@ -305,21 +358,23 @@ is read once before it is compared.
 
 ## 8. Extensions (not in v1)
 
-- **Choice cards:** a shot with `choices: [{"id", "text"}]` and a `chosen` result the campaign
-  service stores in `campaign.json` (the level-05 question, the level-end *Continue* / *Stay*).
-- **Readings:** already expressible (one shot per line, `wait: continue`, a slow orbit); the campaign
-  adds the `level:<Id>` triggers and text with placeholders filled from the Ledger.
-- **Esc to skip** once an input binding the repo has used exists; **hide the UI** once the service
-  that does it is verified; **material swaps** (the Core's light) as a shot action.
+- **Level triggers** (`level:<Id>` start and end) and the level-05 question as a choice card, with
+  the campaign service reading `story.json`; the readings for levels 05 and 10 are then scene files
+  with `args` from the Ledger's history.
+- **Hide the UI** once the service that does it is verified; **material swaps** (the Core's light
+  proper) as a shot action; the `highlight` stands in for both.
 - **Persisted "played"** through `ISaveableSingleton` if a scene ever needs to survive a reload,
-  which none of the planned ones do.
+  which none of the shipped ones do.
 - **Camera bookmarks** as anchors (`anchor: "bookmark:<name>"`), shared with the agent's `camera` tool.
+- **The story record per settlement** if a player runs two settlements against one mod folder (one
+  file today, like `campaign.json`).
 
 ## 9. Testing
 
-- **Static (no game):** `python wardens/tools/check_cutscenes.py wardens/src` prints `problems: none`;
-  `uv run --project python --extra dev pytest wardens/tools/test_check_cutscenes.py` covers a good
-  scene and every rule with a bad one; `validate.py` includes the checker.
+- **Static (no game):** `python wardens/tools/check_cutscenes.py wardens/src` prints `problems: none`
+  for the eight shipped scenes; `uv run --project python --extra dev pytest wardens/tools` covers a
+  good scene and every rule with a bad one (args and placeholders, choices, `when` across scenes,
+  highlights, the `beaver` anchor); `validate.py` includes the checker.
 - **Smoke (with the game), added to `PLAYTEST.md`:** (1) a new Wardens game shows the letterbox, the
   three captions and the dots, the camera orbits the Core once and settles where it started, the
   game is paused afterwards and the tutorial cards are clickable throughout; (2) Skip at any point
@@ -327,7 +382,13 @@ is read once before it is compared.
   `shot`, `waiting`; `cutscene play` replays it on a loaded save; `cutscene reload` after an edit in
   the mod folder changes the next replay; (4) `wardens_status.cutscene_played` true after the scene,
   the `frame` events carry `cutscene.start:ColdBoot` and `cutscene.end:ColdBoot`; (5) with the
-  tutorial off, or `"cutscenes": false`, nothing plays on a new game and `play` still works.
+  tutorial off, or `"cutscenes": false`, nothing plays on a new game and `play` still works;
+  (6) `chapter unlock chapter_id=Badwater` plays the Badwater scene with the scrap count filled in
+  and the camera returns afterwards; (7) `chapter unlock chapter_id=Green` plays Green (on the
+  first beaver, or the Core when there is none) and then the level's end card; a click on *Stay*
+  writes `story.json`, plays the Stay shot, and `cutscene status` shows the record; (8) `cutscene
+  play id=Archive` reads five cards with today's numbers, Return advances them, Escape skips;
+  (9) `cutscene choose` on a card answers it, `reset` archives the record.
 - **MCP:** `mcp_smoke.py` expects the `cutscene` tool in the list.
 
 ## 10. Rollout
@@ -337,9 +398,10 @@ is read once before it is compared.
    of 14.
 2. After the smoke run: fix the zoom scale and the angles in `ColdBoot.json`; decide whether the
    Wake and Directive cards move into the scene (§12).
-3. Chapter scenes, one per chapter, when the campaign's cards for them are written (the story doc
-   has the lines); each is one JSON file and its loc rows.
-4. Choice cards and the level triggers with the campaign service (§8).
+3. Done as prototype content: one scene per chapter (`Badwater`, `Signal`, `Pods`, `Power`,
+   `Green`), the level's end card with its choice (`LevelEnd`), the Archive reading (`Archive`);
+   their captions are in `wardens-campaign-story.md` §3 as fixed text.
+4. The level triggers and the level-05 question with the campaign service (§8).
 
 ## 11. Game APIs used (all already called elsewhere in the repo)
 
@@ -354,9 +416,14 @@ is read once before it is compared.
 `UILayout.AddAbsoluteItem`, `VisualElementInitializer.InitializeVisualElement`, `NineSliceButton`,
 `Label`, `VisualElement.BringToFront`, `PickingMode.Ignore` (`WardensChat`, `TimberbotPanel`),
 `WardensCameraDirector.Fly / Stop / Apply / Current / IsFlying`, `WardensPointer.Point / Clear`,
-`WardensChat.SystemSays`. The one style not used before is `Length.Percent` for the bar heights
-(UI Toolkit core, `UnityEngine.UIElementsModule`); `unityTextAlign` was deliberately avoided because
-`TextAnchor` lives in a Unity module no csproj here references.
+`WardensChat.SystemSays`. For the args: `IDayNightCycle.DayNumber`, `GameCycleService.Cycle /
+CycleDay`, `ScienceService.SciencePoints`, `DistrictResourceCounter.GetResourceCount(id).AllStock`
+(`WardensFrames`, `WardensTutorialSteps`), `Beaver` (`WardensStartingPopulation`), `ILoc.T(key,
+params)` (`WardensPopulationStep`). For the record: `File.WriteAllText / Copy / Delete`
+(`TimberbotService`, `WardensAssetDump`). The styles not used before are `Length.Percent` for the
+bar heights and `focusable` / `Focus()` on the overlay root (UI Toolkit core,
+`UnityEngine.UIElementsModule`; `KeyDownEvent` and `KeyCode` as in `WardensChat`); `unityTextAlign`
+was deliberately avoided because `TextAnchor` lives in a Unity module no csproj here references.
 
 ## 12. Open questions (the smoke run answers them)
 
@@ -368,7 +435,13 @@ is read once before it is compared.
 - Whether `text--centered` exists in the game's stylesheets (harmless if not: the caption is then
   left-aligned inside its box).
 - Whether a `NewGameInitializedEvent` handler may start a camera flight in the same frame the
-  event is posted, or the first shot needs one frame of delay (the old orbit did it in the handler).
+  event is posted, or the first shot needs one frame of delay (the old orbit did it in the handler;
+  the runner queues it to the next update, so this should be moot).
+- Whether a focused, non-text `VisualElement` receives `KeyDownEvent` in the game's UI document,
+  and whether Escape also opens the game's pause menu while a scene shows (then the key goes and
+  the Skip button stays).
+- Whether `ILoc.T(key)` without arguments returns a row that contains `{0}` untouched (the
+  captions with `args` never call it that way; the checker keeps the counts matched).
 
 ## 13. Decisions
 
@@ -389,3 +462,12 @@ is read once before it is compared.
    is silent. A scene that needs to survive a reload is a §8 problem.
 7. **The trigger policy is the Cold Boot's.** Wardens only, tutorial on, setting on; `play` bypasses
    it because that is the tuning loop.
+8. **Args are `{0}` parameters through `ILoc.T`.** The loc rows keep vanilla's convention and the
+   proven call; a `{day}`-style syntax would have had to survive `string.Format` with no way to be
+   sure it does. Rejected: named placeholders, captions in the JSON only.
+9. **The story record is one file per mod folder.** `story.json`, like `campaign.json` in the
+   campaign design and `state.json` in Timberbot; the settlement name is only reachable by
+   reflection or through a snapshot meant for the HTTP thread. Rejected: `ISaveableSingleton`
+   (unverified, and the story spans saves), keying by settlement (§8).
+10. **A choice is the human's.** The buttons answer it; the agent's `choose` exists for playtests
+    and for a human who said which in chat, and the playbook says so.

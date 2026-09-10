@@ -114,8 +114,8 @@ timberbot/
 │   │   │                        #   Maps/ (the generated wasteland), Sprites/ + Materials/ (recolored art),
 │   │   │                        #   Cutscenes/ (scene files, the Cold Boot among them)
 │   │   ├── Wardens*.cs          # Configurator, StartingPopulation, CameraDirector, Pointer, Chat,
-│   │   │                        #   Cutscenes (+Script, +Overlay), McpServer + McpTools, Chapters, Frames,
-│   │   │                        #   Triggers, tutorial steps, AssetDump
+│   │   │                        #   Cutscenes (+Script, +Overlay, +StoryState), McpServer + McpTools,
+│   │   │                        #   Chapters, Frames, Triggers, tutorial steps, AssetDump
 │   │   ├── PollutingBuilding.cs # Spike B stub (building-side contamination; water route planned)
 │   │   ├── Timberbot/           # Verbatim copy of timberbot/src (paths point at Mods/Wardens)
 │   │   └── Wardens.csproj       # Build + deploy (mod folder, docs/, Maps); bumps the version every build
@@ -186,7 +186,7 @@ timberbot/
 - **Game-context singletons only.** `WardensConfigurator` is `[Context("Game")]`; faction-specific behaviour checks `FactionService.Current?.Id == "Wardens"` at runtime, the MCP server, chat, pointer, camera and frames load for every faction. Prefer APIs already used somewhere in `wardens/src` or `timberbot/src`: nothing here is compiled in CI, so an unproven signature is found only by the next local build.
 - **Threading in the MCP server.** Tools touching game state are queued to the main thread; `OffThread` tools must be pure I/O. Long-polls (`chat_read`, `frame`) wait on a lock the main thread pulses; never block the main thread.
 - **The agent's contract.** The server's initialize `instructions`, `WARDEN.md` and `design/wardens-play.md` must agree: the agent reads `manual`, lives on `frame`, answers `chat` first, follows `attention` in order, borrows the camera only as the playbook allows (never while a cutscene plays), and keeps the Ledger. Change one, change all three.
-- **Cutscenes are data.** A scene is `src/Cutscenes/<Id>.json` (`design/wardens-cutscenes.md` §3 is the format; `WardensCutsceneScript.cs` parses it, `WardensCutscenes.cs` plays it); its captions are `Wardens.Cutscene.<Scene>.<Shot>` rows in `Localizations/enUS.csv` (both generators keep rows they do not own). Never add a second runner or pause/lock the speed for a scene elsewhere; a new story moment is a new file plus its loc rows, checked by `check_cutscenes.py`. Tune with the game running (`cutscene reload` / `play`) and copy the file back.
+- **Cutscenes are data.** A scene is `src/Cutscenes/<Id>.json` (`design/wardens-cutscenes.md` §3 is the format; `WardensCutsceneScript.cs` parses it, `WardensCutscenes.cs` plays it); its captions are `Wardens.Cutscene.<Scene>.<Shot>` rows in `Localizations/enUS.csv` (both generators keep rows they do not own), with vanilla's `{0}` placeholders filled by the shot's `args`. Never add a second runner or pause/lock the speed for a scene elsewhere; a new story moment is a new file plus its loc rows, checked by `check_cutscenes.py`. Tune with the game running (`cutscene reload` / `play`) and copy the file back. What a scene remembers (choices, marks) is the story record, `story.json` in the mod folder (`WardensStoryState.cs`), one file, outside any save; the campaign service reads the same file when it comes.
 - **The Timberbot copy.** `wardens/src/Timberbot/` is a verbatim copy of `timberbot/src/`; fix Timberbot bugs upstream and re-copy, do not fork them in the copy.
 
 ### Documentation
@@ -250,7 +250,7 @@ Built and deployed once (the v0.2 batch: faction, tutorial line, in-game MCP, ar
 2. The map loads: `Wardens Wasteland.timber` claims game version 0.7.10.0 on purpose so the game's migration runs; open questions (does 1.1 migrate that layout, do `RuinColumnH*` and `UndergroundRuins` still exist, is the Sump deep enough for the Sludge Pump, does a mod's `Maps/` folder get listed) are in `design/wardens-wasteland.md`.
 3. Chapter gating: padlocks on a new game, the Badwater toast after the Scrap tutorial, no toast on reload.
 4. Frames: `frame` returns within `every_ticks` ticks while unpaused, at once on chat, and carries `attention`.
-5. Cutscenes (2026-09-06, not compiled anywhere): the Cold Boot plays as `Cutscenes/ColdBoot.json` through the new runner (letterbox, three captions, Skip); `design/wardens-cutscenes.md` §12 lists what the run must answer (the zoom scale, the letterbox against the tutorial panel, the `text--centered` class). No game API in it is new to the repo; `Length.Percent` is the one UI Toolkit style not used before.
+5. Cutscenes (2026-09-06, not compiled anywhere): eight scenes play through the new runner (the Cold Boot on a new game, one per chapter, the level's end card with its choice, the Archive reading on request); `design/wardens-cutscenes.md` §12 lists what the run must answer (the zoom scale, the letterbox against the tutorial panel, the `text--centered` class, whether Escape reaches the overlay without opening the pause menu, `ILoc.T` with parameters on the captions). No game API in it is new to the repo; `Length.Percent` and `focusable` / `Focus()` are the UI Toolkit calls not used before.
 
 Stubs and planned work, in the order `design/wardens-play.md` argues for: a native `ledger` tool (soil contamination counts), the Archive persisted in the save (`ISaveableSingleton`), frames on the Timberbot WebSocket for out-of-process agents, a new game from the API (`design/playtest-and-video-capture.md`), a screenshot tool, and Spike B (`PollutingBuilding`, water route). Out of scope for now: remediation tech, the Ark, custom 3D art.
 

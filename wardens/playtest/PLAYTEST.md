@@ -46,7 +46,7 @@ or call the MCP tool `timberbot_ready`.
 | `chat_history` | listener | last N messages |
 | `selection` | main | what the player has selected (their way of pointing at something) |
 | `camera` | main | get / set / fly keyframes / stop |
-| `cutscene` | main | `status` / `list` the scenes from `Cutscenes/*.json` and the running one; `play` `id` (default ColdBoot, replaces a running scene, ignores the trigger policy), `skip`, `continue`, `reload` (edit in the mod folder, reload, play) |
+| `cutscene` | main | `status` / `list` the scenes from `Cutscenes/*.json`, the running one and the story record; `play` `id` (default ColdBoot, replaces a running scene, ignores the trigger policy; `Archive` reads the Ledger back), `skip`, `continue`, `choose` `choice` (an open card), `reload` (edit in the mod folder, reload, play), `reset` (archive `story.json`) |
 | `speed` | main | 0 pause … 3 |
 | `timberbot` | listener | GET/POST passthrough to the compiled-in Timberbot API (loopback) |
 | `timberbot_ready` | main | open the ready gate in-process |
@@ -128,8 +128,19 @@ Design and open questions: `design/wardens-cutscenes.md` (§9 is this list, §12
   `Documents/Timberborn/Mods/Wardens/Cutscenes/ColdBoot.json`, `cutscene reload`, `play`: the change shows.
   A broken edit lands in `errors` and the other scenes still load.
 - Tutorial off, or `"cutscenes": false` in `settings.json`: nothing plays on a new game; `play` still works.
-- `chapter unlock chapter_id=Badwater` raises the chapter's `ChapterOpened` event; with no scene bound to
-  `chapter:Badwater` nothing plays (the design's next step is one scene per chapter).
+- `chapter unlock chapter_id=Badwater` opens the chapter and plays `Badwater`: two shots around the Core,
+  the first caption with the scrap count filled in ("Scrap: 10. ..."), the second with a Continue button
+  (Return or Space also continues); the camera flies back to where it was. Signal, Pods (three stock
+  counts in the first caption) and Power the same way.
+- `chapter unlock chapter_id=Green` plays `Green` (the camera on the first beaver, or the Core when there
+  is none; "Day N. Born M.") and then `LevelEnd`: the level's end card with *Continue to Level 02* and
+  *Stay*. A click writes `Documents/Timberborn/Mods/Wardens/story.json` (`choices.LevelEnd.end`, and
+  `marks.birthday` from the Green scene), plays the matching closing shot, and `cutscene status` shows
+  the record under `story`. `cutscene choose choice=stay` answers a card from the agent's side.
+- `cutscene play id=Archive`: five cards with today's day and cycle, Wardens and beavers, Data Cores,
+  science and scrap, the birthday mark and the level-end choice (`none` until they exist), then
+  "Recorded."; Escape skips it (if the game's pause menu opens too, note it: the key goes, the button stays).
+- `cutscene reset` archives `story.json` as `story.<timestamp>.json`; the next Green plays the card again.
 - What to tune first: the zoom scale (`dzoom` ±0.15 is a placeholder), the tilt (`v` 60 and 35), whether
   the letterbox collides with the tutorial panel, and whether the caption is centered (the game's
   `text--centered` class) or needs a fixed width.
@@ -138,8 +149,9 @@ Design and open questions: `design/wardens-cutscenes.md` (§9 is this list, §12
 
 - Starting a **new game** from the API (faction + map + mode) is still missing.
 - No screenshot endpoint yet; the agent sees the world through the read API only.
-- Cutscenes: Esc does not skip (the Skip button or `cutscene skip` does); the game's UI stays visible
-  under the letterbox; no choice cards yet; the Cold Boot's zoom and angles are untuned.
+- Cutscenes: the game's UI stays visible under the letterbox; whether Escape reaches the overlay (and
+  whether it also opens the pause menu) is unverified; the scenes' zoom and angles are untuned; Level 02
+  does not exist, so *Continue to Level 02* only records the choice.
 - The Core does not charge bots itself (no vanilla building combines a workplace with an
   attraction); the Charging Post does, at 50 hp from the Core.
 - Sludge Reed skips the watered/contaminated components; whether growth needs soil moisture
