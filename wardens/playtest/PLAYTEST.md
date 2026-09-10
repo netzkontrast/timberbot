@@ -150,6 +150,54 @@ Design and open questions: `design/wardens-cutscenes.md` (§9 is this list, §12
   the letterbox collides with the tutorial panel, and whether the caption is centered (the game's
   `text--centered` class) or needs a fixed width.
 
+## Playtest findings (2026-09-10, Claude Code via the `wardens` MCP)
+
+A session run entirely through the MCP loop (`manual` → `wardens_status` → `timberbot_ready` →
+`frame`), on whatever map/save was already loaded (not confirmed to be Wardens Wasteland). Day 1
+Cold Boot, 13 Wardens, 0 beavers, unpaused on player request. Placed a Scavenger Flag on the one
+nearby Scrap Pile, got 20 ScrapMetal, placed a Charging Post beside the Core, set worker counts —
+then the MCP/Timberbot connection dropped partway through night 1 and did not recover.
+
+**Blocking bug — flooded spawn:** the ground around the Core carried a uniform ~0.1 water depth
+(ambient/rain, not a real puddle), which was enough to flag both the **Core** and the nearby
+**Scrap Pile** as `"Flooded."` in `/api/alerts`. A flooded Core never assigns workers: all 13 bots
+stayed `unemployed` the whole session, so no construction, no scavenging, nothing progressed.
+Energy fell 49% → 21% with no charging path — a fresh Cold Boot save can softlock itself before the
+player ever gets a card to click. Needs checking against the map's terrain/drainage (see below) and
+possibly a flood-immunity or higher threshold for Core/Scrap Pile specifically, since they're both
+required for the very first moves.
+
+**Timberbot API bugs found in this session:**
+
+- `/api/tiles?x1&y1&x2&y2`: whichever query param is *last* in the URL is silently dropped
+  (reproduced 3× with different param orders — it's positional, not key-specific). Workaround:
+  append a harmless trailing param, e.g. `&format=json`.
+- `limit`/`offset` pagination is ignored on `/api/gatherables` and `/api/beavers` — always returns
+  the same first page.
+- `/api/buildings?name=ChargingPost` returned `total:0` immediately after placing one, while the
+  unfiltered list showed it present (`finished:0`) — only observed once, possibly a timing race.
+- `/api/alerts` returns `type: "Flooded."` (with the period), not in the documented
+  `unstaffed`/`unpowered`/`unreachable`/`status` enum.
+- `chapter status`'s `complete` list already showed Badwater through Green on a brand-new Cold Boot
+  save with nothing built — looks like state not reset per playthrough.
+
+## What a map needs for this mod to work
+
+- **The Core's footprint, and its immediate approach tiles, must sit above the flood line** — not
+  just look dry. This session's spawn had ambient water pooling to ~0.1 depth across the whole area,
+  which was enough to flood the Core itself. `design/wardens-wasteland.md` already describes the
+  intended layout (Core on a flat pad, dry basin *east* for badwater to fill later, ruins to the
+  north-west/south) — this needs verifying against the actual loaded terrain, since this session's
+  map may not have been Wardens Wasteland.
+- **At least one Scrap Pile reachable and dry within a few tiles of the Core** — First Light's
+  opening move is a Scavenger Flag + scrap run; if the nearest ruin floods too, there's no path to
+  the 5 ScrapMetal a Charging Post costs.
+- **A buildable, unflooded, `nearPower` tile adjacent to the Core** for the Charging Post —
+  `placement/find` returning a valid spot isn't sufficient if the tile floods after the fact.
+- **Wet/dry contrast placed deliberately, not uniformly** — the Badwater Sump needs low/wet ground
+  east of the Core; Pods and Green need dry ground for pods and planting. A map that's evenly damp
+  everywhere (as this session's was) breaks the chapter progression rather than just being ugly.
+
 ## Known gaps
 
 - Starting a **new game** from the API (faction + map + mode) is still missing.
