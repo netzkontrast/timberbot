@@ -53,6 +53,8 @@ src/
   Cutscenes/ColdBoot.json            the Cold Boot: three shots around the Core, one archived badtide each (design/wardens-ui/ColdBoot.dc.html)
   WardensArchivedBadtides.cs         replays the badtides the wasteland logged before day 1 (a shot's `badtide`)
   WardensFrames.cs                   the heartbeat: a sensor frame per N game ticks or per event, for the MCP `frame` tool
+  WardensLedger.cs                   the Ledger in one main-thread call (MCP `ledger`: poisoned, healed, green, archive, born, bots)
+  WardensPure.cs                     helpers with no Unity or game dependency (the loopback URL builder), tested in ../test
   WardensCameraDirector.cs           keyframe camera flights (cutscenes, MCP, trailer)
   WardensPointer.cs                  highlight + arrow + toast on a tile ("look here")
   WardensChat.cs                     in-game chat panel (WARDENS UPLINK) + message store
@@ -62,7 +64,8 @@ src/
   Timberbot/                         verbatim copy of ../../timberbot/src (paths point at Mods/Wardens)
   Maps/Wardens 01 First Light.timber  level 01 of the campaign (tools/gen_map.py); deploy also installs it to Documents/Timberborn/Maps
   ../maps/*.map.toml                 map specs for tools/mapsmith (the spec-driven builder; see "The map")
-playtest/                            smoke.py (Timberbot API), mcp_smoke.py (MCP), PLAYTEST.md
+playtest/                            smoke.py (Timberbot API), mcp_smoke.py + mcp_concurrency.py (MCP), PLAYTEST.md
+test/                                xUnit over src/WardensPure.cs alone (no game DLLs): dotnet test wardens/test/Wardens.Tests.csproj
 WARDEN.md                            the Warden's playbook (deployed to the mod's docs/, served by the `manual` tool)
 CHANGELOG.md                         version history; tools/package.py builds the release ZIP
 ```

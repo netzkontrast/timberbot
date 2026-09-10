@@ -11,6 +11,110 @@ is and how each part works), `wardens/CHANGELOG.md` (what each version added), `
 
 ---
 
+## 2026-09-10, night: implementation session, the cloud half of iteration 04
+
+**Plan:** [`iteration-04-first-light-verified.md`](iteration-04-first-light-verified.md) (its checkboxes
+are the record of what is done). **Goal of this session:** every package of the plan that a cloud
+container can do, written, offline-checked and committed, so the game machine starts with a build and
+the proof run instead of with code to write.
+
+### What I did
+
+Same container as the planning entry below, plus the .NET 10 SDK installed with Microsoft's
+`dotnet-install.sh` (`/root/.dotnet`, one command, no root needed) and numpy pulled in per run with
+`uv run --project python --extra dev --with numpy`. Still no game. Five commits on
+`claude/mod-iteration-handover-09vcku` (pull request #13), one per package, in the plan's order:
+
+| Commit | Package | What it is |
+|---|---|---|
+| `edfa0c9` | WP7 | the level table names the levels; `wardens-02-the-pods.map.toml` is now `wardens-proto-crater.map.toml` and says what it is; four documents corrected |
+| `a35c453` | WP1 | `WardensPure.BuildLoopbackUrl` merges a query carried in `path` with `query`; `Loopback` uses it; `wardens/test/` is the first C# test project for the mod (6 tests, seen failing first); CI lists it; PLAYTEST findings folded into one cause; contradictions row C25 |
+| `3bba410` | WP2 | `WardensMcpServer.ListenLoop` runs each request on a pool thread (`HandleSafely`); `_lastFrameSeq` through `Interlocked`; `playtest/mcp_concurrency.py`; PLAYTEST records the cause of the dropped connection |
+| `1aed346` | WP5 | `WardensLedger.cs`, its `Bind`, the MCP `ledger` tool (`compute` / `record`), and the five contract documents updated together (`WARDEN.md`, the skill, `BuildInstructions`, `wardens-play.md`, the PLAYTEST tool table, which also gains the `campaign` row it had been missing) |
+| `fb19704` | WP8 | `Home(FirstLight)` in `gen_map.py`: same seed and heightfield, contamination zero, badwater sources turned clean, 3,020 plants; `SHIPPED` flag, `generate()` refuses to write an unshipped level without `--out`; `test_gen_map.py` |
+
+Ran on the final tree, all clean:
+
+| Check | Result |
+|---|---|
+| `uv run --project python --extra dev --with numpy pytest -q wardens/tools` | 98 passed (95 before, plus `test_gen_map.py`) |
+| `python wardens/tools/check_cutscenes.py wardens/src` | `problems: none` |
+| `python wardens/tools/mapsmith check` on both specs and the shipped `.timber` | `problems: none` ×3 |
+| `dotnet test wardens/test/Wardens.Tests.csproj` | 6 passed |
+| `dotnet test timberbot/test/Timberbot.Tests.csproj` | 468 passed (untouched, sanity) |
+| `uv run … python wardens/tools/gen_map.py --check "wardens/src/Maps/Wardens 01 First Light.timber"` | `problems: none`; the file is byte-for-byte untouched |
+| `gen_map.py --level 10 --out /tmp/home.timber` then `--check … --level 10` | `problems: none`; without `--out` it refuses, as designed |
+| `ruff check python/` (what CI runs) | clean |
+
+Not run, because they need the game or its files: `dotnet build wardens/src/Wardens.csproj`,
+`python wardens/tools/validate.py`, anything in-game.
+
+### Written but not compiled: read this first at the game machine
+
+Five C# files changed without a compiler that has the game's assemblies. `Wardens.csproj` is an
+SDK-style project with default source globbing, so the two new files compile in without a project
+edit. The first `dotnet build wardens/src/Wardens.csproj -c Release` is their compile:
+
+- `wardens/src/WardensPure.cs` (new): compiled and tested on net10.0 without the game, so only its
+  call site is unproven.
+- `wardens/src/WardensMcpTools.cs`: the `Loopback` call site (four lines), `using System.Threading;`,
+  the `Interlocked` pair in the `frame` tool, one constructor parameter, the `ledger` tool block, one
+  sentence in `BuildInstructions`.
+- `wardens/src/WardensMcpServer.cs`: `ListenLoop` queues `HandleSafely` on the pool; nothing else.
+- `wardens/src/WardensConfigurator.cs`: one `Bind<WardensLedger>()`.
+- `wardens/src/WardensLedger.cs` (new): every type it injects is injected by `TimberbotReadV2` or
+  `WardensFrames` in this same DLL (`ITerrainService`, `IThreadSafeColumnTerrainMap`, `MapIndexService`,
+  `ISoilContaminationService`, `ISoilMoistureService`, `CharacterPopulation`, `DistrictCenterRegistry`,
+  `IDayNightCycle`), and every member it calls is copied from a call that compiles there
+  (`Size`, `ColumnCounts`, `GetColumnCeiling`, `VerticalStride`, `CellToIndex`, `SoilIsContaminated`,
+  `SoilIsMoist`, `AllDistrictCenters`, `GetResourceCount(...).AllStock`, `BotsChargedStep.Energy`). If
+  the build objects, it will be a member name here; the fix is to copy the exact call from those two
+  files.
+
+### What you should do, in this order
+
+**At the game machine:** (1) build, fix any compile slip as above; (2) `python wardens/tools/validate.py`
+prints `problems: none`; (3) load any game and run `python wardens/playtest/mcp_smoke.py`, then
+`python wardens/playtest/mcp_concurrency.py` (WP2's check), then the two `timberbot` calls of the
+plan's WP1 step 7, then `ledger` on a Wardens game (WP5 step 4: the line, then deltas a day later, then
+`action=record` visible under `campaign action=ledger`); (4) WP3, the reference map from the map
+editor; (5) WP4, the proof run, with its record committed; (6) WP6 for what it found; (7) WP9.
+
+**In a cloud container:** nothing in the plan is left for you except what WP6 turns up. Do not start
+level 02; do not "improve" the uncompiled C# without a build.
+
+### What I found while implementing
+
+- `Terrain.REQUIRE_BADWATER` and per-level `contract()` already existed, so *Home* was a subclass and a
+  flag, as the map-set document predicted. The plateau holds exactly the 20× target (3,020 plants).
+- The PLAYTEST tool table had no `campaign` row since 0.3.5. Added, next to `ledger`.
+- `WARDEN.md` had five places that said `campaign action=record`; all now say `ledger action=record`,
+  and the `ledger` tool's description says it writes the same record, so an agent that still calls
+  `campaign action=record` is not wrong, only slower.
+- `mapsmith build` takes `--out`; the README's example for the prototype now writes it outside
+  `src/Maps`, where an unclaimed `.timber` would fail `validate.py`.
+
+### Open questions I could not answer
+
+- The planning entry's three (five or thirteen bots; the game machine's availability; whether the 1.1
+  map editor saves with running water).
+- One new: the `frame` tool's default `after` is "the last seq this server handed out", one field
+  shared by every client. With requests on pool threads a second MCP client would interleave with the
+  first. One client is the design; if a second is ever wanted, `after` becomes per-client.
+
+### What I deliberately did not do
+
+- No version bump and no 0.4.0 changelog entry: WP9 is the close-out after the proof run. The
+  Unreleased note in `wardens/CHANGELOG.md` describes the state instead.
+- No change under `wardens/src/Timberbot/`: no Timberbot bug was involved; the passthrough bug was the
+  Wardens' own, and the HTTP server's query parsing is sound.
+- numpy stays out of the Python dev extras: `--with numpy` keeps it out of the package, and
+  `test_gen_map.py` skips without it (CI, if it ran, would skip it too).
+- No separate branches per package: the session's designated branch is one branch, so the five
+  packages are five commits on pull request #13, which now carries code as well as the plan.
+
+---
+
 ## 2026-09-10, evening: planning session for iteration 04
 
 **Plan:** [`iteration-04-first-light-verified.md`](iteration-04-first-light-verified.md).

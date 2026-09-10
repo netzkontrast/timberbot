@@ -44,12 +44,17 @@ MCP server answers `initialize` with the live-state instructions, `prompts/list`
 work, and the `campaign` tool correctly reports "not a campaign level" on a vanilla map. **Not yet
 verified: a new game on `Wardens 01 First Light`** — level detection, completion and the toast.
 
-- **Iteration 04 is planned, not built** (2026-09-10, evening; `docs/plan/HANDOVER.md` and
-  `docs/plan/iteration-04-first-light-verified.md`): the proof run of level 01 on its own map, the two
-  MCP server fixes the playtest findings trace to by reading (the `timberbot` passthrough drops the last
-  query parameter when the query is carried in `path`; the MCP listener handles one request at a time, so
-  a `frame` long-poll blocks every other call), a `ledger` tool for the daily line, one answer to the
-  level-02 numbering, and level 10 *Home* as a generator flag. Nothing in it changes this version.
+- **Iteration 04, the cloud half, is written; the game half is open** (2026-09-10, evening; the plan is
+  `docs/plan/iteration-04-first-light-verified.md`, the record `docs/plan/HANDOVER.md`). Written and not yet
+  compiled against the game: the `timberbot` passthrough keeps a query carried in `path`
+  (`WardensPure.BuildLoopbackUrl`, unit-tested in `wardens/test/`, the first C# tests for this mod; three of the
+  playtest's four API findings were that one line), the MCP listener handles each request on a pool thread
+  (a `frame` long-poll no longer blocks every other call; `playtest/mcp_concurrency.py` is the check), and the
+  `ledger` tool (`WardensLedger.cs`: the daily line in one main-thread call, `action=record` writes it to
+  `campaign.json`; `WARDEN.md`, the skill, the instructions and the stance updated together). Done outright: the
+  level numbering (02 is *The Sump*; the spec that claimed 02 is now `maps/wardens-proto-crater.map.toml`) and
+  level 10 *Home* in `gen_map.py` as an unshipped regeneration pass over level 01. Still open, and the point of
+  the iteration: a new game on `Wardens 01 First Light`, played through, with the run recorded.
 
 ## 0.3.0 (2026-09-06): cutscenes, a release path
 

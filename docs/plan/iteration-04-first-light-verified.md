@@ -81,14 +81,14 @@ costs a flag and proves the level registry.
 
 | # | Package | Runs | Needs | Done when |
 |---|---|---|---|---|
-| WP1 | Loopback URL: merge a query carried in `path` | cloud, then built on the game machine | — | `dotnet test wardens/test` passes; a `timberbot` call with `path=/api/tiles?x1=15&y1=40&x2=30&y2=55` honours all four bounds in the game |
-| WP2 | MCP listener: one pool thread per request | cloud, then built on the game machine | — | `python wardens/playtest/mcp_concurrency.py` reports `ping` answered while a `frame` waits |
+| WP1 | Loopback URL: merge a query carried in `path` | **written and unit-tested 2026-09-10**; the game-machine build and the in-game check are open | — | `dotnet test wardens/test` passes; a `timberbot` call with `path=/api/tiles?x1=15&y1=40&x2=30&y2=55` honours all four bounds in the game |
+| WP2 | MCP listener: one pool thread per request | **written 2026-09-10**; the game-machine build and the check-script run are open | — | `python wardens/playtest/mcp_concurrency.py` reports `ping` answered while a `frame` waits |
 | WP3 | A 1.1-native reference map from the game's map editor | game (20 min) + cloud | — | `.claude/skills/timberborn-mapsmith/references/timber-format.md` "Still open" items 1 and 2 answered with a file; the water encoding is either decoded or recorded as not decodable from one map |
 | WP4 | The proof run of level 01 | game | WP1, WP2 deployed | `wardens/playtest/runs/<date>-level-01.md` filled in; `campaign.json` shows `"completed": ["01"]` |
-| WP5 | The `ledger` tool and the five-way contract | cloud, then built on the game machine | — | one call returns the Ledger line; the five documents agree |
+| WP5 | The `ledger` tool and the five-way contract | **written 2026-09-10**; the game-machine build and the in-game check are open | — | one call returns the Ledger line; the five documents agree |
 | WP6 | Fix what the run found | cloud + game | WP4 | every finding has a fix or a recorded decision; no open softlock in PLAYTEST.md |
-| WP7 | Level numbering: one answer | cloud | — | one name per level in every document; the prototype spec no longer claims to be level 02 |
-| WP8 | Level 10 *Home* as a generator flag (optional) | cloud | — | `gen_map.py --level 10 --out <scratch> ` builds and `--check` is clean; nothing new in `src/Maps` |
+| WP7 | Level numbering: one answer | **done 2026-09-10** | — | one name per level in every document; the prototype spec no longer claims to be level 02 |
+| WP8 | Level 10 *Home* as a generator flag (optional) | **done 2026-09-10** (unshipped, not loaded in-game) | — | `gen_map.py --level 10 --out <scratch> ` builds and `--check` is clean; nothing new in `src/Maps` |
 | WP9 | Close the iteration | cloud | all | changelog 0.4.0, `AGENTS.md` state rewritten, `HANDOVER.md` has a new entry |
 
 Cloud packages first, in this order: WP1, WP2, WP7, WP5, WP8. They touch different files and can run
@@ -123,7 +123,7 @@ moved the corruption onto a parameter nobody reads.
   and are appended in order; `format=json` is added only when no `format` is present. Throws
   `ArgumentException` for a path outside `/api/`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `wardens/test/WardensPureTests.cs`:
 
@@ -199,13 +199,13 @@ public class WardensPureTests
 </Project>
 ```
 
-- [ ] **Step 2: Run the tests to see them fail**
+- [x] **Step 2: Run the tests to see them fail**
 
 Run: `dotnet test wardens/test/Wardens.Tests.csproj`
 Expected: build error, `WardensPure` does not exist. (No `dotnet` in the container: install the
 .NET 10 SDK with Microsoft's `dotnet-install.sh --channel 10.0`; the test project needs no game DLLs.)
 
-- [ ] **Step 3: Write the helper**
+- [x] **Step 3: Write the helper**
 
 `wardens/src/WardensPure.cs`:
 
@@ -268,12 +268,12 @@ namespace Wardens
 }
 ```
 
-- [ ] **Step 4: Run the tests to see them pass**
+- [x] **Step 4: Run the tests to see them pass**
 
 Run: `dotnet test wardens/test/Wardens.Tests.csproj`
 Expected: 5 passed.
 
-- [ ] **Step 5: Use it in `Loopback`**
+- [x] **Step 5: Use it in `Loopback`**
 
 In `wardens/src/WardensMcpTools.cs`, `Loopback`: replace the `StringBuilder` block that appends
 `?format=json` and the `&k=v` loop with
@@ -289,7 +289,7 @@ and keep the existing `if (!path.StartsWith("/api/", …)) throw` above it for t
 `timberbot` tool's description, after "GET with optional query", add: "`path` may carry its own query
 (`/api/tiles?x1=10&y1=40&x2=30&y2=55`); `query` entries override it."
 
-- [ ] **Step 6: CI**
+- [x] **Step 6: CI**
 
 In `.github/workflows/dotnet-tests.yml` add `wardens/src/WardensPure.cs` and `wardens/test/**` to
 the `relevant` filter, and after the existing Test step:
@@ -311,7 +311,7 @@ Expected: `Deployed Wardens (with Timberbot) to …`. Then, in a loaded game wit
 `timberbot method=GET path=/api/tiles?x1=15&y1=40&x2=30&y2=55` returns tiles up to x 30 and y 55, and
 `timberbot path=/api/beavers?limit=2&offset=2` returns a different page than `offset=0`.
 
-- [ ] **Step 8: Record it**
+- [x] **Step 8: Record it**
 
 In `PLAYTEST.md`, "Timberbot API bugs found in this session": replace the first three bullets with
 one that names the cause (the passthrough's query concatenation) and the fix (WP1, date). Add a row to
@@ -319,7 +319,7 @@ one that names the cause (the passthrough's query concatenation) and the fix (WP
 line in `Loopback`; anchors `wardens/src/WardensMcpTools.cs` (`Loopback`),
 `timberbot/src/TimberbotHttpServer.cs` (`QueryString["y2"]`); confidence HIGH once Step 7 has run.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add wardens/src/WardensPure.cs wardens/src/WardensMcpTools.cs wardens/test .github/workflows/dotnet-tests.yml wardens/playtest/PLAYTEST.md docs/audit/contradictions.md
@@ -349,7 +349,7 @@ the listener side is `WardensMcpTools._lastFrameSeq`.
 - Create: `wardens/playtest/mcp_concurrency.py`
 - Modify: `wardens/playtest/PLAYTEST.md` ("Every run" and the findings paragraph)
 
-- [ ] **Step 1: The listener**
+- [x] **Step 1: The listener**
 
 Replace the body of `ListenLoop` and add `HandleSafely`:
 
@@ -380,7 +380,7 @@ Replace the body of `ListenLoop` and add `HandleSafely`:
         }
 ```
 
-- [ ] **Step 2: The one shared field**
+- [x] **Step 2: The one shared field**
 
 In the `frame` tool (`WardensMcpTools.cs`) replace the two uses of `_lastFrameSeq`:
 
@@ -396,7 +396,7 @@ In the `frame` tool (`WardensMcpTools.cs`) replace the two uses of `_lastFrameSe
                     } while (Interlocked.CompareExchange(ref _lastFrameSeq, seq, seen) != seen);
 ```
 
-- [ ] **Step 3: The check script**
+- [x] **Step 3: The check script**
 
 `wardens/playtest/mcp_concurrency.py` (standard library only, like `mcp_smoke.py`):
 
@@ -454,7 +454,7 @@ Run: `dotnet build wardens/src/Wardens.csproj -c Release`, load any game, then
 `python wardens/playtest/mcp_concurrency.py`.
 Expected: `ping answered in 0.0x s …`, exit 0. Then `python wardens/playtest/mcp_smoke.py` still passes.
 
-- [ ] **Step 5: Record and commit**
+- [x] **Step 5: Record and commit**
 
 Add the script to `PLAYTEST.md` "Every run", and under the 2026-09-10 findings write one sentence:
 the drop is explained by the serial listener, fixed in WP2 (date), verified by the script.
@@ -621,7 +621,7 @@ measurable: the Ledger line at every day change, from the same numbers every tim
 - MCP tool `ledger`: `action=compute` (default) returns that object; `action=record seen="…"`
   also appends it (without `poisoned_new`, with `seen`) through `WardensCampaignService.Record_Ledger`.
 
-- [ ] **Step 1: The class**
+- [x] **Step 1: The class**
 
 `wardens/src/WardensLedger.cs`:
 
@@ -771,7 +771,7 @@ namespace Wardens
 }
 ```
 
-- [ ] **Step 2: Bind and register**
+- [x] **Step 2: Bind and register**
 
 `WardensConfigurator.cs`, after `Bind<WardensFrames>().AsSingleton();`:
 
@@ -810,7 +810,7 @@ namespace Wardens
 
 (Main thread by default: no `offThread: true`.)
 
-- [ ] **Step 3: The five documents, one commit**
+- [x] **Step 3: The five documents, one commit**
 
 `WARDEN.md`, "The Ledger": keep the field table as *definitions* and delete the `/api/tiles`
 instructions from it; before the table add "One call computes it: `ledger`. `ledger action=record
@@ -835,7 +835,7 @@ Run: `dotnet build wardens/src/Wardens.csproj -c Release`. In a loaded Wardens g
 a second call a day later carries deltas; `ledger action=record seen="…"` adds an entry
 (`campaign action=ledger` shows it).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add wardens/src/WardensLedger.cs wardens/src/WardensConfigurator.cs wardens/src/WardensMcpTools.cs wardens/WARDEN.md .claude/skills/warden-play/SKILL.md design/wardens-play.md wardens/playtest/PLAYTEST.md
@@ -899,13 +899,13 @@ the proof that mapsmith's eleven ops can make a different map, and it stays as t
   (status line, "Also surfaced" paragraph, "Next"); `wardens/README.md` ("The campaign", the sentence
   naming the two specs); anything `grep` finds
 
-- [ ] **Step 1: Find every mention**
+- [x] **Step 1: Find every mention**
 
 Run: `grep -rn "wardens-02-the-pods\|Wardens 02 The Pods" --include='*.md' --include='*.toml' --include='*.py' .`
 Expected: the spec itself, `design/mapsmith.md`, `wardens/README.md`, the mapsmith skill or its
 references if they cite the file. Every hit is edited in Step 3.
 
-- [ ] **Step 2: Rename the spec**
+- [x] **Step 2: Rename the spec**
 
 ```bash
 git mv wardens/maps/wardens-02-the-pods.map.toml wardens/maps/wardens-proto-crater.map.toml
@@ -918,7 +918,7 @@ new Python); it is not level 02 (*The Sump*, a gorge and a confluence) or level 
 and an island), whose briefs are `design/wardens-campaign-map-set.md` §2; level 02's spec is
 iteration 05's first map task.
 
-- [ ] **Step 3: Correct the documents**
+- [x] **Step 3: Correct the documents**
 
 `wardens-campaign-maps.md` §6.5: add a line "**Corrected (date):** the second level is *The Sump*
 (`wardens-campaign-arc.md` §3, `WardensCampaign.cs`); the brief in this section became the
@@ -927,7 +927,7 @@ surfaced" paragraph gets "resolved (date): the table wins"; "Next" lists level 0
 name. `wardens/README.md`: the two-spec sentence names the prototype and says level 02 has no spec yet.
 Every other `grep` hit likewise.
 
-- [ ] **Step 4: Check and commit**
+- [x] **Step 4: Check and commit**
 
 Run: `python wardens/tools/mapsmith check wardens/maps/wardens-proto-crater.map.toml` and
 `uv run --project python --extra dev pytest wardens/tools/test_mapsmith.py`.
@@ -953,7 +953,7 @@ outside `src/Maps` and the table row keeps `shipped: false`.
 - Modify: `wardens/tools/gen_map.py` (`Terrain.SHIPPED`, `class Home`, the registry, `generate`, `--list`)
 - Create: `wardens/tools/test_gen_map.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `wardens/tools/test_gen_map.py`:
 
@@ -995,13 +995,13 @@ def test_unshipped_level_refuses_src_maps() -> None:
         gen_map.generate(gen_map.Home, None, None, None, None)
 ```
 
-- [ ] **Step 2: Run them to see them fail**
+- [x] **Step 2: Run them to see them fail**
 
 Run: `pip install numpy && uv run --project python --extra dev pytest wardens/tools/test_gen_map.py -v`
 (or `python -m pytest` in an environment with numpy).
 Expected: `AttributeError: module 'gen_map' has no attribute 'Home'`.
 
-- [ ] **Step 3: The level**
+- [x] **Step 3: The level**
 
 In `gen_map.py`: on `Terrain`, next to `REQUIRE_BADWATER`, add `SHIPPED = True  # false: never written into src/Maps (validate.py rejects an unclaimed .timber)`.
 After `FirstLight`, add:
@@ -1082,7 +1082,7 @@ If the plateau cannot hold 20× (the loop ends early and the contract fails), lo
 what fits and change the "≥ 20×" line in `wardens-campaign-map-set.md` §2 (10) to the same number,
 in the same commit.
 
-- [ ] **Step 4: Run the tests and the checks**
+- [x] **Step 4: Run the tests and the checks**
 
 Run: the test command from Step 2; then
 `python wardens/tools/gen_map.py --level 10 --out /tmp/home.timber --preview /tmp/home.png` and
@@ -1092,7 +1092,7 @@ Expected: 3 passed; `problems: none`; the list shows `10  Wardens 10 Home … (n
 Then: `python wardens/tools/gen_map.py --check "wardens/src/Maps/Wardens 01 First Light.timber"`
 still prints `problems: none` and `git status` shows nothing new under `wardens/src/Maps`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add wardens/tools/gen_map.py wardens/tools/test_gen_map.py
