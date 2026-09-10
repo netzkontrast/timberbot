@@ -1,29 +1,25 @@
-# Wardens level 02, "The Pods" — the second map the campaign plan asks for
-# (design/wardens-campaign-maps.md §6.5: "clean water within reach, contaminated core").
+# Wardens Proto Crater: a mapsmith prototype, not a campaign level.
 #
-#   python wardens/tools/mapsmith preview wardens/maps/wardens-02-the-pods.map.toml --step 2
-#   python wardens/tools/mapsmith build   wardens/maps/wardens-02-the-pods.map.toml
+#   python wardens/tools/mapsmith preview wardens/maps/wardens-proto-crater.map.toml --step 2
+#   python wardens/tools/mapsmith build   wardens/maps/wardens-proto-crater.map.toml
 #
-# The design inverts level 1. There the colony had badwater everywhere and one distant spring;
-# here two clean streams run down the eastern ridge past the landing site, and the poison sits in
-# the middle of the map, in a contaminated crater the colony has to work around before it can work
-# on it. Scrap is scarcer and further out: the level is about water, not salvage.
+# This spec exists to prove the vocabulary: a different map from the same eleven ops as the
+# wasteland, with no new Python. Two clean streams run down an eastern ridge past the landing site,
+# the poison sits in the middle of the map in a contaminated crater the colony has to work around
+# before it can work on it, and scrap is scarcer and further out: a map about water, not salvage.
 #
-# This spec exists as much to prove the vocabulary as to ship a level: it is a different map built
-# from the same eleven ops, with no new Python.
-#
-# NUMBERING IS UNRESOLVED, and this file does not settle it. Two design docs disagree:
-# `wardens-campaign-maps.md` §6.5 calls the second map "The Pods" (clean water within reach,
-# contaminated core), which is the brief this map is built to; `wardens-campaign-arc.md` §levels
-# puts "The Sump" (river gorge, one clean spring upstream) at 02 and "The Pods" (lake with poisoned
-# shores, a green island) at 03. The land here follows the maps doc. Rename the file and the `name`
-# once someone decides which doc wins — the map name is what the campaign service keys levels on
-# (`MapNameService.Name`), so it is worth getting right before anything reads it.
-name = "Wardens 02 The Pods"
+# It is not a campaign level. The level table (wardens/src/WardensCampaign.cs), the arc
+# (design/wardens-campaign-arc.md §3) and the story (design/wardens-campaign-story.md §4-5) name
+# level 02 "The Sump" (a badwater river through one gorge, a clean creek joining above it) and
+# level 03 "The Pods" (a lake with poisoned shores and a green island); their land contracts are
+# design/wardens-campaign-map-set.md §2. This map matches neither, so it keeps a name outside the
+# `Wardens NN` campaign prefix and never goes into src/Maps/. It was built to an earlier brief in
+# design/wardens-campaign-maps.md §6 step 5, which that document now marks as superseded.
+name = "Wardens Proto Crater"
 size = 96
 seed = 2200
 game_version = "0.7.10.0"
-description = "Wardens, level 2. Two clean streams off the eastern ridge, a contaminated crater in the middle, the pods scattered across the flats."
+description = "A mapsmith prototype, not a campaign level: two clean streams off a ridge, a contaminated crater in the middle, wrecks on the flats."
 
 # --- the land ------------------------------------------------------------------------------------
 

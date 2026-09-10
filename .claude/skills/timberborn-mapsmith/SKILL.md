@@ -113,7 +113,7 @@ TOML, read top to bottom. Terrain ops run in order — the spec is a sequence of
 instructions, so a later op can cut through what an earlier one raised.
 
 ```toml
-name = "Wardens 02 The Pods"
+name = "Wardens Proto Crater"
 size = 96
 seed = 2200
 description = "What the map browser shows."

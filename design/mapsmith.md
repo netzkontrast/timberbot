@@ -2,8 +2,9 @@
 
 > **Status:** built 2026-09-10, `wardens/tools/mapsmith/` + `wardens/maps/*.map.toml`. Two specs
 > ship: the wasteland (the same design as [`wardens-wasteland.md`](wardens-wasteland.md), as data)
-> and level 02, "The Pods", the second campaign level asked for by
-> [`wardens-campaign-maps.md`](wardens-campaign-maps.md) §6.5. Neither has been loaded in-game.
+> and a prototype, *Wardens Proto Crater* (`wardens-proto-crater.map.toml`): a different map from the same ops,
+> built to an earlier brief for level 02 that the level table has since overruled (level 02 is *The Sump*;
+> see "Found by pointing fresh agents at the skill"). Neither has been loaded in-game.
 > The agent-facing manual is the `timberborn-mapsmith` skill in `.claude/skills/`.
 
 ## Why
@@ -112,13 +113,16 @@ reach it. Both succeeded, and between them found the things a solo author does n
   including the starting location the skill tells you to look for.
 - `--strict` was documented as a subcommand flag and argparse only took it before the subcommand.
 
-Also surfaced, and not a tool problem: `wardens-campaign-maps.md` §6.5 and `wardens-campaign-arc.md`
-disagree about which level is "The Pods". The level-02 spec carries a comment saying so rather than
-picking a side.
+Also surfaced, and not a tool problem: `wardens-campaign-maps.md` §6 step 5 and `wardens-campaign-arc.md`
+disagreed about which level is "The Pods". **Resolved 2026-09-10:** the level table in `WardensCampaign.cs`
+wins (`AGENTS.md`: "The campaign is the level table"): 02 is *The Sump*, 03 is *The Pods*. The spec built to
+the older brief is the prototype `wardens-proto-crater.map.toml`; it claims no level number and never goes
+into `src/Maps/`.
 
 ## Next
 
 - Load both maps in the game; answer the open questions in `references/timber-format.md`.
-- Level 02's chapter table and the per-level `validate.py` checks (`wardens-campaign-maps.md` §6.5).
+- Level 02, *The Sump*: a spec with a gorge and a confluence (`wardens-campaign-map-set.md` §2, which may need
+  a `gorge` op), then its chapter table and the per-level `validate.py` checks.
 - If the campaign grows past a handful of levels, `[variants]` already covers families of one map;
   a `levels.toml` index tying map name to chapter table is the next thing, not more ops.

@@ -56,7 +56,7 @@ Workshop or mod.io (§2, method A).
 
 ### A. Maps + the vanilla New Game screen (data only, the selection needs no code)
 
-Ship one `.timber` per level in `wardens/src/Maps/` (`Wardens 01 First Light`, `Wardens 02 The Pods`, ...),
+Ship one `.timber` per level in `wardens/src/Maps/` (`Wardens 01 First Light`, `Wardens 02 The Sump`, ...),
 and install them into the player's `Maps` folder at runtime: a MainMenu-context `ILoadableSingleton`
 that copies every `<mod>/Maps/*.timber` to `UserDataFolder.Folder/Maps` when the target is missing or
 older, then calls `MapRepository.NotifyMapRepositoryChanged()` so the list refreshes without a restart.
@@ -181,7 +181,10 @@ In order of how much depends on the answer (decompile setup: [`faction-wardens.m
    next level by hand from the New Game screen. **Not yet loaded in-game.**
 4. **Main-menu *Continue campaign*** button after `LoadMapButton` (MapBrowser precedent) that starts the
    level named in `campaign.json`.
-5. **Second map**: `gen_map.py --level 02` (The Pods: clean water within reach, contaminated core), the
+5. **Second map**: `gen_map.py --level 02` (The Pods: clean water within reach, contaminated core; **corrected 2026-09-10:** level 02 is *The Sump*,
+   a gorge and a confluence, as `WardensCampaign.cs`, `wardens-campaign-arc.md` §3 and `wardens-campaign-story.md` §4
+   say, and its contract is `wardens-campaign-map-set.md` §2; the brief in this line became the prototype spec
+   `wardens/maps/wardens-proto-crater.map.toml`, which claims no level), the
    level's chapter table, `validate.py` per-level checks.
 
 ## Sources

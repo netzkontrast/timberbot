@@ -234,12 +234,13 @@ Newer maps are written from specs instead. `tools/mapsmith` builds a `.timber` f
 `*.map.toml` in [`../wardens/maps/`](maps/), previews it as ASCII (the only way to look at a map
 without the game), and checks it against everything the game would reject — including that the
 colony can actually walk to the scrap. Two specs ship: `wardens-wasteland.map.toml` (the same
-design as above, as data) and `wardens-02-the-pods.map.toml` (campaign level 2). Neither has been
-loaded in-game yet, so `gen_map.py` stays the provenance of the shipped wasteland for now.
+design as above, as data) and `wardens-proto-crater.map.toml` (a prototype that proves the vocabulary; not a
+level: level 02, *The Sump*, has no spec yet). Neither has been loaded in-game yet, so `gen_map.py` stays the
+provenance of the shipped wasteland for now.
 
 ```bash
-python tools/mapsmith preview ../wardens/maps/wardens-02-the-pods.map.toml --step 2
-python tools/mapsmith build   ../wardens/maps/wardens-02-the-pods.map.toml    # -> src/Maps/*.timber
+python tools/mapsmith preview ../wardens/maps/wardens-proto-crater.map.toml --step 2
+python tools/mapsmith build   ../wardens/maps/wardens-proto-crater.map.toml --out /tmp/crater.timber
 python tools/mapsmith ops                                                      # the terrain vocabulary
 ```
 
