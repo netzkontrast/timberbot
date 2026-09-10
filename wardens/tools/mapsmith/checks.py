@@ -84,8 +84,17 @@ def _reachable(heights: list[int], size: int, start: tuple[int, int], blocked: s
     return seen
 
 
-def check_world(world: dict, meta: dict, names: set[str], opts: dict | None = None) -> Report:
-    """Structural + playability checks on a parsed map. `opts` is the spec's `[checks]` table."""
+def check_world(world: dict, meta: dict, names: set[str], opts: dict | None = None,
+                water: set[tuple[int, int]] | None = None,
+                groups: dict[str, list[tuple[int, int]]] | None = None) -> Report:
+    """Structural + playability checks on a parsed map. `opts` is the spec's `[checks]` table.
+
+    `water` and `groups` are the extra context a freshly built spec can supply and a bare `.timber`
+    cannot: which tiles are water (every bed is written dry, so the file alone cannot say), and which
+    entities came from which named `[[scatter]]`/`[[place]]` rule. Without them the walkability check
+    is the lenient version — it stops beavers at riverbanks only where the height step does — so a
+    check run against a file alone can pass a map that `check <spec>` would fail. Prefer checking the
+    spec."""
     opts = opts or {}
     r = Report()
 
@@ -221,10 +230,11 @@ def check_world(world: dict, meta: dict, names: set[str], opts: dict | None = No
     # -- playability -----------------------------------------------------------------------------
     if starts and size_x == size_y:
         c = starts[0]["Components"]["BlockObject"]["Coordinates"]
-        water = {(e["Components"]["BlockObject"]["Coordinates"]["X"],
-                  e["Components"]["BlockObject"]["Coordinates"]["Y"])
-                 for e in entities if "Source" in e.get("Template", "")}
-        reach = _reachable(heights, size_x, (c["X"], c["Y"]), water, int(opts.get("max_step", 1)))
+        blocked = set(water) if water is not None else set()
+        blocked |= {(e["Components"]["BlockObject"]["Coordinates"]["X"],
+                     e["Components"]["BlockObject"]["Coordinates"]["Y"])
+                    for e in entities if "Source" in e.get("Template", "")}
+        reach = _reachable(heights, size_x, (c["X"], c["Y"]), blocked, int(opts.get("max_step", 1)))
         min_area = int(opts.get("min_reachable", 0))
         if min_area and len(reach) < min_area:
             r.err(f"only {len(reach)} tiles are walkable from the starting location "
@@ -232,6 +242,21 @@ def check_world(world: dict, meta: dict, names: set[str], opts: dict | None = No
         elif len(reach) < plane * 0.05:
             r.warn(f"only {len(reach)} of {plane} tiles are walkable from the start "
                    f"({100 * len(reach) / plane:.1f}%) — check the pad is not ringed by cliffs")
+        for group in opts.get("reachable_scatter", []):
+            spots = (groups or {}).get(group)
+            if spots is None:
+                r.warn(f"[checks] reachable_scatter names {group!r}, which is not a named "
+                       f"[[scatter]]/[[place]] rule in this spec"
+                       + ("" if groups is not None else " (checking a .timber cannot see rule names — "
+                                                        "run `check` on the spec instead)"))
+                continue
+            cut_off = [s for s in spots
+                       if not any(abs(s[0] - rx) <= 1 and abs(s[1] - ry) <= 1 for rx, ry in reach)]
+            if cut_off:
+                r.err(f"{len(cut_off)} of {len(spots)} entities from {group!r} cannot be reached on "
+                      f"foot from the starting location, e.g. {cut_off[0]}. If that is deliberate, "
+                      f"drop it from `[checks] reachable_scatter`.")
+
         for template in opts.get("reachable", []):
             spots = [(e["Components"]["BlockObject"]["Coordinates"]["X"],
                       e["Components"]["BlockObject"]["Coordinates"]["Y"])

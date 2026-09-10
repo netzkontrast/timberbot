@@ -232,5 +232,7 @@ contamination = { from = "badwater", offset = 2.5, reach = 6.0 }
 require = ["StartingLocation", "BadwaterSource", "WaterSource"]
 require_at_least = { RuinColumnH1 = 3 }
 min_reachable = 1500
-reachable = ["RuinColumn"]
-reachable_fraction = 0.3
+# Chapter 1 has to be playable on foot; the fields across the river are meant to need a bridge,
+# so they are deliberately absent from this list. `reachable = ["RuinColumn"]` cannot say that —
+# all five clusters use the same templates.
+reachable_scatter = ["near ruins", "south of the pad"]

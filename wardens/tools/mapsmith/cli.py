@@ -17,10 +17,10 @@ from pathlib import Path
 
 from . import spec as spec_mod
 from .build import MapBuild, SpecError
-from .checks import check_file, check_world
+from .checks import check_file
 from .preview import ascii_map, write_png
 from .terrain import OPS
-from .world import metadata_json, read_timber, world_json, write_timber
+from .world import read_timber, write_timber
 
 REPO = Path(__file__).resolve().parents[3]
 DEFAULT_OUT = REPO / "wardens" / "src" / "Maps"
@@ -82,9 +82,7 @@ def cmd_build(args) -> int:
     spec, b = _load(args)
     out = Path(args.out) if args.out else Path(args.out_dir or DEFAULT_OUT) / f"{spec['name']}.timber"
     write_timber(b, spec, out)
-    report = check_world(world_json(b, spec), metadata_json(b, spec),
-                         {"world.json", "map_metadata.json", "version.txt", "map_thumbnail.jpg"},
-                         spec.get("checks", {}))
+    report = spec_mod.check(spec, b)
     print(f"wrote {out} ({out.stat().st_size} bytes)")
     print(spec_mod.describe(spec, b))
     if args.preview:
@@ -113,9 +111,8 @@ def cmd_check(args) -> int:
     if target.suffix == ".toml":
         spec = spec_mod.load(target, args.variant)
         b = spec_mod.build(spec)
-        report = check_world(world_json(b, spec), metadata_json(b, spec),
-                             {"world.json", "map_metadata.json", "version.txt", "map_thumbnail.jpg"},
-                             spec.get("checks", {}))
+        report = spec_mod.check(spec, b)
+        print(spec_mod.walk_report(b))
     else:
         if args.spec:
             opts = spec_mod.load(Path(args.spec), args.variant).get("checks", {})
@@ -174,12 +171,19 @@ def cmd_ops(_args) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # `--strict` is accepted on either side of the subcommand: putting a flag after the spec is the
+    # natural guess, and an argparse error there is a pure waste of the reader's time. The two need
+    # separate dests because a subparser overwrites a shared one with its own default.
+    strict = argparse.ArgumentParser(add_help=False)
+    strict.add_argument("--strict", action="store_true", dest="strict_here",
+                        help="fail on warnings too")
     ap = argparse.ArgumentParser(prog="mapsmith", description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--strict", action="store_true", help="fail on warnings too")
+    ap.add_argument("--strict", action="store_true", dest="strict_first",
+                    help="fail on warnings too (also accepted after the subcommand)")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
-    b = sub.add_parser("build", help="write the .timber a spec describes, then check it")
+    b = sub.add_parser("build", parents=[strict], help="write the .timber a spec describes, then check it")
     b.add_argument("spec")
     b.add_argument("--out", help="explicit output path")
     b.add_argument("--out-dir", help=f"directory to write into (default {DEFAULT_OUT})")
@@ -189,26 +193,26 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--step", type=int, default=1)
     b.set_defaults(func=cmd_build)
 
-    p = sub.add_parser("preview", help="build in memory and print the ASCII map (writes nothing)")
+    p = sub.add_parser("preview", parents=[strict], help="build in memory and print the ASCII map (writes nothing)")
     p.add_argument("spec")
     p.add_argument("--variant")
     p.add_argument("--step", type=int, default=1, help="sample every Nth tile")
     p.add_argument("--png", help="also write a PNG here")
     p.set_defaults(func=cmd_preview)
 
-    c = sub.add_parser("check", help="validate a .timber file or a spec")
+    c = sub.add_parser("check", parents=[strict], help="validate a .timber file or a spec")
     c.add_argument("target", help="a .timber file or a .map.toml spec")
     c.add_argument("--spec", help="spec whose [checks] table to apply to a .timber")
     c.add_argument("--variant")
     c.set_defaults(func=cmd_check)
 
-    d = sub.add_parser("describe", help="what is in a spec or a built map")
+    d = sub.add_parser("describe", parents=[strict], help="what is in a spec or a built map")
     d.add_argument("target")
     d.add_argument("--variant")
     d.add_argument("--build", action="store_true", help="also run the spec and report what came out")
     d.set_defaults(func=cmd_describe)
 
-    n = sub.add_parser("new", help="write a starter spec")
+    n = sub.add_parser("new", parents=[strict], help="write a starter spec")
     n.add_argument("spec")
     n.add_argument("--name")
     n.add_argument("--size", type=int, default=96)
@@ -216,10 +220,11 @@ def main(argv: list[str] | None = None) -> int:
     n.add_argument("--force", action="store_true")
     n.set_defaults(func=cmd_new)
 
-    o = sub.add_parser("ops", help="list the terrain ops and placement keys")
+    o = sub.add_parser("ops", parents=[strict], help="list the terrain ops and placement keys")
     o.set_defaults(func=cmd_ops)
 
     args = ap.parse_args(argv)
+    args.strict = bool(getattr(args, "strict_first", False) or getattr(args, "strict_here", False))
     try:
         return args.func(args)
     except SpecError as exc:

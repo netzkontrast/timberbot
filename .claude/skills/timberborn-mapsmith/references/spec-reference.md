@@ -80,8 +80,9 @@ rather than under-filling, because a map that quietly lost half its scrap wastes
 | `templates` + `weights` | What to sow and in what proportion. `template` alone works for one. |
 | `levels` | Per-template level, feeding `yield.amount_per_level` (`RuinColumnH3` → 3). |
 | `around` | Centre: `[x, y]` or an anchor. |
-| `radius` | Scalar (disc) or `[inner, outer]` (annulus). |
-| `count` / `min_count` | Target, and the floor below which it is an error. |
+| `radius` | Scalar for a disc (`radius = 5.0`, anywhere within 5 tiles) or `[inner, outer]` for an annulus (`radius = [6, 15]`, never closer than 6). Both forms are common; the shipped specs use each. |
+| `count` | How many to place. Sampling stops here. |
+| `min_count` | The floor below which falling short is an error. Defaults to `count`, so by default a rule that cannot place everything raises. Lower it when "up to 20, at least 12" is genuinely what you mean. |
 | `spacing` | Minimum Chebyshev gap between entities from this rule. |
 | `margin` | Keep this far from the map border. |
 | `height_range` | `[min, max]` ground level the entity may stand on. |
@@ -118,11 +119,27 @@ unless `--strict`.
 | `require` | Templates that must appear at least once. |
 | `require_at_least` | `{ Template = n }`. |
 | `min_reachable` | Minimum tiles walkable on foot from the starting location (one level of climb, water blocks). |
-| `reachable` | Template prefixes that must have at least one instance reachable on foot. |
-| `reachable_fraction` | Warn below this fraction of them being reachable. Default 0.2. |
+| `reachable_scatter` | **Usually the one you want.** Names of `[[scatter]]`/`[[place]]` rules whose entities must all be reachable on foot from the start. Clusters left off the list may be cut off on purpose. Needs the spec — a `.timber` does not carry rule names. |
+| `reachable` | Template prefixes that must have at least one instance reachable on foot. Blunt when several rules share templates, which is the normal case for ruins. |
+| `reachable_fraction` | Warn below this fraction of a prefix's instances being reachable. Default 0.2. A proxy you have to hand-compute against how many clusters are cut off by design; prefer `reachable_scatter`. |
 | `buried_ok` | Templates allowed to sit inside terrain. Default `["UndergroundRuins"]`. |
 | `start_pad` / `start_anchor` / `headroom` | Pad geometry the checker assumes. Defaults 8 / 2 / 3. |
 | `max_step` | Levels a beaver climbs unaided, for the walkability flood fill. Default 1. |
+
+### Checking a spec vs. checking a `.timber`
+
+They are not the same check, and the difference is not cosmetic:
+
+| | `check <spec>` | `check <file.timber>` |
+|---|---|---|
+| where the water is | from the build's masks | unknown — every bed is written dry, so only tiles holding a `*Source` entity are treated as water |
+| walkability | strict: banks are walls | lenient: beavers stop only where the height step stops them |
+| `reachable_scatter` | evaluated | warns that it cannot be evaluated |
+| walk report | printed | not available |
+
+So a map can pass the file check and fail the spec check. Check the spec whenever you have it; the
+file check is for maps someone else wrote. Pass `--spec <spec>` alongside a `.timber` to at least
+apply the spec's `[checks]` table to it.
 
 ## Variants
 
@@ -155,5 +172,20 @@ for seed in (1, 2, 3):
     print(ascii_map(m, step=3))
 ```
 
-`build()` returns a `MapBuild` with `height`, `masks`, `anchors`, `paths`, `entities`, and
-`walkable_from((x, y))` if you want to measure something the checker does not.
+`build()` returns a `MapBuild`. The parts worth knowing, because reading the source to find them is
+a waste of your time:
+
+| | |
+|---|---|
+| `b.h(x, y)` | ground level at a tile (int) |
+| `b.height` | the `Grid`: `.at(x, y)`, `.set(x, y, v)`, `.min()`, `.max()`, `.coords()` |
+| `b.masks["badwater"]` | a `Mask`: `.at(x, y)`, `.count()`, `.points()`, `.grow(r)`, `.union(m)` |
+| `b.anchors`, `b.paths` | named points, and river centrelines by name |
+| `b.entities` | `Entity(template, x, y, z, components, orientation, rule)` — `rule` is the `name` of the block that placed it |
+| `b.walkable_from((x, y))` | `Mask` of ground reachable on foot (one level of climb, water blocks) |
+| `b.walk_distances((x, y))` | `{(x, y): steps}` — 4-neighbour, so a lower bound on the real path |
+| `b.water_cells()` | every tile any water mask covers |
+| `b.distance_to("badwater")` | a `Grid` of distance to the nearest cell of a mask |
+
+And in `mapsmith.spec`: `check(spec, b)` (the strict check, with water and rule names),
+`walk_report(b)` (the per-cluster distance table), `groups_of(b)` (entities by rule name).

@@ -20,9 +20,23 @@ ASCII map and ask whether the land does what the design asked of it.
 ```bash
 python3 wardens/tools/mapsmith preview wardens/maps/wardens-wasteland.map.toml --step 2
 python3 wardens/tools/mapsmith build   wardens/maps/wardens-wasteland.map.toml
-python3 wardens/tools/mapsmith check   "wardens/src/Maps/Wardens Wasteland.timber"
+python3 wardens/tools/mapsmith check   wardens/maps/wardens-wasteland.map.toml
 python3 wardens/tools/mapsmith ops     # every terrain verb and what it takes
 ```
+
+Two things about the command line worth knowing before your first run:
+
+- **`build` writes into the repo by default** — `wardens/src/Maps/<name>.timber`, which is what the
+  Wardens build deploys. Pass `--out <path>` (or `--out-dir`) when you are experimenting, trying
+  seeds, or working on a copy; otherwise you are editing shipped content by accident.
+- **`--strict` (fail on warnings) works on either side of the subcommand.** Both
+  `mapsmith --strict build spec.toml` and `mapsmith build spec.toml --strict` are accepted.
+
+**Check the spec, not the built file, whenever you have the choice.** `check <spec>` knows where the
+water is and which rule placed what; `check <file.timber>` cannot know either — every bed is written
+dry, so a `.timber` alone has no way to say "this tile is a river". The file check is therefore the
+*lenient* one: it stops beavers at banks only where the height step happens to, and it cannot
+evaluate `reachable_scatter` at all. Use it for files someone else wrote.
 
 Standard library only — it runs in any container, with no install step. (Pillow, if it happens to
 be there, is used for a nicer map-browser thumbnail; nothing else changes.)
@@ -42,7 +56,21 @@ Work in this order. Each step is cheap and catches a different class of mistake.
 2. **Write or edit the spec.** `mapsmith new wardens/maps/level-03.map.toml` gives a working
    skeleton. Copy an existing spec when the new map is a cousin of an old one.
 3. **`preview` it, and read the output.** This is the step people skip and regret. See below.
-4. **`build` it.** The build re-runs the checker and prints what it made.
+4. **`build` it.** The build re-runs the checker, prints what it made, and prints the walk report:
+   how many steps from the starting location to each named group of entities. This is the answer to
+   "is the scrap within a day's walk" — you cannot read walking distance off a heightmap, and a
+   straight-line radius says nothing about a cliff in the way.
+
+   ```
+   walk from the start at 22,48 (4159 tiles reachable on foot):
+     across the river         unreachable on foot (9 entities)
+     near ruins                10 min   13 median   19 max
+     the south field           24 min   33 median   36 max
+   ```
+
+   `unreachable on foot` is not automatically a bug — "across the river" is meant to need a bridge.
+   It is a bug when the thing the colony opens with is in that list. Name your `[[scatter]]` rules;
+   the report and `reachable_scatter` are both keyed on those names.
 5. **Fix what the checker names, then look again.** Warnings are not noise: "only 240 of 9216 tiles
    are walkable from the start" means the colony is trapped on a shelf.
 6. **Say plainly what is still unverified.** The checker proves the file is well-formed and the
@@ -162,8 +190,13 @@ contamination = { from = "badwater", offset = 1.5, reach = 9.0 }
 [checks]                          # what `check` must be able to prove about this map
 require = ["StartingLocation", "WaterSource", "BadwaterSource"]
 min_reachable = 1200
-reachable = ["RuinColumn"]
+reachable_scatter = ["the pods"]  # this cluster must be walkable — name it, don't guess a fraction
 ```
+
+`reachable_scatter` is usually the check you want. Five ruin clusters share the `RuinColumnH*`
+templates, so a template-prefix check (`reachable = ["RuinColumn"]`) can only say "at least one of
+them somewhere is reachable" — it cannot say "the scrap the colony opens with must be walkable while
+the field across the river is meant to need a bridge". Naming the rules says exactly that.
 
 `python3 wardens/tools/mapsmith ops` prints every op with its parameters — read that rather than
 guessing a key. The full key-by-key reference is
@@ -176,8 +209,12 @@ Three mental models that make specs come out right:
   9.0 }`, `along = "north stream"`). Naming things is what keeps a spec readable when it grows.
 - **Order is meaning.** `noise` then `river` gives a river cut through hills. `river` then `noise`
   gives a lumpy riverbed. `clamp` last, always.
-- **Seeds are cheap.** `seed` reshuffles noise and scatter without touching the design. If a layout
-  is nearly right, try three seeds before you edit numbers.
+- **Seeds are cheap, but every edit reseeds what follows it.** `seed` reshuffles noise and scatter
+  without touching the design, so try three seeds before editing numbers. The other half of that
+  coin surprises people: the RNG is one stream consumed in spec order, so moving a scatter's centre
+  changes every draw *after* it. Moving two coordinates in the wasteland shifted `RuinColumnH1` from
+  7 to 4 and the tree mix from 74/71 to 66/81. Nothing is wrong — but if a `require_at_least` fails
+  after an unrelated edit, that is why. Re-read the counts in the build output after any change.
 
 ## When something will not build
 
@@ -193,7 +230,9 @@ written to tell you the fix:
 | `[error] ... floating — the ground top here is 9` | An entity's Z is not its column's surface. Almost always a hand-edited coordinate. |
 | `[error] ... buried 3 level(s) under the surface` | Only `UndergroundRuins` (and anything you list in `[checks] buried_ok`) may sit inside terrain. |
 | `[error] StartingLocation ... pad is not flat` | The pad op ran before something that raised the ground back up, or `at` moved. |
+| `[error] 3 of 7 entities from 'near ruins' cannot be reached on foot` | A cluster listed in `[checks] reachable_scatter` is cut off. Move it to the colony's side, or drop it from the list if being cut off is the point. |
 | `[warning] only N of M tiles are walkable from the start` | Beavers climb one level unaided; the start is ringed by cliffs. |
+| `[warning] reachable_scatter names 'x', which is not a named rule` | A typo, or you are checking a `.timber` instead of the spec — rule names do not survive into the file. |
 
 ## Facts about the format worth not rediscovering
 

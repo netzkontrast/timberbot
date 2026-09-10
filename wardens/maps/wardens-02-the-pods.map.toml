@@ -223,5 +223,5 @@ moisture = { from = "clean", offset = 0.0, reach = 7.0, peak = 0.8 }
 require = ["StartingLocation", "WaterSource", "BadwaterSource"]
 require_at_least = { RuinColumnH1 = 2 }
 min_reachable = 1200
-reachable = ["RuinColumn"]
-reachable_fraction = 0.3
+# The pods are the level's opening scrap: if they are cut off, the level does not start.
+reachable_scatter = ["the pods"]

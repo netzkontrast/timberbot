@@ -46,7 +46,8 @@ def _entity(b: MapBuild, template: str, x: int, y: int, rule: dict, level: int =
         raise SpecError(f"{template} at {x},{y}: buried {buried} puts it below Z 0")
     return Entity(template=template, x=x, y=y, z=z,
                   components=_decorate(_components(rule), rule, b, level),
-                  orientation=rule.get("orientation"))
+                  orientation=rule.get("orientation"),
+                  rule=str(rule.get("name", "")))
 
 
 def _footprint(rule: dict) -> int:

@@ -15,7 +15,19 @@ import zipfile
 from pathlib import Path
 
 import pytest
-from mapsmith import ascii_map, build, check_file, check_world, load, metadata_json, world_json, write_png, write_timber
+from mapsmith import (
+    ascii_map,
+    build,
+    check_file,
+    check_world,
+    cli,
+    load,
+    metadata_json,
+    world_json,
+    write_png,
+    write_timber,
+)
+from mapsmith import spec as spec_mod
 from mapsmith.build import SpecError
 from mapsmith.spec import deep_merge
 
@@ -447,6 +459,98 @@ def test_check_file_reads_a_real_timber(minimal, tmp_path: Path):
     out = write_timber(build(minimal), minimal, tmp_path / "m.timber")
     assert check_file(out, minimal.get("checks", {})).ok
     assert not check_file(tmp_path / "nope.timber").ok
+
+
+# --- named groups, walking distance, and the CLI ---
+
+def test_entities_remember_which_rule_placed_them(minimal):
+    spec = deep_merge(minimal, {"scatter": [{"name": "grove", "template": "Pine", "around": [16, 16],
+                                             "radius": 8, "count": 4}]})
+    b = build(spec)
+    assert {e.rule for e in b.entities if e.template == "Pine"} == {"grove"}
+    assert spec_mod.groups_of(b)["grove"] and len(spec_mod.groups_of(b)["grove"]) == 4
+
+
+def test_reachable_scatter_catches_a_cut_off_cluster(minimal):
+    """Template prefixes cannot say "the chapter-1 scrap must be walkable" when five clusters share
+    one template. Naming the rule can."""
+    terrain = [{"op": "base", "height": 6},
+               {"op": "river", "points": [[20, -2], [20, 34]], "bed": 1, "width": 3.0, "tag": "badwater"},
+               {"op": "pad", "at": [4, 12], "size": 8, "height": 6, "name": "start", "reserve": 2},
+               {"op": "clamp", "min": 1, "max": 19}]
+    spec = deep_merge(minimal, {
+        "terrain": terrain,
+        "scatter": [{"name": "near scrap", "template": "RuinColumnH1", "around": [8, 24],
+                     "radius": 4, "count": 3, "height_range": [6, 6]},
+                    {"name": "far scrap", "template": "RuinColumnH1", "around": [27, 16],
+                     "radius": 3, "count": 3, "height_range": [6, 6]}],
+        "checks": {"require": ["StartingLocation"], "reachable_scatter": ["near scrap"]}})
+    b = build(spec)
+    assert spec_mod.check(spec, b).ok, "the near cluster is on the colony's own bank"
+
+    across = deep_merge(spec, {"checks": {"reachable_scatter": ["near scrap", "far scrap"]}})
+    report = spec_mod.check(across, build(across))
+    assert any("far scrap" in str(p) for p in report.errors), report.summary()
+
+
+def test_reachable_scatter_warns_when_the_name_is_not_a_rule(minimal):
+    spec = deep_merge(minimal, {"checks": {"require": ["StartingLocation"],
+                                           "reachable_scatter": ["typo"]}})
+    report = spec_mod.check(spec, build(spec))
+    assert report.ok and any("typo" in str(p) for p in report.warnings)
+
+
+def test_checking_a_spec_knows_about_water_and_a_bare_file_does_not(minimal):
+    """Beds are written dry, so a `.timber` alone cannot tell the checker where the water is."""
+    b = build(minimal)
+    assert b.water_cells() == set()
+    river = deep_merge(minimal, {"terrain": [
+        {"op": "base", "height": 6},
+        {"op": "river", "points": [[16, -2], [16, 34]], "bed": 4, "width": 1.5, "tag": "badwater"},
+        {"op": "pad", "at": [4, 4], "size": 8, "height": 6, "name": "start", "reserve": 2},
+        {"op": "clamp", "min": 1, "max": 19}]})
+    assert build(river).water_cells(), "the river's bed tiles are water"
+
+
+def test_walk_distances_measure_steps_not_straight_lines(minimal):
+    b = build(minimal)
+    start = next(e for e in b.entities if e.template == "StartingLocation")
+    dist = b.walk_distances((start.x, start.y))
+    assert dist[(start.x, start.y)] == 0
+    assert dist[(start.x + 3, start.y + 4)] == 7        # 4-neighbour steps, not 5
+    report = spec_mod.walk_report(b)
+    assert "reachable on foot" in report
+
+
+def test_walk_report_names_a_cluster_the_colony_cannot_reach(minimal):
+    spec = deep_merge(minimal, {
+        "terrain": [{"op": "base", "height": 6},
+                    {"op": "river", "points": [[20, -2], [20, 34]], "bed": 1, "width": 3.0, "tag": "badwater"},
+                    {"op": "pad", "at": [4, 12], "size": 8, "height": 6, "name": "start", "reserve": 2},
+                    {"op": "clamp", "min": 1, "max": 19}],
+        "scatter": [{"name": "far side", "template": "RuinColumnH1", "around": [27, 16],
+                     "radius": 3, "count": 3, "height_range": [6, 6]}]})
+    assert "far side" in spec_mod.walk_report(build(spec))
+    assert "unreachable on foot" in spec_mod.walk_report(build(spec))
+
+
+@pytest.mark.parametrize("argv", [
+    ["--strict", "check", str(WASTELAND)],
+    ["check", str(WASTELAND), "--strict"],
+])
+def test_strict_is_accepted_on_either_side_of_the_subcommand(argv, capsys):
+    """Putting a flag after the spec is the natural guess; an argparse error there wastes a run."""
+    assert cli.main(argv) == 0
+    capsys.readouterr()
+
+
+def test_strict_actually_fails_on_a_warning_from_either_side(tmp_path: Path, capsys):
+    path = tmp_path / "warn.map.toml"
+    path.write_text(MINIMAL + '\nreachable_scatter = ["typo"]\n', encoding="utf-8")
+    assert cli.main(["check", str(path)]) == 0                 # a warning alone does not fail
+    assert cli.main(["check", str(path), "--strict"]) == 1
+    assert cli.main(["--strict", "check", str(path)]) == 1
+    capsys.readouterr()
 
 
 # --- previews ----------------------------------------------------------------------------------------

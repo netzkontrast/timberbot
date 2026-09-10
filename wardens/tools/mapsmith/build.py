@@ -23,6 +23,7 @@ class Entity:
     components: dict = field(default_factory=dict)
     orientation: str | None = None
     ident: str = ""
+    rule: str = ""      # the [[place]]/[[scatter]] `name` that produced it, for checks and reports
 
     def to_json(self, seed: int) -> dict:
         block: dict = {"Coordinates": {"X": self.x, "Y": self.y, "Z": self.z}}
@@ -161,6 +162,43 @@ class MapBuild:
                 reached.set(nx, ny)
                 stack.append((nx, ny))
         return reached
+
+    def walk_distances(self, start: tuple[int, int], max_step: int = 1) -> dict[tuple[int, int], int]:
+        """Steps from `start` to every walkable tile — how far a beaver actually walks, not how far
+        it looks on a heightmap. Diagonals are excluded, so treat these as a lower bound."""
+        water = [self.masks[m] for m in ("water", "badwater", "clean") if m in self.masks]
+
+        def blocked(x: int, y: int) -> bool:
+            return any(m.at(x, y) for m in water)
+
+        if blocked(*start):
+            return {}
+        dist = {start: 0}
+        queue = [start]
+        head = 0
+        while head < len(queue):
+            x, y = queue[head]
+            head += 1
+            d = dist[(x, y)]
+            h0 = self.h(x, y)
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx, ny = x + dx, y + dy
+                if not (0 <= nx < self.size and 0 <= ny < self.size) or (nx, ny) in dist:
+                    continue
+                if blocked(nx, ny) or abs(self.h(nx, ny) - h0) > max_step:
+                    continue
+                dist[(nx, ny)] = d + 1
+                queue.append((nx, ny))
+        return dist
+
+    def water_cells(self) -> set[tuple[int, int]]:
+        """Every tile any water mask covers — what the checker needs to agree with `walkable_from`."""
+        out: set[tuple[int, int]] = set()
+        for name in ("water", "badwater", "clean"):
+            m = self.masks.get(name)
+            if m is not None:
+                out.update(m.points())
+        return out
 
     # -- voxels ----------------------------------------------------------------------------------
 

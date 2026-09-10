@@ -27,6 +27,8 @@ else:  # pragma: no cover - only on 3.10
 
 from . import placement, terrain
 from .build import MapBuild, SpecError
+from .checks import Report, check_world
+from .world import metadata_json, world_json
 
 REQUIRED = ("name", "size")
 
@@ -78,6 +80,54 @@ def build(spec: dict) -> MapBuild:
     return b
 
 
+MEMBERS = {"world.json", "map_metadata.json", "version.txt", "map_thumbnail.jpg"}
+
+
+def groups_of(b: MapBuild) -> dict[str, list[tuple[int, int]]]:
+    """Entities by the `name` of the rule that placed them."""
+    out: dict[str, list[tuple[int, int]]] = {}
+    for e in b.entities:
+        if e.rule:
+            out.setdefault(e.rule, []).append((e.x, e.y))
+    return out
+
+
+def check(spec: dict, b: MapBuild) -> Report:
+    """Check a built spec. Unlike checking a bare `.timber`, this knows where the water is and which
+    rule placed what, so the walkability checks are the strict ones."""
+    return check_world(world_json(b, spec), metadata_json(b, spec), set(MEMBERS),
+                       spec.get("checks", {}), water=b.water_cells(), groups=groups_of(b))
+
+
+def walk_report(b: MapBuild, start: tuple[int, int] | None = None) -> str:
+    """How far a beaver actually walks from the start to each named group of entities.
+
+    The design language is "scrap within a day's walk", not "scrap at radius 5" — and you cannot
+    read walking distance off a heightmap, which is why this exists rather than leaving it to the
+    eye. Steps are 4-neighbour, so they are a lower bound on the real path.
+    """
+    if start is None:
+        anchor = next((e for e in b.entities if e.template == "StartingLocation"), None)
+        if anchor is None:
+            return "  walk: no StartingLocation to measure from"
+        start = (anchor.x, anchor.y)
+    dist = b.walk_distances(start)
+    lines = [f"  walk from the start at {start[0]},{start[1]} ({len(dist)} tiles reachable on foot):"]
+    for name, spots in sorted(groups_of(b).items()):
+        steps = sorted(d for s in spots
+                       for d in [min((dist[(s[0] + dx, s[1] + dy)]
+                                      for dx in (-1, 0, 1) for dy in (-1, 0, 1)
+                                      if (s[0] + dx, s[1] + dy) in dist), default=None)]
+                       if d is not None)
+        if not steps:
+            lines.append(f"    {name:24s} unreachable on foot ({len(spots)} entities)")
+            continue
+        mid = steps[len(steps) // 2]
+        tail = "" if len(steps) == len(spots) else f"  ({len(spots) - len(steps)} cut off)"
+        lines.append(f"    {name:24s} {steps[0]:3d} min  {mid:3d} median  {steps[-1]:3d} max{tail}")
+    return "\n".join(lines)
+
+
 def describe(spec: dict, b: MapBuild | None = None) -> str:
     """A short human/agent-readable account of what a spec asks for and what came out."""
     lines = [f"{spec['name']}  {spec['size']}x{spec['size']}  seed {spec.get('seed', 0)}"]
@@ -105,4 +155,5 @@ def describe(spec: dict, b: MapBuild | None = None) -> str:
             lines.append(f"          {n:4d}  {template}")
         for name, mask in sorted(b.masks.items()):
             lines.append(f"          mask {name}: {mask.count()} tiles")
+        lines.append(walk_report(b))
     return "\n".join(lines)
