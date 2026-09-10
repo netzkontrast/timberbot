@@ -31,11 +31,14 @@ verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first 
 - The prototype spec that briefly claimed to be level 02 is now `prototype-two-streams.map.toml`.
   The C# level table is the source: 02 is *The Sump*, 03 is *The Pods*.
 
-### Not verified
-- Nothing in this entry has been loaded in Timberborn, and the C# was written where there is no .NET
-  SDK and no game DLLs — it has not been compiled. The level-transition code reaches every
-  unverified game API by reflection and logs the exact member when one is missing, so the first
-  build-and-run turns `design/wardens-campaign-maps.md` §5 into findings with names in them.
+### State (the words in `.claude/skills/driving-iterations`)
+- The maps, the specs and the tools are **`checked`** (cloud): `pytest wardens/tools`,
+  `mapsmith check --level 02`, `mapsmith levels --verify` and `check_cutscenes.py` all clean.
+- Everything under `wardens/src/*.cs` is **`written`** — this was authored where there is no .NET SDK
+  and no game DLLs, so no compiler has seen it. Not `built`, not `tested`, not `verified`.
+- Nothing here has been loaded in Timberborn. The level-transition code reaches every unverified game
+  API by reflection and logs the exact member when one is missing, so the first build-and-run turns
+  `design/wardens-campaign-maps.md` §5 into findings with names in them.
 
 ## Unreleased (0.3.5): the campaign's first level
 

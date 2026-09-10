@@ -72,7 +72,8 @@ the surface and in bounds. Nothing to do but rename the file and keep the seed p
 no second crossing where a dam is cheaper; the spring's clean cells never touch a badwater cell before the
 confluence.
 
-**Built** (2026-09-10) as [`wardens/maps/wardens-02-the-sump.map.toml`](../wardens/maps/wardens-02-the-sump.map.toml),
+**`checked` (2026-09-10, cloud; not yet loaded in the game)** as
+[`wardens/maps/wardens-02-the-sump.map.toml`](../wardens/maps/wardens-02-the-sump.map.toml),
 and that contract is now machine-checked rather than asserted — `mapsmith check --level 02` reports:
 
 ```
