@@ -1,0 +1,785 @@
+{
+  "BuildingSpec": {
+    "SelectionSoundName": "WindTurbine",
+    "LoopingSoundName": "Gristmill",
+    "BuildingCost": [
+      {
+        "Id": "ScrapMetal",
+        "Amount": 20
+      }
+    ],
+    "ScienceCost": 200,
+    "PlaceFinished": false,
+    "FinishableWithBeaversOnSite": false,
+    "DrawRangeBoundsOnIt": false
+  },
+  "BuildingModelSpec": {
+    "FinishedModelName": "#Finished",
+    "UnfinishedModelName": "#Unfinished",
+    "FinishedUncoveredModelName": "",
+    "UndergroundModelName": "",
+    "ConstructionModeModel": "Finished",
+    "UndergroundModelDepth": 0
+  },
+  "TemplateSpec": {
+    "TemplateName": "WindTurbine.GantryBase.Wardens",
+    "BackwardCompatibleTemplateNames": [],
+    "RequiredFeatureToggle": "",
+    "DisablingFeatureToggle": ""
+  },
+  "BlockObjectSpec": {
+    "Size": {
+      "X": 3,
+      "Y": 3,
+      "Z": 3
+    },
+    "Blocks": [
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      }
+    ],
+    "Entrance": {
+      "HasEntrance": false,
+      "Coordinates": {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      }
+    },
+    "BaseZ": 0,
+    "Overridable": false,
+    "Flippable": false
+  },
+  "MechanicalNodeSpec": {
+    "PowerOutput": 250,
+    "PowerInput": 0,
+    "IsShaft": false
+  },
+  "TransputProviderSpec": {
+    "Transputs": [
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 2,
+          "Z": 0
+        },
+        "Directions": "Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 2,
+          "Z": 0
+        },
+        "Directions": "Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 2,
+          "Z": 0
+        },
+        "Directions": "Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 0,
+          "Z": 2
+        },
+        "Directions": "Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 0,
+          "Z": 2
+        },
+        "Directions": "Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 0,
+          "Z": 2
+        },
+        "Directions": "Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 1,
+          "Z": 2
+        },
+        "Directions": "Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 1,
+          "Z": 2
+        },
+        "Directions": "Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 2,
+          "Z": 2
+        },
+        "Directions": "Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 2,
+          "Z": 2
+        },
+        "Directions": "Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 2,
+          "Z": 2
+        },
+        "Directions": "Top",
+        "ReverseRotation": false
+      }
+    ],
+    "IgnoreRotation": true
+  },
+  "PowerGeneratorSoundsSpec": {},
+  "MechanicalBuildingSpec": {},
+  "PlaceableBlockObjectSpec": {
+    "ToolGroupId": "Power",
+    "ToolOrder": 41,
+    "ToolShape": "Square",
+    "Layout": "Single",
+    "CustomPivot": {
+      "HasCustomPivot": false,
+      "Coordinates": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      }
+    },
+    "CanBeAttachedToTerrainSide": false,
+    "DevModeTool": false
+  },
+  "WindPoweredGeneratorSpec": {
+    "MinRequiredWindStrength": 0.25
+  },
+  "WindPoweredGeneratorAnimatorSpec": {},
+  "WaterObjectSpec": {
+    "WaterCoordinates": {
+      "X": 1,
+      "Y": 1,
+      "Z": 0
+    }
+  },
+  "FloodableBuildingSpec": {},
+  "LabeledEntitySpec": {
+    "DisplayNameLocKey": "Building.WindTurbineGantryBase.DisplayName",
+    "DescriptionLocKey": "Building.WindTurbineGantryBase.Description",
+    "FlavorDescriptionLocKey": "Building.WindTurbineGantryBase.FlavorDescription",
+    "Icon": "Buildings/Power/WindTurbineTreeTrunkIcon"
+  },
+  "WindRotationAnimatorSpec": {
+    "WindRotators": [
+      {
+        "TransformName": "#TreeTrunk.RotorMisc",
+        "RotationAxis": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 1.0
+        },
+        "RotationSpeed": 90.0
+      },
+      {
+        "TransformName": "#TreeTrunk.ShaftMisc",
+        "RotationAxis": {
+          "X": 0.0,
+          "Y": -1.0,
+          "Z": 0.0
+        },
+        "RotationSpeed": 30.0
+      }
+    ],
+    "Tower": {
+      "TransformName": "#TreeTrunk.BaseMisc",
+      "RotationAxis": {
+        "X": 0.0,
+        "Y": 1.0,
+        "Z": 0.0
+      },
+      "RotationSpeed": 75.0
+    }
+  },
+  "ConstructionSiteProgressVisualizerSpec": {
+    "ProgressThresholds": [
+      0.0
+    ]
+  },
+  "BlockObjectNavMeshSettingsSpec": {
+    "NoAutoWalls": false,
+    "GenerateFloorsOnStackable": true,
+    "EdgeGroups": [
+      {
+        "Cost": 1.0,
+        "Group": {
+          "UseGroup": false,
+          "GroupName": ""
+        },
+        "IsPath": true,
+        "AddedEdges": [
+          {
+            "Start": {
+              "X": 1,
+              "Y": 1,
+              "Z": 0
+            },
+            "End": {
+              "X": 1,
+              "Y": 1,
+              "Z": 1
+            },
+            "IsTwoWay": true
+          },
+          {
+            "Start": {
+              "X": 1,
+              "Y": 1,
+              "Z": 1
+            },
+            "End": {
+              "X": 1,
+              "Y": 1,
+              "Z": 2
+            },
+            "IsTwoWay": true
+          },
+          {
+            "Start": {
+              "X": 1,
+              "Y": 1,
+              "Z": 2
+            },
+            "End": {
+              "X": 1,
+              "Y": 1,
+              "Z": 3
+            },
+            "IsTwoWay": true
+          }
+        ]
+      }
+    ],
+    "UnblockedCoordinates": [],
+    "BlockedEdges": []
+  },
+  "PathSpec": {
+    "MainPathCoordinates": {
+      "X": 1,
+      "Y": 1,
+      "Z": 0
+    }
+  },
+  "BlockObjectAccessesSpec": {
+    "BlockingCoordinates": [],
+    "AllowedCoordinates": [
+      {
+        "X": 1,
+        "Y": 1,
+        "Z": 2
+      }
+    ]
+  },
+  "PneumaticTubeConnectionProviderSpec": {
+    "ConnectionSpecs": [
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Bottom"
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Bottom"
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Bottom"
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Bottom"
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Bottom"
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 2,
+          "Z": 0
+        },
+        "Directions": "Bottom"
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 2,
+          "Z": 0
+        },
+        "Directions": "Bottom"
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 2,
+          "Z": 0
+        },
+        "Directions": "Bottom"
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 0,
+          "Z": 2
+        },
+        "Directions": "Top"
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 0,
+          "Z": 2
+        },
+        "Directions": "Top"
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 0,
+          "Z": 2
+        },
+        "Directions": "Top"
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 1,
+          "Z": 2
+        },
+        "Directions": "Top"
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 1,
+          "Z": 2
+        },
+        "Directions": "Top"
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 2,
+          "Z": 2
+        },
+        "Directions": "Top"
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 2,
+          "Z": 2
+        },
+        "Directions": "Top"
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 2,
+          "Z": 2
+        },
+        "Directions": "Top"
+      }
+    ]
+  },
+  "BlockableFloodableObjectSpec": {},
+  "BobingaboutPathMeshHiderSpec": {},
+  "BobingaboutTubeAccessiblePathModifierSpec": {},
+  "Children": {
+    "#Finished": {
+      "TimbermeshSpec": {
+        "Model": "Buildings/Power/WindTurbine.TreeTrunk.LeafCoats.Model"
+      },
+      "CollidersSpec": {
+        "BoxColliders": [
+          {
+            "Center": {
+              "X": 1.5,
+              "Y": 1.5,
+              "Z": 0.5875
+            },
+            "Size": {
+              "X": 2.0,
+              "Y": 3.0,
+              "Z": 1.075
+            }
+          },
+          {
+            "Center": {
+              "X": 1.5,
+              "Y": 1.5,
+              "Z": 2.4125
+            },
+            "Size": {
+              "X": 2.0,
+              "Y": 3.0,
+              "Z": 1.075
+            }
+          },
+          {
+            "Center": {
+              "X": 0.5875,
+              "Y": 1.5,
+              "Z": 1.5
+            },
+            "Size": {
+              "X": 1.075,
+              "Y": 3.0,
+              "Z": 2.0
+            }
+          },
+          {
+            "Center": {
+              "X": 2.35,
+              "Y": 1.5,
+              "Z": 1.5
+            },
+            "Size": {
+              "X": 1.2,
+              "Y": 3.0,
+              "Z": 2.0
+            }
+          }
+        ],
+        "SphereColliders": [],
+        "CapsuleColliders": []
+      }
+    },
+    "#Unfinished": {
+      "Children": {
+        "ConstructionBase3x3Donut": {
+          "TimbermeshSpec": {
+            "Model": "ConstructionBases/ConstructionBase3x3Donut.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 0.05,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 2.7,
+                  "Y": 0.1,
+                  "Z": 2.7
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        },
+        "ConstructionStage0": {
+          "TimbermeshSpec": {
+            "Model": "Buildings/Power/WindTurbine.TreeTrunk.LeafCoats.ConstructionStage0.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 1.5,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 2.7,
+                  "Y": 3.0,
+                  "Z": 2.7
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        }
+      }
+    }
+  }
+}

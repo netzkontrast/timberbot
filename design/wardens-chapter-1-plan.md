@@ -165,3 +165,23 @@ Biomass + power (advanced: + Firmware), per the user's request. §4 (chapter unl
 Badwater loop added on request: Sludge Pump (the unlocked pump, badwater only), Badwater Cell (100 hp from
 Badwater, the early power source), Sludge Tank; tutorial stage "Power" before "Cruncher". Chapter 1 bar is
 now 13 buttons. Art direction for leaving the Iron Teeth look: `wardens-art-path.md`.
+
+## Status 2026-09-03, badtide cold-open
+
+§5's orbit now plays back **3 archived badtides** during the 14 s flight (new-game only, at
+1.5 s/5.5 s/9.5 s into the orbit), and a new stage `Wardens.ColdBoot.Badtides` sets it up right
+after "Wake". Mechanically: `WardensColdBoot` posts the real vanilla `HazardousWeatherSelectedEvent`
+/`Started`/`Ended` events for `BadtideWeather` 3 times (durations from `BadtideWeather
+.GetDurationAtCycle(1..3)`, the same call the real weather cycle uses) instead of fast-forwarding
+actual simulated days. Checked in the decompiled game code first: nothing reacts to those events
+except a notification toast, a sound cue, and `HazardousWeatherHistory`'s own bookkeeping — no
+water or contamination system does, those key off `WeatherService.IsHazardousWeather` over real
+elapsed cycles — so this gives the real toast + sound 3 times, seeds a real streak/history (feeding
+the normal badtide-chance math going forward) and satisfies `SurvivedFirstBadtideTrigger`, without
+needing to simulate days that never happened. Each firing also drops a line into the WARDENS UPLINK
+chat with its real logged duration. The MCP `cutscene` tool's replay path does not reseed history
+(`seedBadtideHistory` defaults false there), so re-running the shot for tuning is harmless.
+
+Open thread from the same conversation: whether the *starting* resources/buildings should change to
+match a world that has already been through this (more Scrap on the map, a saltier opening economy,
+etc.) — not implemented, flagged for a follow-up design pass.

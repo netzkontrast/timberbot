@@ -1,0 +1,1789 @@
+{
+  "BuildingSpec": {
+    "SelectionSoundName": "BadwaterRig",
+    "LoopingSoundName": "",
+    "BuildingCost": [
+      {
+        "Id": "ScrapMetal",
+        "Amount": 100
+      }
+    ],
+    "ScienceCost": 4000,
+    "PlaceFinished": false,
+    "FinishableWithBeaversOnSite": false,
+    "DrawRangeBoundsOnIt": false
+  },
+  "BuildingModelSpec": {
+    "FinishedModelName": "#Finished",
+    "UnfinishedModelName": "#Unfinished",
+    "FinishedUncoveredModelName": "",
+    "UndergroundModelName": "#Underground",
+    "ConstructionModeModel": "Finished",
+    "UndergroundModelDepth": 99
+  },
+  "TemplateSpec": {
+    "TemplateName": "BadwaterRig.Wardens",
+    "BackwardCompatibleTemplateNames": [],
+    "RequiredFeatureToggle": "",
+    "DisablingFeatureToggle": ""
+  },
+  "BlockObjectSpec": {
+    "Size": {
+      "X": 3,
+      "Y": 3,
+      "Z": 3
+    },
+    "Blocks": [
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "Floor, Top, Corners, Path, Middle",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "Floor, Top, Corners, Path, Middle",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "Floor, Top, Corners, Path, Middle",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "Floor, Top, Corners, Path, Middle",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      }
+    ],
+    "Entrance": {
+      "HasEntrance": true,
+      "Coordinates": {
+        "X": 1,
+        "Y": 1,
+        "Z": 2
+      }
+    },
+    "BaseZ": 0,
+    "Overridable": false,
+    "Flippable": false
+  },
+  "BuildingAccessibleSpec": {
+    "LocalAccess": {
+      "X": 1.5,
+      "Y": 2.0,
+      "Z": 2.5
+    },
+    "ForceOneFinalAccess": false
+  },
+  "EnterableSpec": {
+    "OperatingState": "Finished",
+    "LimitedCapacityFinished": false,
+    "CapacityFinished": 0,
+    "LimitedCapacityUnfinished": false,
+    "CapacityUnfinished": 0
+  },
+  "PlaceableBlockObjectSpec": {
+    "ToolGroupId": "Water",
+    "ToolOrder": 90,
+    "ToolShape": "Square",
+    "Layout": "Single",
+    "CustomPivot": {
+      "HasCustomPivot": false,
+      "Coordinates": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      }
+    },
+    "CanBeAttachedToTerrainSide": false,
+    "DevModeTool": false
+  },
+  "LabeledEntitySpec": {
+    "DisplayNameLocKey": "Building.BadwaterRig.DisplayName",
+    "DescriptionLocKey": "Building.BadwaterRig.Description",
+    "FlavorDescriptionLocKey": "Building.BadwaterRig.FlavorDescription",
+    "Icon": "Buildings/Water/BadwaterRig/BadwaterRigIcon"
+  },
+  "WaterSourceDisablerSpec": {},
+  "WorkplaceSpec": {
+    "MaxWorkers": 10,
+    "DefaultWorkers": 5,
+    "DefaultWorkerType": "Beaver",
+    "DisallowOtherWorkerTypes": false,
+    "WorkerTypeUnlockCosts": [
+      {
+        "WorkerType": "Bot",
+        "ScienceCost": 2000
+      }
+    ]
+  },
+  "ManufactorySpec": {
+    "ProductionRecipeIds": [
+      "ExtractExtracted"
+    ]
+  },
+  "WorkshopSpec": {},
+  "SimpleManufactoryBehaviorsSpec": {},
+  "WorkshopRandomNeedApplierSpec": {
+    "Effects": [
+      {
+        "NeedId": "Injury",
+        "Points": -0.8,
+        "Probability": "High"
+      }
+    ]
+  },
+  "WorkshopAnimationControllerSpec": {},
+  "WorkplaceIlluminatorSpec": {},
+  "WorkplaceSlotManagerSpec": {},
+  "TransformSlotInitializerSpec": {
+    "Slots": [
+      {
+        "SlotKeyword": "Entrance",
+        "Animation": "Sitting",
+        "Inanimate": false,
+        "RandomizeYRotation": false,
+        "WaterSlot": false
+      }
+    ]
+  },
+  "WorkshopWorkerHiderSpec": {},
+  "BlockObjectNavMeshSettingsSpec": {
+    "NoAutoWalls": false,
+    "GenerateFloorsOnStackable": true,
+    "EdgeGroups": [
+      {
+        "Cost": 1.0,
+        "Group": {
+          "UseGroup": false,
+          "GroupName": ""
+        },
+        "IsPath": true,
+        "AddedEdges": [
+          {
+            "Start": {
+              "X": 0,
+              "Y": 0,
+              "Z": 2
+            },
+            "End": {
+              "X": 1,
+              "Y": 0,
+              "Z": 2
+            },
+            "IsTwoWay": true
+          },
+          {
+            "Start": {
+              "X": 1,
+              "Y": 0,
+              "Z": 2
+            },
+            "End": {
+              "X": 2,
+              "Y": 0,
+              "Z": 2
+            },
+            "IsTwoWay": true
+          },
+          {
+            "Start": {
+              "X": 0,
+              "Y": 0,
+              "Z": 2
+            },
+            "End": {
+              "X": 0,
+              "Y": 1,
+              "Z": 2
+            },
+            "IsTwoWay": true
+          },
+          {
+            "Start": {
+              "X": 1,
+              "Y": 0,
+              "Z": 2
+            },
+            "End": {
+              "X": 1,
+              "Y": 1,
+              "Z": 2
+            },
+            "IsTwoWay": true
+          },
+          {
+            "Start": {
+              "X": 2,
+              "Y": 0,
+              "Z": 2
+            },
+            "End": {
+              "X": 2,
+              "Y": 1,
+              "Z": 2
+            },
+            "IsTwoWay": true
+          },
+          {
+            "Start": {
+              "X": 0,
+              "Y": 1,
+              "Z": 2
+            },
+            "End": {
+              "X": 0,
+              "Y": 2,
+              "Z": 2
+            },
+            "IsTwoWay": true
+          },
+          {
+            "Start": {
+              "X": 1,
+              "Y": 1,
+              "Z": 2
+            },
+            "End": {
+              "X": 1,
+              "Y": 2,
+              "Z": 2
+            },
+            "IsTwoWay": true
+          },
+          {
+            "Start": {
+              "X": 2,
+              "Y": 1,
+              "Z": 2
+            },
+            "End": {
+              "X": 2,
+              "Y": 2,
+              "Z": 2
+            },
+            "IsTwoWay": true
+          },
+          {
+            "Start": {
+              "X": 0,
+              "Y": 2,
+              "Z": 2
+            },
+            "End": {
+              "X": 1,
+              "Y": 2,
+              "Z": 2
+            },
+            "IsTwoWay": true
+          },
+          {
+            "Start": {
+              "X": 1,
+              "Y": 2,
+              "Z": 2
+            },
+            "End": {
+              "X": 2,
+              "Y": 2,
+              "Z": 2
+            },
+            "IsTwoWay": true
+          },
+          {
+            "Start": {
+              "X": 1,
+              "Y": 1,
+              "Z": 2
+            },
+            "End": {
+              "X": 1,
+              "Y": 1,
+              "Z": 3
+            },
+            "IsTwoWay": true
+          }
+        ]
+      },
+      {
+        "Cost": 1.0,
+        "Group": {
+          "UseGroup": false,
+          "GroupName": "Branch"
+        },
+        "IsPath": true,
+        "AddedEdges": [
+          {
+            "Start": {
+              "X": 1,
+              "Y": 0,
+              "Z": 2
+            },
+            "End": {
+              "X": 1,
+              "Y": -1,
+              "Z": 2
+            },
+            "IsTwoWay": false
+          },
+          {
+            "Start": {
+              "X": 1,
+              "Y": 2,
+              "Z": 2
+            },
+            "End": {
+              "X": 1,
+              "Y": 3,
+              "Z": 2
+            },
+            "IsTwoWay": false
+          },
+          {
+            "Start": {
+              "X": 0,
+              "Y": 1,
+              "Z": 2
+            },
+            "End": {
+              "X": -1,
+              "Y": 1,
+              "Z": 2
+            },
+            "IsTwoWay": false
+          },
+          {
+            "Start": {
+              "X": 2,
+              "Y": 1,
+              "Z": 2
+            },
+            "End": {
+              "X": 3,
+              "Y": 1,
+              "Z": 2
+            },
+            "IsTwoWay": false
+          }
+        ]
+      }
+    ],
+    "UnblockedCoordinates": [],
+    "BlockedEdges": []
+  },
+  "ConstructionSiteProgressVisualizerSpec": {
+    "ProgressThresholds": [
+      0.0,
+      0.2,
+      0.6
+    ]
+  },
+  "MechanicalBuildingSpec": {},
+  "TransputProviderSpec": {
+    "Transputs": [
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 0,
+          "Z": 2
+        },
+        "Directions": "Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 0,
+          "Z": 2
+        },
+        "Directions": "Down, Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 0,
+          "Z": 2
+        },
+        "Directions": "Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 1,
+          "Z": 2
+        },
+        "Directions": "Left, Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 1,
+          "Z": 2
+        },
+        "Directions": "Right, Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 2,
+          "Z": 2
+        },
+        "Directions": "Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 2,
+          "Z": 2
+        },
+        "Directions": "Up, Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 2,
+          "Z": 2
+        },
+        "Directions": "Top",
+        "ReverseRotation": false
+      }
+    ],
+    "IgnoreRotation": true
+  },
+  "MechanicalNodeSpec": {
+    "PowerOutput": 0,
+    "PowerInput": 500,
+    "IsShaft": false
+  },
+  "MechanicalConnectorTargetSpec": {},
+  "PathSpec": {
+    "MainPathCoordinates": {
+      "X": 1,
+      "Y": 1,
+      "Z": 2
+    }
+  },
+  "BlockObjectAccessesSpec": {
+    "BlockingCoordinates": [],
+    "AllowedCoordinates": [
+      {
+        "X": 1,
+        "Y": 1,
+        "Z": 2
+      }
+    ]
+  },
+  "BobingaboutBranchWallConnectionSpec": {},
+  "PneumaticTubeConnectionProviderSpec": {
+    "ConnectionSpecs": [
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 0,
+          "Z": 2
+        },
+        "Directions": "Top"
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 0,
+          "Z": 2
+        },
+        "Directions": "Top"
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 0,
+          "Z": 2
+        },
+        "Directions": "Top"
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 1,
+          "Z": 2
+        },
+        "Directions": "Top"
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 1,
+          "Z": 2
+        },
+        "Directions": "Top"
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 2,
+          "Z": 2
+        },
+        "Directions": "Top"
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 2,
+          "Z": 2
+        },
+        "Directions": "Top"
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 2,
+          "Z": 2
+        },
+        "Directions": "Top"
+      }
+    ]
+  },
+  "PneumaticTubeSupplierSpec": {
+    "OwnGoodsOnly": true
+  },
+  "UnderstructureConstraintSpec": {
+    "UnderstructureTemplateNames": [
+      "BadwaterSource"
+    ]
+  },
+  "BobingaboutPathMeshHiderSpec": {},
+  "BobingaboutTubeAccessiblePathModifierSpec": {},
+  "BobingaboutBranchWallSpec": {
+    "Connections": [
+      {
+        "WallModelName": "#Window.D3",
+        "DoorModelName": "#Door.D3",
+        "ConnectionModelName": "#Connection.D3",
+        "DoorPosition": {
+          "Start": {
+            "X": 1,
+            "Y": 0,
+            "Z": 2
+          },
+          "End": {
+            "X": 1,
+            "Y": -1,
+            "Z": 2
+          }
+        }
+      },
+      {
+        "WallModelName": "#Window.U3",
+        "DoorModelName": "#Door.U3",
+        "ConnectionModelName": "#Connection.U3",
+        "DoorPosition": {
+          "Start": {
+            "X": 1,
+            "Y": 2,
+            "Z": 2
+          },
+          "End": {
+            "X": 1,
+            "Y": 3,
+            "Z": 2
+          }
+        }
+      },
+      {
+        "WallModelName": "#Window.L3",
+        "DoorModelName": "#Door.L3",
+        "ConnectionModelName": "#Connection.L3",
+        "DoorPosition": {
+          "Start": {
+            "X": 0,
+            "Y": 1,
+            "Z": 2
+          },
+          "End": {
+            "X": -1,
+            "Y": 1,
+            "Z": 2
+          }
+        }
+      },
+      {
+        "WallModelName": "#Window.R3",
+        "DoorModelName": "#Door.R3",
+        "ConnectionModelName": "#Connection.R3",
+        "DoorPosition": {
+          "Start": {
+            "X": 2,
+            "Y": 1,
+            "Z": 2
+          },
+          "End": {
+            "X": 3,
+            "Y": 1,
+            "Z": 2
+          }
+        }
+      }
+    ]
+  },
+  "Children": {
+    "#Finished": {
+      "TimbermeshSpec": {
+        "Model": "Buildings/Water/BadwaterRig.LeafCoats.Model"
+      },
+      "CollidersSpec": {
+        "BoxColliders": [
+          {
+            "Center": {
+              "X": 1.5,
+              "Y": 1.5,
+              "Z": 1.5
+            },
+            "Size": {
+              "X": 2.7,
+              "Y": 3.0,
+              "Z": 2.7
+            }
+          }
+        ],
+        "SphereColliders": [],
+        "CapsuleColliders": []
+      },
+      "Children": {
+        "#Slot#Entrance": {
+          "TransformSpec": {
+            "Position": {
+              "X": 1.5,
+              "Y": 2.0,
+              "Z": 1.9
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 180.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          }
+        },
+        "#Door.U3": {
+          "TransformSpec": {
+            "Position": {
+              "X": 2.0,
+              "Y": 2.0,
+              "Z": 3.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 180.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/DoorMetal.LeafCoats.Model"
+          }
+        },
+        "#Connection.U3": {
+          "TransformSpec": {
+            "Position": {
+              "X": 2.0,
+              "Y": 2.0,
+              "Z": 3.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 180.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/TreeBuildings/Branches/Branch.DoorMetal.LeafCoats.Model"
+          }
+        },
+        "#Window.U3": {
+          "TransformSpec": {
+            "Position": {
+              "X": 2.0,
+              "Y": 2.0,
+              "Z": 3.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 180.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Window2.LeafCoats.Model"
+          }
+        },
+        "#Door.D3": {
+          "TransformSpec": {
+            "Position": {
+              "X": 1.0,
+              "Y": 2.0,
+              "Z": 0.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/DoorMetal.LeafCoats.Model"
+          }
+        },
+        "#Connection.D3": {
+          "TransformSpec": {
+            "Position": {
+              "X": 1.0,
+              "Y": 2.0,
+              "Z": 0.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/TreeBuildings/Branches/Branch.DoorMetal.LeafCoats.Model"
+          }
+        },
+        "#Window.D3": {
+          "TransformSpec": {
+            "Position": {
+              "X": 1.0,
+              "Y": 2.0,
+              "Z": 0.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Window2.LeafCoats.Model"
+          }
+        },
+        "#Door.L3": {
+          "TransformSpec": {
+            "Position": {
+              "X": 0.0,
+              "Y": 2.0,
+              "Z": 2.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 90.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/DoorMetal.LeafCoats.Model"
+          }
+        },
+        "#Connection.L3": {
+          "TransformSpec": {
+            "Position": {
+              "X": 0.0,
+              "Y": 2.0,
+              "Z": 2.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 90.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/TreeBuildings/Branches/Branch.DoorMetal.LeafCoats.Model"
+          }
+        },
+        "#Window.L3": {
+          "TransformSpec": {
+            "Position": {
+              "X": 0.0,
+              "Y": 2.0,
+              "Z": 2.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 90.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Window2.LeafCoats.Model"
+          }
+        },
+        "#Door.R3": {
+          "TransformSpec": {
+            "Position": {
+              "X": 3.0,
+              "Y": 2.0,
+              "Z": 1.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 270.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/DoorMetal.LeafCoats.Model"
+          }
+        },
+        "#Connection.R3": {
+          "TransformSpec": {
+            "Position": {
+              "X": 3.0,
+              "Y": 2.0,
+              "Z": 1.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 270.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/TreeBuildings/Branches/Branch.DoorMetal.LeafCoats.Model"
+          }
+        },
+        "#Window.R3": {
+          "TransformSpec": {
+            "Position": {
+              "X": 3.0,
+              "Y": 2.0,
+              "Z": 1.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 270.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Window2.LeafCoats.Model"
+          }
+        }
+      }
+    },
+    "#Unfinished": {
+      "Children": {
+        "ConstructionBase3x3EdgesOnly": {
+          "TimbermeshSpec": {
+            "Model": "ConstructionBases/ConstructionBase3x3EdgesOnly/ConstructionBase3x3EdgesOnly.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 0.05,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 3.0,
+                  "Y": 0.1,
+                  "Z": 3.0
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        },
+        "ConstructionStage0": {
+          "TimbermeshSpec": {
+            "Model": "Buildings/Water/BadwaterRig.LeafCoats.ConstructionStage0.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 0.1,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 3.0,
+                  "Y": 0.2,
+                  "Z": 3.0
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.4,
+                  "Y": 0.5,
+                  "Z": 0.4
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 1.0,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.6,
+                  "Y": 0.5,
+                  "Z": 0.4
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 1.0,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.4,
+                  "Y": 0.5,
+                  "Z": 2.6
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 1.0,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.6,
+                  "Y": 0.5,
+                  "Z": 2.6
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 1.0,
+                  "Z": 0.2
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        },
+        "ConstructionStage1": {
+          "TimbermeshSpec": {
+            "Model": "Buildings/Water/BadwaterRig.LeafCoats.ConstructionStage1.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 0.1,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 3.0,
+                  "Y": 0.2,
+                  "Z": 3.0
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.4,
+                  "Y": 0.5,
+                  "Z": 0.4
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 1.0,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.6,
+                  "Y": 0.5,
+                  "Z": 0.4
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 1.0,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.4,
+                  "Y": 0.5,
+                  "Z": 2.6
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 1.0,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.6,
+                  "Y": 0.5,
+                  "Z": 2.6
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 1.0,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.2,
+                  "Y": 1.05,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.1,
+                  "Z": 2.7
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.8,
+                  "Y": 1.05,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.1,
+                  "Z": 2.7
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 1.05,
+                  "Z": 0.2
+                },
+                "Size": {
+                  "X": 2.7,
+                  "Y": 0.1,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 1.05,
+                  "Z": 2.8
+                },
+                "Size": {
+                  "X": 2.7,
+                  "Y": 0.1,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.05,
+                  "Y": 1.5,
+                  "Z": 0.1
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.8,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.95,
+                  "Y": 1.5,
+                  "Z": 0.1
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.8,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.05,
+                  "Y": 1.5,
+                  "Z": 2.9
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.8,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.95,
+                  "Y": 1.5,
+                  "Z": 2.9
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.8,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.1,
+                  "Y": 1.5,
+                  "Z": 1.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.8,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.9,
+                  "Y": 1.5,
+                  "Z": 1.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.8,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.1,
+                  "Y": 1.5,
+                  "Z": 1.95
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.8,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.9,
+                  "Y": 1.5,
+                  "Z": 1.95
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.8,
+                  "Z": 0.2
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        },
+        "ConstructionStage2": {
+          "TimbermeshSpec": {
+            "Model": "Buildings/Water/BadwaterRig.LeafCoats.ConstructionStage2.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 0.1,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 3.0,
+                  "Y": 0.2,
+                  "Z": 3.0
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.4,
+                  "Y": 0.5,
+                  "Z": 0.4
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 1.0,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.6,
+                  "Y": 0.5,
+                  "Z": 0.4
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 1.0,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.4,
+                  "Y": 0.5,
+                  "Z": 2.6
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 1.0,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.6,
+                  "Y": 0.5,
+                  "Z": 2.6
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 1.0,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.2,
+                  "Y": 1.05,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.1,
+                  "Z": 2.7
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.8,
+                  "Y": 1.05,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.1,
+                  "Z": 2.7
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 1.05,
+                  "Z": 0.2
+                },
+                "Size": {
+                  "X": 2.7,
+                  "Y": 0.1,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 1.05,
+                  "Z": 2.8
+                },
+                "Size": {
+                  "X": 2.7,
+                  "Y": 0.1,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.05,
+                  "Y": 1.5,
+                  "Z": 0.1
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.8,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.95,
+                  "Y": 1.5,
+                  "Z": 0.1
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.8,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.05,
+                  "Y": 1.5,
+                  "Z": 2.9
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.8,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.95,
+                  "Y": 1.5,
+                  "Z": 2.9
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.8,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.1,
+                  "Y": 1.5,
+                  "Z": 1.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.8,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.9,
+                  "Y": 1.5,
+                  "Z": 1.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.8,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.1,
+                  "Y": 1.5,
+                  "Z": 1.95
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.8,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.9,
+                  "Y": 1.5,
+                  "Z": 1.95
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.8,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.2,
+                  "Y": 2.05,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.1,
+                  "Z": 2.7
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.8,
+                  "Y": 2.05,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.1,
+                  "Z": 2.7
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 2.05,
+                  "Z": 0.2
+                },
+                "Size": {
+                  "X": 2.7,
+                  "Y": 0.1,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 2.05,
+                  "Z": 2.8
+                },
+                "Size": {
+                  "X": 2.7,
+                  "Y": 0.1,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.05,
+                  "Y": 2.5,
+                  "Z": 0.1
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.8,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.95,
+                  "Y": 2.5,
+                  "Z": 0.1
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.8,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.05,
+                  "Y": 2.5,
+                  "Z": 2.9
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.8,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.95,
+                  "Y": 2.5,
+                  "Z": 2.9
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.8,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.1,
+                  "Y": 2.5,
+                  "Z": 1.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.8,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.9,
+                  "Y": 2.5,
+                  "Z": 1.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.8,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.1,
+                  "Y": 2.5,
+                  "Z": 1.95
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.8,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.9,
+                  "Y": 2.5,
+                  "Z": 1.95
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.8,
+                  "Z": 0.2
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        }
+      }
+    },
+    "#Underground": {
+      "TimbermeshSpec": {
+        "Model": "Buildings/Water/BadwaterRig/BadwaterRig.Folktails.Underground"
+      }
+    }
+  }
+}

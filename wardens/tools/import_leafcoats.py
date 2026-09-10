@@ -42,6 +42,94 @@ MODS = {
     "3631491885": "VerticalNavMesh",
 }
 SKIP_NAMES = {"manifest.json", "Readme.txt", "workshop_data.json", "thumbnail.jpg", "thumbnail.png"}
+# Whole top-level folders that turned out to be either unused by anything we ship (other
+# factions' CharacterCustomizer entries, Bobingabout's own named-beaver tributes, LeafCoats-only
+# worker outfits/decals/good visualizations) or a duplicate-key risk once loaded: RecipeSpecService
+# and (confirmed separately) the tool-group loader both throw "An item with the same key has
+# already been added" when a loose file registers an Id that AssetBundles/leafcoats_win *or*
+# vanilla already provides under a different path, and that abort takes every singleton scheduled
+# after it down with it (that is how one duplicate recipe took down the whole tutorial system).
+# Recipes/Needs/Goods/Factions are NOT skipped wholesale: we still author our own files there
+# (DataCore, Firmware, Need.Bot.Lubricant, Faction.Wardens, ...), so those use SKIP_PATHS instead.
+SKIP_FOLDERS = {
+    "CharacterCustomizer", "CustomBeaverByName", "CustomBeaverNamesList", "CustomBotByName",
+    "Decals", "GoodsVisualization", "MaterialPatcher", "WorkerOutfits",
+}
+SKIP_PATHS = {
+    # Registers "Leaf Coats" as a second playable faction; not the point of this import
+    # (design/leafcoats-port-plan.md rule 1: read the bundle's assets, don't ship its faction).
+    "Factions/Faction.LeafCoats.blueprint.json",
+    # Inject LeafCoats-specific goods/needs/path behaviour into vanilla Folktails/IronTeeth —
+    # unwanted outside a LeafCoats game.
+    "Factions/GoodCollection.Common.LeafCoatsModifier.blueprint.json",
+    "Factions/NeedCollection.Common.LeafCoatsModifier.blueprint.json",
+    "Factions/Path.LeafCoatsModifier.blueprint.json",
+    # Vanilla already has a "Landscaping" BlockObjectToolGroupSpec; this loose one duplicates it.
+    # The other 5 groups here (Dams/Industry/Platforms/TreeBuildings/Zipline) are not vanilla
+    # names and several are genuinely referenced by ported buildings — keep those.
+    "BlockObjectToolGroups/BlockObjectToolGroup.Landscaping.optional.blueprint.json",
+    # Collections that only exist to serve the (now-dropped) LeafCoats faction and its add-ons.
+    "Collections/GoodCollection.LeafCoats.LeafCoatsExplosives.blueprint.json",
+    "Collections/GoodCollection.LeafCoats.blueprint.json",
+    "Collections/GoodCollection.LeafCoatsAddons.blueprint.json",
+    "Collections/MaterialCollection.LeafCoats.blueprint.json",
+    "Collections/NeedCollection.Folktails.LeafCoatsModifier.blueprint.json",
+    "Collections/NeedCollection.IronTeeth.LeafCoatsModifier.blueprint.json",
+    "Collections/NeedCollection.LeafCoats.blueprint.json",
+    "Collections/NeedCollection.LeafCoatsAddons.blueprint.json",
+    "Collections/TemplateCollection.Buildings.LeafCoats.LeafCoatsBadWater.blueprint.json",
+    "Collections/TemplateCollection.Buildings.LeafCoats.LeafCoatsExplosives.blueprint.json",
+    "Collections/TemplateCollection.Buildings.LeafCoats.blueprint.json",
+    "Collections/TemplateCollection.Characters.LeafCoats.blueprint.json",
+    "Collections/TemplateCollection.ModularShaftParts.LeaCoats.blueprint.json",
+    "Collections/TemplateCollection.NaturalResources.LeafCoats.blueprint.json",
+    "TemplateCollection.NaturalResources.LeafCoats.BeaverPlants.blueprint.json",
+    # Food-chain / Act-III-only goods and needs: bots don't eat, and every one of these turned out
+    # to duplicate a bundle-internal Id the moment it was actually loaded, same failure mode as
+    # the recipes below.
+    "Goods/Good.Apple.blueprint.json",
+    "Goods/Good.Bark.blueprint.json",
+    "Goods/Good.Branch.blueprint.json",
+    "Goods/Good.FancyApples.blueprint.json",
+    "Goods/Good.FermentedChestnut.blueprint.json",
+    "Goods/Good.FermentedDandelion.blueprint.json",
+    "Goods/Good.FermentedFruit.blueprint.json",
+    "Goods/Good.FruitSalad.blueprint.json",
+    "Goods/Good.Grapes.blueprint.json",
+    "Goods/Good.Leaf.blueprint.json",
+    "Goods/Good.Lubricant.blueprint.json",
+    "Goods/Good.Shovel.blueprint.json",
+    "Needs/Need.Beaver.Apples.blueprint.json",
+    "Needs/Need.Beaver.FancyApples.blueprint.json",
+    "Needs/Need.Beaver.FermentedChestnut.blueprint.json",
+    "Needs/Need.Beaver.FermentedDandelion.blueprint.json",
+    "Needs/Need.Beaver.FermentedFruit.blueprint.json",
+    "Needs/Need.Beaver.FruitSalad.blueprint.json",
+    "Needs/Need.Beaver.Garden.blueprint.json",
+    "Needs/Need.Beaver.Grapes.blueprint.json",
+    "Needs/Need.Beaver.Greenery.blueprint.json",
+    "Needs/Need.Beaver.ObservationTerrace.blueprint.json",
+    "Needs/Need.Beaver.PlantMurderer.blueprint.json",
+    "Needs/Need.Beaver.Plaza.blueprint.json",
+    "Needs/Need.Beaver.WonderLeafCoats.blueprint.json",
+    # Confirmed RecipeSpecService duplicate-key crashes (Antidote, then Log.Press) generalized to
+    # every other loose *.LeafCoats recipe: buildings that reference them (Mine, Shredder,
+    # Refinery, LargeWaterPump.Wardens, ...) still resolve fine off the bundle's own copy.
+    "Recipes/Recipe.Antidote.LeafCoats.blueprint.json",
+    "Recipes/Recipe.Extract.Extracted.blueprint.json",
+    "Recipes/Recipe.FancyApples.blueprint.json",
+    "Recipes/Recipe.FermentedChestnut.blueprint.json",
+    "Recipes/Recipe.FermentedDandelion.blueprint.json",
+    "Recipes/Recipe.FermentedFruit.blueprint.json",
+    "Recipes/Recipe.FruitSalad.blueprint.json",
+    "Recipes/Recipe.Log.Press.LeafCoats.blueprint.json",
+    "Recipes/Recipe.Lubricant.LeafCoats.blueprint.json",
+    "Recipes/Recipe.MetalBlock.LeafCoats.blueprint.json",
+    "Recipes/Recipe.Plank.Press.LeafCoats.blueprint.json",
+    "Recipes/Recipe.ScrapMetal.Efficient.LeafCoats.blueprint.json",
+    "Recipes/Recipe.Shovel.LeafCoats.blueprint.json",
+    "Recipes/Recipe.Water.LeafCoats.Large.blueprint.json",
+}
 
 
 def latest_version(mod_dir: Path) -> Path:
@@ -53,9 +141,11 @@ def latest_version(mod_dir: Path) -> Path:
 
 def destination(mod_id: str, rel: Path) -> Path | None:
     """Map a source file to its place in wardens/src, or None to skip."""
-    if rel.name in SKIP_NAMES:
+    if rel.name in SKIP_NAMES or rel.as_posix() in SKIP_PATHS:
         return None
     parts = rel.parts
+    if parts[0] in SKIP_FOLDERS:
+        return None
     if parts[0] == "AssetBundles":
         if rel.name.endswith("_mac") or rel.name.endswith("_mac.manifest"):
             return None                                   # Windows machine, win bundles only

@@ -1,0 +1,1357 @@
+{
+  "BuildingSpec": {
+    "SelectionSoundName": "BuildersHut",
+    "LoopingSoundName": "",
+    "BuildingCost": [
+      {
+        "Id": "ScrapMetal",
+        "Amount": 15
+      }
+    ],
+    "ScienceCost": 100,
+    "PlaceFinished": false,
+    "FinishableWithBeaversOnSite": false,
+    "DrawRangeBoundsOnIt": false
+  },
+  "BuildingModelSpec": {
+    "FinishedModelName": "#Finished",
+    "UnfinishedModelName": "#Unfinished",
+    "FinishedUncoveredModelName": "",
+    "UndergroundModelName": "",
+    "ConstructionModeModel": "Finished",
+    "UndergroundModelDepth": 0
+  },
+  "WorkplaceSpec": {
+    "MaxWorkers": 5,
+    "DefaultWorkers": 4,
+    "DefaultWorkerType": "Beaver",
+    "DisallowOtherWorkerTypes": false,
+    "WorkerTypeUnlockCosts": [
+      {
+        "WorkerType": "Bot",
+        "ScienceCost": 250
+      }
+    ]
+  },
+  "EnterableSpec": {
+    "OperatingState": "Finished",
+    "LimitedCapacityFinished": true,
+    "CapacityFinished": 5,
+    "LimitedCapacityUnfinished": false,
+    "CapacityUnfinished": 0
+  },
+  "TemplateSpec": {
+    "TemplateName": "BuildersHut.Wardens",
+    "BackwardCompatibleTemplateNames": [],
+    "RequiredFeatureToggle": "",
+    "DisablingFeatureToggle": ""
+  },
+  "TransformSlotInitializerSpec": {
+    "Slots": [
+      {
+        "SlotKeyword": "Entrance",
+        "Animation": "Sitting",
+        "Inanimate": false,
+        "RandomizeYRotation": false,
+        "WaterSlot": false
+      }
+    ]
+  },
+  "WorkplaceSlotManagerSpec": {},
+  "BlockObjectSpec": {
+    "Size": {
+      "X": 3,
+      "Y": 2,
+      "Z": 2
+    },
+    "Blocks": [
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Top, Corners, Path, Middle",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Middle",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Top, Corners, Path, Middle",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Top, Corners, Path, Middle",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "None",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "None",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "None",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "Floor, Top, Corners, Path, Middle",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      }
+    ],
+    "Entrance": {
+      "HasEntrance": true,
+      "Coordinates": {
+        "X": 1,
+        "Y": 0,
+        "Z": 0
+      }
+    },
+    "BaseZ": 0,
+    "Overridable": false,
+    "Flippable": true
+  },
+  "BuildingAccessibleSpec": {
+    "LocalAccess": {
+      "X": 1.5,
+      "Y": 0.0,
+      "Z": 1.5
+    },
+    "ForceOneFinalAccess": false
+  },
+  "BuilderHubSpec": {},
+  "TransputProviderSpec": {
+    "Transputs": [
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Down, Left, Bottom, Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Up, Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Down, Right, Bottom, Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 1,
+          "Z": 1
+        },
+        "Directions": "Down, Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 1,
+          "Z": 1
+        },
+        "Directions": "Down, Up, Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 1,
+          "Z": 1
+        },
+        "Directions": "Down, Top",
+        "ReverseRotation": false
+      }
+    ],
+    "IgnoreRotation": true
+  },
+  "PlaceableBlockObjectSpec": {
+    "ToolGroupId": "DistrictManagement",
+    "ToolOrder": 30,
+    "ToolShape": "Square",
+    "Layout": "Single",
+    "CustomPivot": {
+      "HasCustomPivot": false,
+      "Coordinates": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      }
+    },
+    "CanBeAttachedToTerrainSide": false,
+    "DevModeTool": false
+  },
+  "WorkplaceIlluminatorSpec": {},
+  "LabeledEntitySpec": {
+    "DisplayNameLocKey": "Building.BuildersHut.DisplayName",
+    "DescriptionLocKey": "Building.BuildersHut.Description",
+    "FlavorDescriptionLocKey": "Building.BuildersHut.FlavorDescription",
+    "Icon": "Buildings/DistrictManagement/BuildersHut/BuildersHutIcon"
+  },
+  "WorkplaceWorkerOutfitSpec": {
+    "WorkerOutfit": "Builder"
+  },
+  "ConstructionSiteProgressVisualizerSpec": {
+    "ProgressThresholds": [
+      0.0,
+      0.65
+    ]
+  },
+  "MechanicalConnectorTargetSpec": {},
+  "BlockObjectNavMeshSettingsSpec": {
+    "NoAutoWalls": false,
+    "GenerateFloorsOnStackable": true,
+    "EdgeGroups": [
+      {
+        "Cost": 1.0,
+        "Group": {
+          "UseGroup": false,
+          "GroupName": ""
+        },
+        "IsPath": true,
+        "AddedEdges": [
+          {
+            "Start": {
+              "X": 1,
+              "Y": 0,
+              "Z": 0
+            },
+            "End": {
+              "X": 1,
+              "Y": -1,
+              "Z": 0
+            },
+            "IsTwoWay": false
+          },
+          {
+            "Start": {
+              "X": 1,
+              "Y": 0,
+              "Z": 0
+            },
+            "End": {
+              "X": 1,
+              "Y": 1,
+              "Z": 0
+            },
+            "IsTwoWay": true
+          },
+          {
+            "Start": {
+              "X": 1,
+              "Y": 0,
+              "Z": 0
+            },
+            "End": {
+              "X": 1,
+              "Y": 0,
+              "Z": 1
+            },
+            "IsTwoWay": true
+          }
+        ]
+      },
+      {
+        "Cost": 2.0,
+        "Group": {
+          "UseGroup": false,
+          "GroupName": ""
+        },
+        "IsPath": true,
+        "AddedEdges": [
+          {
+            "Start": {
+              "X": 1,
+              "Y": 1,
+              "Z": 0
+            },
+            "End": {
+              "X": 1,
+              "Y": 1,
+              "Z": 1
+            },
+            "IsTwoWay": true
+          },
+          {
+            "Start": {
+              "X": 1,
+              "Y": 1,
+              "Z": 0
+            },
+            "End": {
+              "X": 2,
+              "Y": 1,
+              "Z": 0
+            },
+            "IsTwoWay": true
+          },
+          {
+            "Start": {
+              "X": 1,
+              "Y": 1,
+              "Z": 0
+            },
+            "End": {
+              "X": 0,
+              "Y": 1,
+              "Z": 0
+            },
+            "IsTwoWay": true
+          },
+          {
+            "Start": {
+              "X": 0,
+              "Y": 1,
+              "Z": 0
+            },
+            "End": {
+              "X": 0,
+              "Y": 0,
+              "Z": 0
+            },
+            "IsTwoWay": true
+          },
+          {
+            "Start": {
+              "X": 2,
+              "Y": 1,
+              "Z": 0
+            },
+            "End": {
+              "X": 2,
+              "Y": 0,
+              "Z": 0
+            },
+            "IsTwoWay": true
+          }
+        ]
+      },
+      {
+        "Cost": 1.0,
+        "Group": {
+          "UseGroup": false,
+          "GroupName": "Branch"
+        },
+        "IsPath": true,
+        "AddedEdges": [
+          {
+            "Start": {
+              "X": 0,
+              "Y": 0,
+              "Z": 0
+            },
+            "End": {
+              "X": -1,
+              "Y": 0,
+              "Z": 0
+            },
+            "IsTwoWay": false
+          },
+          {
+            "Start": {
+              "X": 2,
+              "Y": 0,
+              "Z": 0
+            },
+            "End": {
+              "X": 3,
+              "Y": 0,
+              "Z": 0
+            },
+            "IsTwoWay": false
+          },
+          {
+            "Start": {
+              "X": 1,
+              "Y": 1,
+              "Z": 0
+            },
+            "End": {
+              "X": 1,
+              "Y": 2,
+              "Z": 0
+            },
+            "IsTwoWay": false
+          },
+          {
+            "Start": {
+              "X": 1,
+              "Y": 1,
+              "Z": 1
+            },
+            "End": {
+              "X": 1,
+              "Y": 2,
+              "Z": 1
+            },
+            "IsTwoWay": false
+          }
+        ]
+      }
+    ],
+    "UnblockedCoordinates": [],
+    "BlockedEdges": []
+  },
+  "PathSpec": {
+    "MainPathCoordinates": {
+      "X": 1,
+      "Y": 1,
+      "Z": 0
+    }
+  },
+  "BlockObjectAccessesSpec": {
+    "BlockingCoordinates": [],
+    "AllowedCoordinates": [
+      {
+        "X": 1,
+        "Y": 0,
+        "Z": 0
+      }
+    ]
+  },
+  "BobingaboutBranchWallConnectionSpec": {},
+  "PneumaticTubeConnectionProviderSpec": {
+    "ConnectionSpecs": [
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Down, Bottom, Top"
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Down, Bottom, Top"
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Bottom"
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Bottom"
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Bottom"
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 1,
+          "Z": 1
+        },
+        "Directions": "Down, Top"
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 1,
+          "Z": 1
+        },
+        "Directions": "Down, Top"
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 1,
+          "Z": 1
+        },
+        "Directions": "Down, Top"
+      }
+    ]
+  },
+  "BobingaboutBranchWallSpec": {
+    "Connections": [
+      {
+        "WallModelName": "#Window.L1",
+        "DoorModelName": "#Door.L1",
+        "ConnectionModelName": "#Connection.L1",
+        "DoorPosition": {
+          "Start": {
+            "X": 0,
+            "Y": 0,
+            "Z": 0
+          },
+          "End": {
+            "X": -1,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      {
+        "WallModelName": "#Window.R1",
+        "DoorModelName": "#Door.R1",
+        "ConnectionModelName": "#Connection.R1",
+        "DoorPosition": {
+          "Start": {
+            "X": 2,
+            "Y": 0,
+            "Z": 0
+          },
+          "End": {
+            "X": 3,
+            "Y": 0,
+            "Z": 0
+          }
+        }
+      },
+      {
+        "WallModelName": "#Window.U1",
+        "DoorModelName": "#Door.U1",
+        "ConnectionModelName": "#Connection.U1",
+        "DoorPosition": {
+          "Start": {
+            "X": 1,
+            "Y": 1,
+            "Z": 0
+          },
+          "End": {
+            "X": 1,
+            "Y": 2,
+            "Z": 0
+          }
+        }
+      },
+      {
+        "WallModelName": "#Window.U2",
+        "DoorModelName": "#Door.U2",
+        "ConnectionModelName": "#Connection.U2",
+        "DoorPosition": {
+          "Start": {
+            "X": 1,
+            "Y": 1,
+            "Z": 1
+          },
+          "End": {
+            "X": 1,
+            "Y": 2,
+            "Z": 1
+          }
+        }
+      }
+    ]
+  },
+  "BobingaboutTubeAccessiblePathModifierSpec": {},
+  "SimpleOutputInventorySpec": {
+    "Capacity": 20,
+    "IgnorableCapacity": true
+  },
+  "InventoryLimitRowHiderSpec": {},
+  "PneumaticTubeSupplierSpec": {
+    "OwnGoodsOnly": true
+  },
+  "Children": {
+    "#Finished": {
+      "TimbermeshSpec": {
+        "Model": "Buildings/DistrictManagement/BuildersHut.LeafCoats.Model"
+      },
+      "CollidersSpec": {
+        "BoxColliders": [
+          {
+            "Center": {
+              "X": 1.5,
+              "Y": 1.0,
+              "Z": 1.425
+            },
+            "Size": {
+              "X": 2.7,
+              "Y": 2.0,
+              "Z": 0.85
+            }
+          },
+          {
+            "Center": {
+              "X": 0.55,
+              "Y": 0.5,
+              "Z": 0.5
+            },
+            "Size": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          {
+            "Center": {
+              "X": 2.45,
+              "Y": 0.5,
+              "Z": 0.5
+            },
+            "Size": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          {
+            "Center": {
+              "X": 1.85,
+              "Y": 0.5,
+              "Z": 0.5
+            },
+            "Size": {
+              "X": 0.2,
+              "Y": 1.0,
+              "Z": 0.7
+            }
+          }
+        ],
+        "SphereColliders": [],
+        "CapsuleColliders": []
+      },
+      "Children": {
+        "#Door.U1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 2.0,
+              "Y": 0.0,
+              "Z": 2.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 180.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Door.LeafCoats.Model"
+          }
+        },
+        "#Door.U2": {
+          "TransformSpec": {
+            "Position": {
+              "X": 2.0,
+              "Y": 1.0,
+              "Z": 2.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 180.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Door.LeafCoats.Model"
+          }
+        },
+        "#Door.L1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 1.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 90.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Door.LeafCoats.Model"
+          }
+        },
+        "#Door.R1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 3.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 270.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Door.LeafCoats.Model"
+          }
+        },
+        "#Connection.U1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 2.0,
+              "Y": 0.0,
+              "Z": 2.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 180.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/TreeBuildings/Branches/Branch.Door.LeafCoats.Model"
+          }
+        },
+        "#Connection.U2": {
+          "TransformSpec": {
+            "Position": {
+              "X": 2.0,
+              "Y": 1.0,
+              "Z": 2.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 180.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/TreeBuildings/Branches/Branch.Door.LeafCoats.Model"
+          }
+        },
+        "#Connection.L1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 1.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 90.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/TreeBuildings/Branches/Branch.Door.LeafCoats.Model"
+          }
+        },
+        "#Connection.R1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 3.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 270.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/TreeBuildings/Branches/Branch.Door.LeafCoats.Model"
+          }
+        },
+        "#Window.U1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 2.0,
+              "Y": 0.0,
+              "Z": 2.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 180.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Window.LeafCoats.Model"
+          }
+        },
+        "#Window.U2": {
+          "TransformSpec": {
+            "Position": {
+              "X": 2.0,
+              "Y": 1.0,
+              "Z": 2.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 180.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Window5.LeafCoats.Model"
+          }
+        },
+        "#Window.L1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 1.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 90.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Window.LeafCoats.Model"
+          }
+        },
+        "#Window.R1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 3.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 270.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Window.LeafCoats.Model"
+          }
+        }
+      }
+    },
+    "#Unfinished": {
+      "Children": {
+        "ConstructionBase3x2": {
+          "TimbermeshSpec": {
+            "Model": "ConstructionBases/ConstructionBase3x2Arch.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 0.05,
+                  "Z": 1.0
+                },
+                "Size": {
+                  "X": 3.0,
+                  "Y": 0.1,
+                  "Z": 2.0
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        },
+        "ConstructionStage0": {
+          "TimbermeshSpec": {
+            "Model": "Buildings/DistrictManagement/BuildersHut.LeafCoats.ConstructionStage0.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 0.1,
+                  "Z": 0.975
+                },
+                "Size": {
+                  "X": 2.9,
+                  "Y": 0.2,
+                  "Z": 1.98
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.1,
+                  "Y": 0.45,
+                  "Z": 0.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.0,
+                  "Y": 0.45,
+                  "Z": 0.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.0,
+                  "Y": 0.45,
+                  "Z": 0.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.9,
+                  "Y": 0.45,
+                  "Z": 0.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.1,
+                  "Y": 0.45,
+                  "Z": 1.0
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.9,
+                  "Y": 0.45,
+                  "Z": 1.0
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.05,
+                  "Y": 0.45,
+                  "Z": 1.0
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.9,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.95,
+                  "Y": 0.45,
+                  "Z": 1.0
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.9,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.0,
+                  "Y": 0.45,
+                  "Z": 1.9
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.0,
+                  "Y": 0.45,
+                  "Z": 1.9
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.1,
+                  "Y": 0.95,
+                  "Z": 1.9
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 1.9,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.9,
+                  "Y": 0.95,
+                  "Z": 1.9
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 1.9,
+                  "Z": 0.1
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        },
+        "ConstructionStage1": {
+          "TimbermeshSpec": {
+            "Model": "Buildings/DistrictManagement/BuildersHut.LeafCoats.ConstructionStage1.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 0.1,
+                  "Z": 0.975
+                },
+                "Size": {
+                  "X": 2.9,
+                  "Y": 0.2,
+                  "Z": 1.98
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.1,
+                  "Y": 0.45,
+                  "Z": 0.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.0,
+                  "Y": 0.45,
+                  "Z": 0.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.0,
+                  "Y": 0.45,
+                  "Z": 0.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.9,
+                  "Y": 0.45,
+                  "Z": 0.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.1,
+                  "Y": 0.45,
+                  "Z": 1.0
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.9,
+                  "Y": 0.45,
+                  "Z": 1.0
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.05,
+                  "Y": 0.45,
+                  "Z": 1.0
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.9,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.95,
+                  "Y": 0.45,
+                  "Z": 1.0
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.9,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.05,
+                  "Y": 0.95,
+                  "Z": 1.9
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 1.9,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.95,
+                  "Y": 0.95,
+                  "Z": 1.9
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 1.9,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.1,
+                  "Y": 1.45,
+                  "Z": 1.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.05,
+                  "Y": 1.45,
+                  "Z": 1.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.95,
+                  "Y": 1.45,
+                  "Z": 1.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 2.9,
+                  "Y": 1.45,
+                  "Z": 1.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.1
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        }
+      }
+    }
+  }
+}

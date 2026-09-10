@@ -316,7 +316,7 @@ namespace Wardens
                 });
 
             Add("dump_assets",
-                "Write loaded game assets to Documents/Timberborn/Mods/Wardens/dump: what=blueprints (every blueprint the game merged, filter on path), materials (names, shaders, colors, texture names), textures (PNG via GPU readback, filter on name, max_count). Enable the mods you want to inspect for that session.",
+                "Write loaded game assets to Documents/Timberborn/WardensDump (a sibling of Mods/, never inside a mod folder - the loader would index a dump left there as real mod content): what=blueprints (every blueprint the game merged, filter on path), materials (names, shaders, colors, texture names), textures (PNG via GPU readback, filter on name, max_count). Enable the mods you want to inspect for that session.",
                 Schema(new JObject
                 {
                     ["what"] = Prop("string", "blueprints | materials | textures", "blueprints"),

@@ -30,7 +30,7 @@ src/
   WardensPoweredStep.cs              PoweredBuildingStepSpec: "Power: X" with our own shaft buttons
   WardensPopulationStep.cs           BeaversStepSpec: "Beavers: (n/m)" for the first pod-born beaver
   WardensTriggers.cs                 MissingDam / PlatformBuilt / IdleWardens triggers (optional tutorials)
-  WardensColdBoot.cs                 start-of-run cutscene: paused orbit around the Core
+  WardensColdBoot.cs                 start-of-run cutscene: paused orbit + 3 archived badtides
   WardensCameraDirector.cs           keyframe camera flights (cutscene, MCP, trailer)
   WardensPointer.cs                  highlight + arrow + toast on a tile ("look here")
   WardensChat.cs                     in-game chat panel (WARDENS UPLINK) + message store
@@ -97,6 +97,12 @@ with alpha premultiplied so fully-transparent-but-black source pixels don't frin
 Models stay vanilla references. Everything costs Scrap Metal (the Scavenger Flag is the only source);
 science cost is 0 until the chapter unlock service exists.
 
+`tools/gen_port.py` ports Leaf Coats buildings the same way, from a live `dump_assets` dump instead
+of a zip (`design/leafcoats-port-plan.md` has the full plan and status). The current batch — 44
+buildings the Iron Teeth re-specs above don't already cover (District management, Power, Science,
+Water, Metal, the larger Storage tier) — sits in `Buildings.WardensPort`, not yet added to the
+faction's `TemplateCollectionIds`.
+
 | Template | From | What changed |
 |---|---|---|
 | `Core.Wardens` (starting building) | DistrictCenter.IronTeeth | + 150 hp power output |
@@ -126,4 +132,6 @@ and the code it needs (Bobingabout Script Pack, Vertical Nav Mesh) into `src/` f
 `--remove` takes them out again. With the copies in the mod, **disable the seven workshop mods** (Leaf Coats + 3 add-ons, Script Pack, Vertical Nav Mesh, Harmony: Vertical Nav Mesh is a Harmony patch).
 The analysis and the file-by-file port plan are in
 [`../design/leafcoats-port-plan.md`](../design/leafcoats-port-plan.md); the building blueprints
-inside their bundle are read with the MCP tool `dump_assets` (writes to `Mods/Wardens/dump/`).
+inside their bundle are read with the MCP tool `dump_assets` (writes to `Documents/Timberborn/WardensDump/`,
+deliberately outside `Mods/Wardens/` — the mod loader scans every mod folder recursively with no
+folder exclusions, so a dump left inside one gets indexed as real mod content on the next boot).

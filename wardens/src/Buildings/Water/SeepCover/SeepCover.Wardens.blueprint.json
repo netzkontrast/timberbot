@@ -1,0 +1,339 @@
+{
+  "BuildingSpec": {
+    "SelectionSoundName": "Floodgate",
+    "LoopingSoundName": "",
+    "BuildingCost": [
+      {
+        "Id": "ScrapMetal",
+        "Amount": 45
+      }
+    ],
+    "ScienceCost": 1000,
+    "PlaceFinished": false,
+    "FinishableWithBeaversOnSite": false,
+    "DrawRangeBoundsOnIt": false
+  },
+  "BuildingModelSpec": {
+    "FinishedModelName": "#Finished",
+    "UnfinishedModelName": "#Unfinished",
+    "FinishedUncoveredModelName": "",
+    "UndergroundModelName": "#Underground",
+    "ConstructionModeModel": "Finished",
+    "UndergroundModelDepth": 99
+  },
+  "TemplateSpec": {
+    "TemplateName": "SeepCover.Wardens",
+    "BackwardCompatibleTemplateNames": [],
+    "RequiredFeatureToggle": "",
+    "DisablingFeatureToggle": ""
+  },
+  "BlockObjectSpec": {
+    "Size": {
+      "X": 2,
+      "Y": 2,
+      "Z": 1
+    },
+    "Blocks": [
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      }
+    ],
+    "Entrance": {
+      "HasEntrance": false,
+      "Coordinates": {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      }
+    },
+    "BaseZ": 0,
+    "Overridable": false,
+    "Flippable": false
+  },
+  "PlaceableBlockObjectSpec": {
+    "ToolGroupId": "Water",
+    "ToolOrder": 82,
+    "ToolShape": "Square",
+    "Layout": "Single",
+    "CustomPivot": {
+      "HasCustomPivot": false,
+      "Coordinates": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      }
+    },
+    "CanBeAttachedToTerrainSide": false,
+    "DevModeTool": false
+  },
+  "LabeledEntitySpec": {
+    "DisplayNameLocKey": "Building.SeepCover.DisplayName",
+    "DescriptionLocKey": "Building.SeepCover.Description",
+    "FlavorDescriptionLocKey": "Building.SeepCover.FlavorDescription",
+    "Icon": "Buildings/Water/SeepCoverIcon"
+  },
+  "WaterSourceRegulatorSpec": {},
+  "WaterSourceRegulatorAnimationControllerSpec": {
+    "RegulatorTransforms": [
+      {
+        "TransformName": "#SeepCover.LeafCoats.1",
+        "TargetOffset": {
+          "X": 0.0,
+          "Y": 0.6,
+          "Z": 0.0
+        },
+        "TargetRotation": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        }
+      },
+      {
+        "TransformName": "#SeepCover.LeafCoats.2",
+        "TargetOffset": {
+          "X": 0.0,
+          "Y": 0.3,
+          "Z": 0.0
+        },
+        "TargetRotation": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        }
+      }
+    ]
+  },
+  "BuildingTerrainCutoutSpec": {
+    "CutoutTiles": [
+      {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      },
+      {
+        "X": 0,
+        "Y": 1,
+        "Z": 0
+      },
+      {
+        "X": 1,
+        "Y": 0,
+        "Z": 0
+      },
+      {
+        "X": 1,
+        "Y": 1,
+        "Z": 0
+      }
+    ]
+  },
+  "ConstructionSiteProgressVisualizerSpec": {
+    "ProgressThresholds": [
+      0.0
+    ]
+  },
+  "UnderstructureConstraintSpec": {
+    "UnderstructureTemplateNames": [
+      "WaterSeep",
+      "BadwaterSeep"
+    ]
+  },
+  "RegulatedWaterSourceBlockerSpec": {},
+  "UnderlyingWaterSourceModelChangerSpec": {
+    "DefaultModelName": "#SeepCover.LeafCoats.Default",
+    "UnderlyingWaterSourceModels": [
+      {
+        "UnderlyingWaterSourceName": "WaterSeep",
+        "ModelName": "#SeepCover.LeafCoats.Good"
+      },
+      {
+        "UnderlyingWaterSourceName": "BadwaterSeep",
+        "ModelName": "#SeepCover.LeafCoats.Bad"
+      }
+    ]
+  },
+  "BlockObjectNavMeshSettingsSpec": {
+    "NoAutoWalls": false,
+    "GenerateFloorsOnStackable": true,
+    "EdgeGroups": [],
+    "UnblockedCoordinates": [],
+    "BlockedEdges": []
+  },
+  "Children": {
+    "#Underground": {
+      "TimbermeshSpec": {
+        "Model": "Buildings/Water/SeepCover.LeafCoats.Underground.Model"
+      }
+    },
+    "#Finished": {
+      "TimbermeshSpec": {
+        "Model": "Buildings/Water/SeepCover.LeafCoats.Model"
+      },
+      "CollidersSpec": {
+        "BoxColliders": [
+          {
+            "Center": {
+              "X": 1.0,
+              "Y": 0.5,
+              "Z": 1.0
+            },
+            "Size": {
+              "X": 2.0,
+              "Y": 1.0,
+              "Z": 2.0
+            }
+          }
+        ],
+        "SphereColliders": [],
+        "CapsuleColliders": []
+      }
+    },
+    "#Unfinished": {
+      "Children": {
+        "ConstructionBase2x2EdgesOnly": {
+          "TimbermeshSpec": {
+            "Model": "ConstructionBases/ConstructionBase2x2EdgesOnly.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 0.1,
+                  "Y": 0.05,
+                  "Z": 1.0
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.1,
+                  "Z": 2.0
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.9,
+                  "Y": 0.05,
+                  "Z": 1.0
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.1,
+                  "Z": 2.0
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.0,
+                  "Y": 0.05,
+                  "Z": 0.1
+                },
+                "Size": {
+                  "X": 2.0,
+                  "Y": 0.1,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.0,
+                  "Y": 0.05,
+                  "Z": 1.9
+                },
+                "Size": {
+                  "X": 2.0,
+                  "Y": 0.1,
+                  "Z": 0.2
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        },
+        "ConstructionStage0": {
+          "TimbermeshSpec": {
+            "Model": "Buildings/Water/SeepCover.LeafCoats.ConstructionStage0.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 0.05,
+                  "Y": 0.45,
+                  "Z": 0.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.95,
+                  "Y": 0.45,
+                  "Z": 0.05
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.05,
+                  "Y": 0.45,
+                  "Z": 1.95
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.1
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.95,
+                  "Y": 0.45,
+                  "Z": 1.95
+                },
+                "Size": {
+                  "X": 0.1,
+                  "Y": 0.9,
+                  "Z": 0.1
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        }
+      }
+    }
+  }
+}

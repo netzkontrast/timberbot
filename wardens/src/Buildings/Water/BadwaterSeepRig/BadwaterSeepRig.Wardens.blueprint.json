@@ -1,0 +1,582 @@
+{
+  "BuildingSpec": {
+    "SelectionSoundName": "BadwaterRig",
+    "LoopingSoundName": "",
+    "BuildingCost": [
+      {
+        "Id": "ScrapMetal",
+        "Amount": 70
+      }
+    ],
+    "ScienceCost": 2000,
+    "PlaceFinished": false,
+    "FinishableWithBeaversOnSite": false,
+    "DrawRangeBoundsOnIt": false
+  },
+  "BuildingModelSpec": {
+    "FinishedModelName": "#Finished",
+    "UnfinishedModelName": "#Unfinished",
+    "FinishedUncoveredModelName": "",
+    "UndergroundModelName": "#Underground",
+    "ConstructionModeModel": "Finished",
+    "UndergroundModelDepth": 99
+  },
+  "TemplateSpec": {
+    "TemplateName": "BadwaterSeepRig.Wardens",
+    "BackwardCompatibleTemplateNames": [],
+    "RequiredFeatureToggle": "",
+    "DisablingFeatureToggle": ""
+  },
+  "BlockObjectSpec": {
+    "Size": {
+      "X": 2,
+      "Y": 2,
+      "Z": 4
+    },
+    "Blocks": [
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Ground",
+        "Occupations": "Top",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "Floor, Bottom",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "Floor, Bottom",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "Floor, Bottom",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "Floor, Bottom",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      }
+    ],
+    "Entrance": {
+      "HasEntrance": true,
+      "Coordinates": {
+        "X": 1,
+        "Y": -1,
+        "Z": 1
+      }
+    },
+    "BaseZ": 0,
+    "Overridable": false,
+    "Flippable": false
+  },
+  "PlaceableBlockObjectSpec": {
+    "ToolGroupId": "Water",
+    "ToolOrder": 92,
+    "ToolShape": "Square",
+    "Layout": "Single",
+    "CustomPivot": {
+      "HasCustomPivot": false,
+      "Coordinates": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      }
+    },
+    "CanBeAttachedToTerrainSide": false,
+    "DevModeTool": false
+  },
+  "LabeledEntitySpec": {
+    "DisplayNameLocKey": "Building.BadwaterSeepRig.DisplayName",
+    "DescriptionLocKey": "Building.BadwaterSeepRig.Description",
+    "FlavorDescriptionLocKey": "Building.BadwaterSeepRig.FlavorDescription",
+    "Icon": "Buildings/Water/BadwaterSeepRigIcon"
+  },
+  "UnderstructureConstraintSpec": {
+    "UnderstructureTemplateNames": [
+      "BadwaterSeep"
+    ]
+  },
+  "WaterSourceDisablerSpec": {},
+  "WorkplaceSpec": {
+    "MaxWorkers": 4,
+    "DefaultWorkers": 2,
+    "DefaultWorkerType": "Beaver",
+    "DisallowOtherWorkerTypes": false,
+    "WorkerTypeUnlockCosts": [
+      {
+        "WorkerType": "Bot",
+        "ScienceCost": 1000
+      }
+    ]
+  },
+  "ManufactorySpec": {
+    "ProductionRecipeIds": [
+      "ExtractExtracted"
+    ]
+  },
+  "EnterableSpec": {
+    "OperatingState": "Finished",
+    "LimitedCapacityFinished": false,
+    "CapacityFinished": 0,
+    "LimitedCapacityUnfinished": false,
+    "CapacityUnfinished": 0
+  },
+  "WorkshopSpec": {},
+  "BuildingAccessibleSpec": {
+    "LocalAccess": {
+      "X": 1.5,
+      "Y": 1.0,
+      "Z": 0.75
+    },
+    "ForceOneFinalAccess": false
+  },
+  "SimpleManufactoryBehaviorsSpec": {},
+  "WorkshopRandomNeedApplierSpec": {
+    "Effects": [
+      {
+        "NeedId": "Injury",
+        "Points": -0.8,
+        "Probability": "High"
+      }
+    ]
+  },
+  "WorkshopAnimationControllerSpec": {},
+  "WorkshopParticleControllerSpec": {
+    "AttachmentIds": [
+      "Smoke"
+    ]
+  },
+  "WorkplaceIlluminatorSpec": {},
+  "BlockObjectNavMeshSettingsSpec": {
+    "NoAutoWalls": false,
+    "GenerateFloorsOnStackable": false,
+    "EdgeGroups": [
+      {
+        "Cost": 1.0,
+        "Group": {
+          "UseGroup": false,
+          "GroupName": ""
+        },
+        "IsPath": true,
+        "AddedEdges": [
+          {
+            "Start": {
+              "X": 1,
+              "Y": -1,
+              "Z": 1
+            },
+            "End": {
+              "X": 1,
+              "Y": 0,
+              "Z": 1
+            },
+            "IsTwoWay": true
+          }
+        ]
+      }
+    ],
+    "UnblockedCoordinates": [],
+    "BlockedEdges": []
+  },
+  "ConstructionSiteProgressVisualizerSpec": {
+    "ProgressThresholds": [
+      0.0,
+      0.3
+    ]
+  },
+  "FinishedBlockObjectBelowBlockerSpec": {},
+  "TemplateAttachmentsSpec": {
+    "Attachments": [
+      {
+        "AttachmentId": "Smoke",
+        "Prefab": "Buildings/Water/BadwaterRig/BadwaterRigSmokeGroup",
+        "Parent": "#Finished",
+        "Position": {
+          "X": -0.5,
+          "Y": 0.0,
+          "Z": -0.5
+        },
+        "Rotation": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        "Scale": {
+          "X": 1.0,
+          "Y": 1.0,
+          "Z": 1.0
+        },
+        "CreateInstantly": true
+      }
+    ]
+  },
+  "MechanicalBuildingSpec": {},
+  "TransputProviderSpec": {
+    "Transputs": [
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Down, Left",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Down, Right",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Left, Up",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Up, Right",
+        "ReverseRotation": false
+      }
+    ],
+    "IgnoreRotation": true
+  },
+  "MechanicalNodeSpec": {
+    "PowerOutput": 0,
+    "PowerInput": 200,
+    "IsShaft": false
+  },
+  "MechanicalConnectorTargetSpec": {},
+  "BobingaboutBranchWallConnectionSpec": {},
+  "BobingaboutBranchWallSpec": {
+    "Connections": [
+      {
+        "WallModelName": "",
+        "DoorModelName": "#BadwaterSeepRig.LeafCoats.Bridge",
+        "ConnectionModelName": "#BadwaterSeepRig.LeafCoats.Branch",
+        "DoorPosition": {
+          "Start": {
+            "X": 1,
+            "Y": 0,
+            "Z": 1
+          },
+          "End": {
+            "X": 1,
+            "Y": -1,
+            "Z": 1
+          }
+        }
+      }
+    ]
+  },
+  "WorkplaceSlotManagerSpec": {},
+  "TransformSlotInitializerSpec": {
+    "Slots": [
+      {
+        "SlotKeyword": "Entrance",
+        "Animation": "Sitting",
+        "Inanimate": false,
+        "RandomizeYRotation": false,
+        "WaterSlot": false
+      }
+    ]
+  },
+  "WorkshopWorkerHiderSpec": {},
+  "BobingaboutPathMeshHiderSpec": {},
+  "Children": {
+    "#Finished": {
+      "TimbermeshSpec": {
+        "Model": "Buildings/Water/BadwaterSeepRig.LeafCoats.Model"
+      },
+      "CollidersSpec": {
+        "BoxColliders": [
+          {
+            "Center": {
+              "X": 1.0,
+              "Y": 0.4,
+              "Z": 1.0
+            },
+            "Size": {
+              "X": 2.0,
+              "Y": 0.8,
+              "Z": 2.0
+            }
+          }
+        ],
+        "SphereColliders": [
+          {
+            "Center": {
+              "X": 1.0,
+              "Y": 1.2,
+              "Z": 1.0
+            },
+            "Radius": 1.0
+          }
+        ],
+        "CapsuleColliders": [
+          {
+            "Center": {
+              "X": 1.0,
+              "Y": 2.0,
+              "Z": 1.0
+            },
+            "Radius": 0.35,
+            "Height": 2.0,
+            "Axis": "Y"
+          }
+        ]
+      }
+    },
+    "#Unfinished": {
+      "Children": {
+        "ConstructionBase2x2EdgesOnly": {
+          "TimbermeshSpec": {
+            "Model": "ConstructionBases/ConstructionBase2x2EdgesOnly.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 0.1,
+                  "Y": 0.05,
+                  "Z": 1.0
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.1,
+                  "Z": 2.0
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.9,
+                  "Y": 0.05,
+                  "Z": 1.0
+                },
+                "Size": {
+                  "X": 0.2,
+                  "Y": 0.1,
+                  "Z": 2.0
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.0,
+                  "Y": 0.05,
+                  "Z": 0.1
+                },
+                "Size": {
+                  "X": 2.0,
+                  "Y": 0.1,
+                  "Z": 0.2
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.0,
+                  "Y": 0.05,
+                  "Z": 1.9
+                },
+                "Size": {
+                  "X": 2.0,
+                  "Y": 0.1,
+                  "Z": 0.2
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        },
+        "ConstructionStage0": {
+          "TimbermeshSpec": {
+            "Model": "Buildings/Water/BadwaterSeepRig.LeafCoats.ConstructionStage0.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 0.075,
+                  "Y": 0.35,
+                  "Z": 0.075
+                },
+                "Size": {
+                  "X": 0.15,
+                  "Y": 0.7,
+                  "Z": 0.15
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.925,
+                  "Y": 0.35,
+                  "Z": 0.075
+                },
+                "Size": {
+                  "X": 0.15,
+                  "Y": 0.7,
+                  "Z": 0.15
+                }
+              },
+              {
+                "Center": {
+                  "X": 0.075,
+                  "Y": 0.35,
+                  "Z": 1.925
+                },
+                "Size": {
+                  "X": 0.15,
+                  "Y": 0.7,
+                  "Z": 0.15
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.925,
+                  "Y": 0.35,
+                  "Z": 1.925
+                },
+                "Size": {
+                  "X": 0.15,
+                  "Y": 0.7,
+                  "Z": 0.15
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        },
+        "ConstructionStage1": {
+          "TimbermeshSpec": {
+            "Model": "Buildings/Water/BadwaterSeepRig.LeafCoats.ConstructionStage1.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 1.0,
+                  "Y": 0.5,
+                  "Z": 1.0
+                },
+                "Size": {
+                  "X": 2.0,
+                  "Y": 1.0,
+                  "Z": 2.0
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        }
+      }
+    },
+    "#Underground": {
+      "TimbermeshSpec": {
+        "Model": "Buildings/Water/SeepCover.LeafCoats.Underground.Model"
+      }
+    }
+  }
+}

@@ -187,3 +187,106 @@ meshes appears in Wardens colors without touching the bundle.
    the Leaf Coats meshes.
 
 Licensing stays the gate for anything beyond this machine.
+
+## Status 2026-09-03
+
+Step 1 (dump) and the first slice of step 3 (generator) are done, against a live game
+(`wardens/playtest/run_dump.py`, `dump_assets what=blueprints filter=LeafCoats` → 287 files under
+`Documents/Timberborn/Mods/Wardens/dump/blueprints`, one clean fully-resolved JSON per building —
+no re-merging needed on our end).
+
+`wardens/tools/gen_port.py` ported the first batch: **44 buildings** (DistrictManagement, Power,
+Science, Water, Metal, Storage — everything in §5's table for those folders that we did **not**
+already have under a Wardens name from `gen_buildings.py`'s Iron Teeth re-specs; Core, ChargingPost,
+PowerShaft, HaulingPost, the small storage tier and the badwater pump were deliberately left alone
+so nothing already wired into the live tutorial/save changes shape). Each got the five edits
+(TemplateName, fresh loc keys, a Scrap Metal cost tiered off its own unchanged ScienceCost, a
+WardensCyan illuminator recolor where one already exists) with model/mesh/collider/transput data
+copied verbatim. They live in a new `Buildings.WardensPort` collection that is **not** yet added to
+`Faction.Wardens.TemplateCollectionIds` — wiring them into the bar/chapters is a separate step.
+Deployed as v0.2.7; `validate.py` clean.
+
+Blocked, needs a short live-game step: `dump_assets what=materials|textures filter=LeafCoats`
+returned **zero** results (checked with no filter too, against 50k+ loaded materials — genuinely
+none loaded). Unity only loads an AssetBundle's materials/textures into memory once something
+references them; since no Leaf Coats building has ever been placed or previewed in this game, and
+the `timberbot` placement API only accepts prefabs already in the active faction's toolbar
+(`invalid_prefab` for `Dam.LeafCoats`), nothing has forced them into memory yet. Next session: add
+`Buildings.LeafCoats` (or just the 44 ported ones, via `Buildings.WardensPort`) to
+`Faction.Wardens.TemplateCollectionIds` for one test session, rebuild, reload the save, place (or
+just preview in the build menu — worth testing whether a hover is enough) one building per material
+family, dump materials + textures, then revert the collection change. That unblocks §6 (the 30
+`MaterialCloneSpec` files + recolored atlas) and the icon recolor pass.
+
+Remaining building batches (§5, unstarted): Scaffolds/Paths/Platforms/Dams/Landscaping/Automation/
+Decoration/Zipline (the bulk of the 243 — mostly rename + tint, low risk, high volume), then the
+Wellbeing re-purposes (need individual judgment calls per row, not a mechanical port), then
+Characters/Bot → `Bot.Wardens` + `BotTexturesSpec` (blocked on the same material work above, since
+the bot skin is a texture, not a blueprint).
+
+## Status 2026-09-03, first real crash: duplicate loose files
+
+The port's §7 step 5 ("remove the LeafCoats faction, collections and loose blueprints from the
+copy") was written but never executed, and it bit: `RecipeSpecService.Load()` throws
+`ArgumentException: An item with the same key has already been added. Key: Antidote.LeafCoats`
+whenever a loose recipe we copied duplicates an Id that also exists inside
+`AssetBundles/leafcoats_win` (the dumped copy earlier only showed one source because
+`dump_assets`/`BlueprintFileBundleLoader.GetBundles` groups by *file path*, and the bundle's
+internal path for the same recipe apparently doesn't contain "LeafCoats" — so the earlier
+`filter=LeafCoats` dump silently missed it). Any singleton scheduled after `RecipeSpecService` in
+`SingletonLifecycleService.LoadAll()` never loads at all, which is why the *next* symptom looked
+unrelated: `TutorialStageService`'s stage dictionary was simply empty, so every stage lookup threw
+`KeyNotFoundException`, `Wardens.ColdBoot.Badtides` included — that stage was never the bug.
+
+Same story for the faction menu showing "Leaf Coats" twice: `Factions/Faction.LeafCoats
+.blueprint.json` (also a loose copy the plan said to delete) registers a second playable faction
+on top of whatever the bundle itself already contributes.
+
+Fixed: removed the loose `Faction.LeafCoats.blueprint.json` and the loose recipes §4 always meant
+to drop (`Antidote`, `Extract.Extracted`, the five food recipes). `tools/import_leafcoats.py` now
+has a `SKIP_PATHS` set so a future re-run of the import won't resurrect exactly this bug.
+`Wardens.csproj`'s deploy `RemoveDir` now also wipes `Factions` before each redeploy (matching
+Tutorials/Buildings/Collections/Recipes) so a source deletion can't leave a stale file behind.
+Deployed as v0.2.9.
+
+**Not yet checked**: the same loose-vs-bundle duplication could exist in `Goods/`, `Needs/`,
+`WorkerOutfits/`, `Decals/`, `Collections/*.LeafCoats.*`, `CharacterCustomizer/`, `MaterialPatcher/`
+— every category `import_leafcoats.py` copied verbatim. Antidote was caught because
+`RecipeSpecService` happens to hard-fail with `Dictionary.Add`; a duplicate elsewhere might behave
+differently (silent overwrite, a different exception, or nothing at all) depending on how that
+spec type's own service builds its index. Worth a systematic pass — cross-reference every loose
+file's declared Id against a *fresh, unfiltered* `dump_assets what=blueprints` (no `filter=LeafCoats`,
+since path-based filtering is what let Antidote slip through) — before porting more buildings.
+
+## Status 2026-09-03, actual root cause found: the dump lived inside the mod folder
+
+Every crash chased today (`Antidote.LeafCoats`, `Log.Press.LeafCoats`, then `Need "Garden" not
+found`) traced back to one mistake: `WardensAssetDump.DumpRoot` wrote to
+`Documents/Timberborn/Mods/Wardens/dump/`, a folder *inside* the live mod directory.
+`ModSystemFileProvider.CacheFilesFromMod` (decompiled) scans every enabled mod with
+`modDirectory.GetFiles("*", SearchOption.AllDirectories)` — no folder exclusion, extension only —
+so the 287-file blueprint dump taken mid-session for the port work was being re-indexed as real,
+current mod content on every subsequent load, frozen at whatever it looked like the moment it was
+dumped. That explains all three symptoms: a loose file we still shipped collided with its own
+frozen dump copy (duplicate-key crash); once we deleted the loose original in response, the *dump
+copy* became the sole survivor, so deleting further things from `src` didn't remove them from the
+game's eyes at all; and the "Garden" need vanished from `src` while the dump's frozen
+`needcollection.leafcoats.blueprint.json` still listed it as a member, an orphaned reference the
+verifier caught.
+
+The "loose file duplicates the bundle" theory from earlier today was likely wrong, or at best only
+part of the picture — the dump folder alone is sufficient to explain everything, and no offline
+tool can actually confirm bundle-internal duplication either way. The Recipes/Goods/Needs/etc.
+cleanup done under that theory is not undone (Leaf Coats' own faction, food chain, and tribute
+content genuinely don't belong in this mod regardless), but it likely fixed nothing by itself; the
+one file that mattered was deleting `Mods/Wardens/dump/` itself.
+
+Fixed: deleted the deployed `dump/` folder, moved `WardensAssetDump.DumpRoot` to
+`Documents/Timberborn/WardensDump` (a sibling of `Mods/`, never inside a mod's own scanned tree),
+updated every doc reference to the old path. Deployed as v0.2.12.
+
+Consequence for future port sessions: `dump_assets` output now lives outside the mod folder by
+construction, so re-running the port's step 1 dump can no longer resurrect this bug — but the
+Recipes/Goods/Needs cleanup should be treated as *unverified* against the real "does the bundle
+also define this Id" question. If a genuinely new duplicate-key crash shows up now that the dump
+folder is out of the loading path, that would be the first real evidence either way.

@@ -1,0 +1,332 @@
+{
+  "BuildingSpec": {
+    "SelectionSoundName": "GravityBattery",
+    "LoopingSoundName": "",
+    "BuildingCost": [
+      {
+        "Id": "ScrapMetal",
+        "Amount": 20
+      }
+    ],
+    "ScienceCost": 300,
+    "PlaceFinished": false,
+    "FinishableWithBeaversOnSite": false,
+    "DrawRangeBoundsOnIt": false
+  },
+  "BuildingModelSpec": {
+    "FinishedModelName": "#Finished",
+    "UnfinishedModelName": "#Unfinished",
+    "FinishedUncoveredModelName": "",
+    "UndergroundModelName": "",
+    "ConstructionModeModel": "Finished",
+    "UndergroundModelDepth": 0
+  },
+  "MechanicalBuildingSpec": {},
+  "TemplateSpec": {
+    "TemplateName": "GravityBattery.Gantry.Wardens",
+    "BackwardCompatibleTemplateNames": [],
+    "RequiredFeatureToggle": "",
+    "DisablingFeatureToggle": ""
+  },
+  "BlockObjectSpec": {
+    "Size": {
+      "X": 1,
+      "Y": 2,
+      "Z": 2
+    },
+    "Blocks": [
+      {
+        "MatterBelow": "Any",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "Floor, Bottom, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      }
+    ],
+    "Entrance": {
+      "HasEntrance": false,
+      "Coordinates": {
+        "X": 0,
+        "Y": 0,
+        "Z": 0
+      }
+    },
+    "BaseZ": 0,
+    "Overridable": false,
+    "Flippable": true
+  },
+  "PlaceableBlockObjectSpec": {
+    "ToolGroupId": "Power",
+    "ToolOrder": 61,
+    "ToolShape": "Square",
+    "Layout": "Single",
+    "CustomPivot": {
+      "HasCustomPivot": true,
+      "Coordinates": {
+        "X": 0.5,
+        "Y": 1.5,
+        "Z": 0.0
+      }
+    },
+    "CanBeAttachedToTerrainSide": false,
+    "DevModeTool": false
+  },
+  "LabeledEntitySpec": {
+    "DisplayNameLocKey": "Building.GravityBatteryGantry.DisplayName",
+    "DescriptionLocKey": "Building.GravityBatteryGantry.Description",
+    "FlavorDescriptionLocKey": "Building.GravityBatteryGantry.FlavorDescription",
+    "Icon": "Buildings/Power/GravityBattery/GravityBatteryIcon"
+  },
+  "MechanicalNodeSpec": {
+    "PowerOutput": 0,
+    "PowerInput": 0,
+    "IsShaft": false
+  },
+  "TransputProviderSpec": {
+    "Transputs": [
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Up, Right, Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 1,
+          "Z": 1
+        },
+        "Directions": "Up, Right, Top",
+        "ReverseRotation": false
+      }
+    ],
+    "IgnoreRotation": true
+  },
+  "LayeredBlockObstacleSpec": {
+    "LayerSize": {
+      "X": 1,
+      "Y": 1
+    },
+    "AnchorPosition": {
+      "X": 0.5,
+      "Y": 0.0,
+      "Z": 0.5
+    },
+    "BlockCreationOffset": 1
+  },
+  "GravityBatterySpec": {
+    "CapacityPerTile": 1000
+  },
+  "LayeredBlockObstacleVisualizerSpec": {
+    "PositionTransformName": "#Weight1x1.LeafCoats",
+    "ScaleTransformName": "#Rope.LeafCoats"
+  },
+  "BoxColliderAdderSpec": {
+    "TargetName": "#Weight1x1.LeafCoats",
+    "Center": {
+      "X": 0.0,
+      "Y": 0.3666,
+      "Z": 0.0
+    },
+    "Size": {
+      "X": 0.7398,
+      "Y": 0.7435,
+      "Z": 0.7401
+    }
+  },
+  "ConstructionSiteProgressVisualizerSpec": {
+    "ProgressThresholds": [
+      0.0
+    ]
+  },
+  "MechanicalConnectorTargetSpec": {},
+  "PneumaticTubeConnectionProviderSpec": {
+    "ConnectionSpecs": [
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Up, Right, Bottom"
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 1,
+          "Z": 1
+        },
+        "Directions": "Up, Right, Top"
+      }
+    ]
+  },
+  "Children": {
+    "#Finished": {
+      "TimbermeshSpec": {
+        "Model": "Buildings/Power/GravityBattery.TreeTrunk.LeafCoats.Model"
+      },
+      "CollidersSpec": {
+        "BoxColliders": [
+          {
+            "Center": {
+              "X": 0.5,
+              "Y": 1.0,
+              "Z": 1.5
+            },
+            "Size": {
+              "X": 1.0,
+              "Y": 2.0,
+              "Z": 1.0
+            }
+          },
+          {
+            "Center": {
+              "X": 0.5,
+              "Y": 1.699094,
+              "Z": 1.11066842
+            },
+            "Size": {
+              "X": 0.2426753,
+              "Y": 0.210205078,
+              "Z": 1.605017
+            }
+          },
+          {
+            "Center": {
+              "X": 0.5,
+              "Y": 1.107624,
+              "Z": 0.9024992
+            },
+            "Size": {
+              "X": 0.192974985,
+              "Y": 0.125957012,
+              "Z": 0.886641
+            }
+          }
+        ],
+        "SphereColliders": [],
+        "CapsuleColliders": []
+      },
+      "Children": {
+        "Rope": {
+          "TransformSpec": {
+            "Position": {
+              "X": 0.5,
+              "Y": 1.79005,
+              "Z": 0.5
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Power/#Rope.LeafCoats.Model"
+          }
+        },
+        "Weight.LeafCoats": {
+          "TimbermeshSpec": {
+            "Model": "Buildings/Power/#Weight1x1.LeafCoats.Model"
+          }
+        }
+      }
+    },
+    "#Unfinished": {
+      "Children": {
+        "ConstructionBase1x1Curved": {
+          "TransformSpec": {
+            "Position": {
+              "X": 1.0,
+              "Y": 0.0,
+              "Z": 2.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 180.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "ConstructionBases/ConstructionBase1x1Curved.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 0.5,
+                  "Y": 0.05,
+                  "Z": 0.5
+                },
+                "Size": {
+                  "X": 1.0,
+                  "Y": 0.1,
+                  "Z": 1.0
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        },
+        "ConstructionStage0": {
+          "TimbermeshSpec": {
+            "Model": "Buildings/Power/GravityBattery.TreeTrunk.LeafCoats.ConstructionStage0.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 0.5,
+                  "Y": 1.0,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 1.0,
+                  "Y": 2.0,
+                  "Z": 1.0
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        }
+      }
+    }
+  }
+}

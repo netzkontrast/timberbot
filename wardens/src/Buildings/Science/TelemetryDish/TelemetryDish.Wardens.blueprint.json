@@ -1,0 +1,1133 @@
+{
+  "BuildingSpec": {
+    "SelectionSoundName": "Observatory",
+    "LoopingSoundName": "",
+    "BuildingCost": [
+      {
+        "Id": "ScrapMetal",
+        "Amount": 45
+      }
+    ],
+    "ScienceCost": 1000,
+    "PlaceFinished": false,
+    "FinishableWithBeaversOnSite": false,
+    "DrawRangeBoundsOnIt": false
+  },
+  "BuildingModelSpec": {
+    "FinishedModelName": "#Finished",
+    "UnfinishedModelName": "#Unfinished",
+    "FinishedUncoveredModelName": "",
+    "UndergroundModelName": "",
+    "ConstructionModeModel": "Finished",
+    "UndergroundModelDepth": 0
+  },
+  "EnterableSpec": {
+    "OperatingState": "Finished",
+    "LimitedCapacityFinished": true,
+    "CapacityFinished": 4,
+    "LimitedCapacityUnfinished": false,
+    "CapacityUnfinished": 0
+  },
+  "TemplateSpec": {
+    "TemplateName": "TelemetryDish.Wardens",
+    "BackwardCompatibleTemplateNames": [],
+    "RequiredFeatureToggle": "",
+    "DisablingFeatureToggle": ""
+  },
+  "BlockObjectSpec": {
+    "Size": {
+      "X": 3,
+      "Y": 3,
+      "Z": 4
+    },
+    "Blocks": [
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "Any",
+        "Occupations": "All",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      }
+    ],
+    "Entrance": {
+      "HasEntrance": true,
+      "Coordinates": {
+        "X": 1,
+        "Y": 1,
+        "Z": 0
+      }
+    },
+    "BaseZ": 0,
+    "Overridable": false,
+    "Flippable": false
+  },
+  "BuildingAccessibleSpec": {
+    "LocalAccess": {
+      "X": 1.5,
+      "Y": 0.0,
+      "Z": 2.5
+    },
+    "ForceOneFinalAccess": false
+  },
+  "PlaceableBlockObjectSpec": {
+    "ToolGroupId": "Science",
+    "ToolOrder": 20,
+    "ToolShape": "Square",
+    "Layout": "Single",
+    "CustomPivot": {
+      "HasCustomPivot": false,
+      "Coordinates": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      }
+    },
+    "CanBeAttachedToTerrainSide": false,
+    "DevModeTool": false
+  },
+  "LabeledEntitySpec": {
+    "DisplayNameLocKey": "Building.TelemetryDish.DisplayName",
+    "DescriptionLocKey": "Building.TelemetryDish.Description",
+    "FlavorDescriptionLocKey": "Building.TelemetryDish.FlavorDescription",
+    "Icon": "Buildings/Science/Observatory/ObservatoryIcon"
+  },
+  "MechanicalBuildingSpec": {},
+  "MechanicalNodeSpec": {
+    "PowerOutput": 0,
+    "PowerInput": 200,
+    "IsShaft": false
+  },
+  "WorkplaceSpec": {
+    "MaxWorkers": 4,
+    "DefaultWorkers": 4,
+    "DefaultWorkerType": "Beaver",
+    "DisallowOtherWorkerTypes": false,
+    "WorkerTypeUnlockCosts": [
+      {
+        "WorkerType": "Bot",
+        "ScienceCost": 7500
+      }
+    ]
+  },
+  "WorkshopSpec": {},
+  "ManufactorySpec": {
+    "ProductionRecipeIds": [
+      "SciencePointsObservatory"
+    ]
+  },
+  "WorkplaceIlluminatorSpec": {},
+  "ObservatoryAnimatorSpec": {
+    "DomeName": "#ObservatoryDomeMisc",
+    "TelescopeName": "#ObservatoryTelescopeMisc"
+  },
+  "SimpleManufactoryBehaviorsSpec": {},
+  "ConstructionSiteProgressVisualizerSpec": {
+    "ProgressThresholds": [
+      0.0,
+      0.35,
+      0.65
+    ]
+  },
+  "TransputProviderSpec": {
+    "Transputs": [
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Left, Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 2,
+          "Z": 0
+        },
+        "Directions": "Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Down, Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 2,
+          "Z": 0
+        },
+        "Directions": "Up, Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Right, Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 2,
+          "Z": 0
+        },
+        "Directions": "Bottom",
+        "ReverseRotation": false
+      }
+    ],
+    "IgnoreRotation": false
+  },
+  "MechanicalConnectorTargetSpec": {},
+  "BlockObjectNavMeshSettingsSpec": {
+    "NoAutoWalls": false,
+    "GenerateFloorsOnStackable": true,
+    "EdgeGroups": [
+      {
+        "Cost": 1.0,
+        "Group": {
+          "UseGroup": false,
+          "GroupName": ""
+        },
+        "IsPath": true,
+        "AddedEdges": [
+          {
+            "Start": {
+              "X": 1,
+              "Y": 1,
+              "Z": 0
+            },
+            "End": {
+              "X": 1,
+              "Y": 1,
+              "Z": -1
+            },
+            "IsTwoWay": false
+          },
+          {
+            "Start": {
+              "X": 1,
+              "Y": 1,
+              "Z": 0
+            },
+            "End": {
+              "X": 1,
+              "Y": 2,
+              "Z": 0
+            },
+            "IsTwoWay": true
+          }
+        ]
+      },
+      {
+        "Cost": 2.0,
+        "Group": {
+          "UseGroup": false,
+          "GroupName": ""
+        },
+        "IsPath": true,
+        "AddedEdges": [
+          {
+            "Start": {
+              "X": 1,
+              "Y": 0,
+              "Z": 0
+            },
+            "End": {
+              "X": 1,
+              "Y": 1,
+              "Z": 0
+            },
+            "IsTwoWay": true
+          },
+          {
+            "Start": {
+              "X": 0,
+              "Y": 1,
+              "Z": 0
+            },
+            "End": {
+              "X": 1,
+              "Y": 1,
+              "Z": 0
+            },
+            "IsTwoWay": true
+          },
+          {
+            "Start": {
+              "X": 1,
+              "Y": 1,
+              "Z": 0
+            },
+            "End": {
+              "X": 2,
+              "Y": 1,
+              "Z": 0
+            },
+            "IsTwoWay": true
+          }
+        ]
+      },
+      {
+        "Cost": 1.0,
+        "Group": {
+          "UseGroup": false,
+          "GroupName": "Branch"
+        },
+        "IsPath": true,
+        "AddedEdges": [
+          {
+            "Start": {
+              "X": 0,
+              "Y": 1,
+              "Z": 0
+            },
+            "End": {
+              "X": -1,
+              "Y": 1,
+              "Z": 0
+            },
+            "IsTwoWay": false
+          },
+          {
+            "Start": {
+              "X": 1,
+              "Y": 2,
+              "Z": 0
+            },
+            "End": {
+              "X": 1,
+              "Y": 3,
+              "Z": 0
+            },
+            "IsTwoWay": false
+          },
+          {
+            "Start": {
+              "X": 2,
+              "Y": 1,
+              "Z": 0
+            },
+            "End": {
+              "X": 3,
+              "Y": 1,
+              "Z": 0
+            },
+            "IsTwoWay": false
+          },
+          {
+            "Start": {
+              "X": 1,
+              "Y": 0,
+              "Z": 0
+            },
+            "End": {
+              "X": 1,
+              "Y": -1,
+              "Z": 0
+            },
+            "IsTwoWay": false
+          }
+        ]
+      }
+    ],
+    "UnblockedCoordinates": [],
+    "BlockedEdges": []
+  },
+  "PathSpec": {
+    "MainPathCoordinates": {
+      "X": 1,
+      "Y": 1,
+      "Z": 0
+    }
+  },
+  "BobingaboutBranchWallConnectionSpec": {},
+  "ContinuousEffectBuildingSpec": {
+    "Effects": [
+      {
+        "NeedId": "Roof",
+        "PointsPerHour": 0.2,
+        "SatisfyToMaxValue": false
+      }
+    ]
+  },
+  "RangedEffectBuildingSpec": {
+    "EffectRadius": 1
+  },
+  "BobingaboutPathMeshHiderSpec": {},
+  "BobingaboutBranchWallSpec": {
+    "Connections": [
+      {
+        "WallModelName": "#Window.U1",
+        "DoorModelName": "#Door.U1",
+        "ConnectionModelName": "#Connection.U1",
+        "DoorPosition": {
+          "Start": {
+            "X": 1,
+            "Y": 2,
+            "Z": 0
+          },
+          "End": {
+            "X": 1,
+            "Y": 3,
+            "Z": 0
+          }
+        }
+      },
+      {
+        "WallModelName": "#Window.D1",
+        "DoorModelName": "#Door.D1",
+        "ConnectionModelName": "#Connection.D1",
+        "DoorPosition": {
+          "Start": {
+            "X": 1,
+            "Y": 0,
+            "Z": 0
+          },
+          "End": {
+            "X": 1,
+            "Y": -1,
+            "Z": 0
+          }
+        }
+      },
+      {
+        "WallModelName": "#Window.L1",
+        "DoorModelName": "#Door.L1",
+        "ConnectionModelName": "#Connection.L1",
+        "DoorPosition": {
+          "Start": {
+            "X": 0,
+            "Y": 1,
+            "Z": 0
+          },
+          "End": {
+            "X": -1,
+            "Y": 1,
+            "Z": 0
+          }
+        }
+      },
+      {
+        "WallModelName": "#Window.R1",
+        "DoorModelName": "#Door.R1",
+        "ConnectionModelName": "#Connection.R1",
+        "DoorPosition": {
+          "Start": {
+            "X": 2,
+            "Y": 1,
+            "Z": 0
+          },
+          "End": {
+            "X": 3,
+            "Y": 1,
+            "Z": 0
+          }
+        }
+      }
+    ]
+  },
+  "Children": {
+    "#Finished": {
+      "TimbermeshSpec": {
+        "Model": "Buildings/Science/Observatory.LeafCoats.Model"
+      },
+      "CollidersSpec": {
+        "BoxColliders": [
+          {
+            "Center": {
+              "X": 1.5,
+              "Y": 0.65,
+              "Z": 1.5
+            },
+            "Size": {
+              "X": 3.0,
+              "Y": 1.3,
+              "Z": 3.0
+            }
+          }
+        ],
+        "SphereColliders": [],
+        "CapsuleColliders": [
+          {
+            "Center": {
+              "X": 1.5,
+              "Y": 2.41,
+              "Z": 1.5
+            },
+            "Radius": 1.3,
+            "Height": 2.8,
+            "Axis": "Y"
+          }
+        ]
+      },
+      "Children": {
+        "#Door.U1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 2.0,
+              "Y": 0.0,
+              "Z": 3.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 180.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Door.LeafCoats.Model"
+          }
+        },
+        "#Door.L1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 2.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 90.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Door.LeafCoats.Model"
+          }
+        },
+        "#Door.R1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 3.0,
+              "Y": 0.0,
+              "Z": 1.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 270.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Door.LeafCoats.Model"
+          }
+        },
+        "#Door.D1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 1.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Door.LeafCoats.Model"
+          }
+        },
+        "#Connection.U1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 2.0,
+              "Y": 0.0,
+              "Z": 3.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 180.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/TreeBuildings/Branches/Branch.Door.LeafCoats.Model"
+          }
+        },
+        "#Connection.L1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 2.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 90.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/TreeBuildings/Branches/Branch.Door.LeafCoats.Model"
+          }
+        },
+        "#Connection.R1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 3.0,
+              "Y": 0.0,
+              "Z": 1.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 270.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/TreeBuildings/Branches/Branch.Door.LeafCoats.Model"
+          }
+        },
+        "#Connection.D1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 1.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/TreeBuildings/Branches/Branch.Door.LeafCoats.Model"
+          }
+        },
+        "#Window.U1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 2.0,
+              "Y": 0.0,
+              "Z": 3.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 180.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Window2.LeafCoats.Model"
+          }
+        },
+        "#Window.L1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 2.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 90.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Window2.LeafCoats.Model"
+          }
+        },
+        "#Window.R1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 3.0,
+              "Y": 0.0,
+              "Z": 1.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 270.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Window2.LeafCoats.Model"
+          }
+        },
+        "#Window.D1": {
+          "TransformSpec": {
+            "Position": {
+              "X": 1.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Rotation": {
+              "X": 0.0,
+              "Y": 0.0,
+              "Z": 0.0
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "TimbermeshSpec": {
+            "Model": "Buildings/Window2.LeafCoats.Model"
+          }
+        }
+      }
+    },
+    "#Unfinished": {
+      "Children": {
+        "ConstructionBase3x3": {
+          "TimbermeshSpec": {
+            "Model": "ConstructionBases/ConstructionBase3x3Donut.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 0.05,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 3.0,
+                  "Y": 0.1,
+                  "Z": 3.0
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        },
+        "ConstructionStage0": {
+          "TimbermeshSpec": {
+            "Model": "Buildings/Science/Observatory.LeafCoats.ConstructionStage0.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 0.66093266,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 2.9,
+                  "Y": 1.32186532,
+                  "Z": 2.9
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        },
+        "ConstructionStage1": {
+          "TimbermeshSpec": {
+            "Model": "Buildings/Science/Observatory.LeafCoats.ConstructionStage1.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 0.66093266,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 2.9,
+                  "Y": 1.32186532,
+                  "Z": 2.9
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.49430537,
+                  "Y": 1.75,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 1.50713539,
+                  "Y": 1.0,
+                  "Z": 1.49906838
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        },
+        "ConstructionStage2": {
+          "TimbermeshSpec": {
+            "Model": "Buildings/Science/Observatory.LeafCoats.ConstructionStage2.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 0.66093266,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 2.9,
+                  "Y": 1.32186532,
+                  "Z": 2.9
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 1.91023993,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 2.0,
+                  "Y": 1.18930292,
+                  "Z": 2.0
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        }
+      }
+    }
+  }
+}

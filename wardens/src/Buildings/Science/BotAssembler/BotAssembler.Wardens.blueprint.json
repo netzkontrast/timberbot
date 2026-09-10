@@ -1,0 +1,515 @@
+{
+  "BuildingSpec": {
+    "SelectionSoundName": "BotAssembler",
+    "LoopingSoundName": "",
+    "BuildingCost": [
+      {
+        "Id": "ScrapMetal",
+        "Amount": 45
+      }
+    ],
+    "ScienceCost": 750,
+    "PlaceFinished": false,
+    "FinishableWithBeaversOnSite": false,
+    "DrawRangeBoundsOnIt": false
+  },
+  "BuildingModelSpec": {
+    "FinishedModelName": "#Finished",
+    "UnfinishedModelName": "#Unfinished",
+    "FinishedUncoveredModelName": "",
+    "UndergroundModelName": "",
+    "ConstructionModeModel": "Finished",
+    "UndergroundModelDepth": 0
+  },
+  "WorkplaceSpec": {
+    "MaxWorkers": 2,
+    "DefaultWorkers": 2,
+    "DefaultWorkerType": "Beaver",
+    "DisallowOtherWorkerTypes": false,
+    "WorkerTypeUnlockCosts": [
+      {
+        "WorkerType": "Bot",
+        "ScienceCost": 10000
+      }
+    ]
+  },
+  "ManufactorySpec": {
+    "ProductionRecipeIds": [
+      "Bot.IronTeeth"
+    ]
+  },
+  "WorkshopSpec": {},
+  "EnterableSpec": {
+    "OperatingState": "Finished",
+    "LimitedCapacityFinished": false,
+    "CapacityFinished": 0,
+    "LimitedCapacityUnfinished": false,
+    "CapacityUnfinished": 0
+  },
+  "TemplateSpec": {
+    "TemplateName": "BotAssembler.Wardens",
+    "BackwardCompatibleTemplateNames": [],
+    "RequiredFeatureToggle": "",
+    "DisablingFeatureToggle": ""
+  },
+  "BlockObjectSpec": {
+    "Size": {
+      "X": 3,
+      "Y": 3,
+      "Z": 1
+    },
+    "Blocks": [
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Top, Corners, Path, Middle",
+        "Stackable": "BlockObject",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      },
+      {
+        "MatterBelow": "GroundOrStackable",
+        "Occupations": "Bottom, Corners, Path, Middle",
+        "Stackable": "None",
+        "OccupyAllBelow": false,
+        "Underground": false
+      }
+    ],
+    "Entrance": {
+      "HasEntrance": true,
+      "Coordinates": {
+        "X": 1,
+        "Y": -1,
+        "Z": 0
+      }
+    },
+    "BaseZ": 0,
+    "Overridable": false,
+    "Flippable": false
+  },
+  "BuildingAccessibleSpec": {
+    "LocalAccess": {
+      "X": 1.5,
+      "Y": 0.0,
+      "Z": 0.5
+    },
+    "ForceOneFinalAccess": false
+  },
+  "PlaceableBlockObjectSpec": {
+    "ToolGroupId": "Science",
+    "ToolOrder": 60,
+    "ToolShape": "Square",
+    "Layout": "Single",
+    "CustomPivot": {
+      "HasCustomPivot": false,
+      "Coordinates": {
+        "X": 0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      }
+    },
+    "CanBeAttachedToTerrainSide": false,
+    "DevModeTool": false
+  },
+  "WorkplaceIlluminatorSpec": {},
+  "LabeledEntitySpec": {
+    "DisplayNameLocKey": "Building.BotAssembler.DisplayName",
+    "DescriptionLocKey": "Building.BotAssembler.Description",
+    "FlavorDescriptionLocKey": "Building.BotAssembler.FlavorDescription",
+    "Icon": "Buildings/Science/BotAssembler/BotAssemblerIcon"
+  },
+  "MechanicalNodeSpec": {
+    "PowerOutput": 0,
+    "PowerInput": 250,
+    "IsShaft": false
+  },
+  "MechanicalBuildingSpec": {},
+  "BotManufactorySpec": {},
+  "TransformSlotInitializerSpec": {
+    "Slots": [
+      {
+        "SlotKeyword": "Entrance",
+        "Animation": "Sitting",
+        "Inanimate": false,
+        "RandomizeYRotation": false,
+        "WaterSlot": false
+      }
+    ]
+  },
+  "WorkplaceSlotManagerSpec": {},
+  "SimpleManufactoryBehaviorsSpec": {},
+  "WorkshopRandomNeedApplierSpec": {
+    "Effects": [
+      {
+        "NeedId": "Injury",
+        "Points": -1.0,
+        "Probability": "High"
+      }
+    ]
+  },
+  "BotManufactoryAnimationControllerSpec": {
+    "AssemblyDuration": 0.5,
+    "RingRotationSpeed": 100.0,
+    "DrillRotationSpeed": 0.0,
+    "RingName": "#BotAssembler.LeafCoats.RingMisc",
+    "DrillName": "",
+    "AttachmentIds": [
+      "Sparks"
+    ]
+  },
+  "ManufactoryProgressVisualizerSpec": {
+    "ProgressSteps": [
+      {
+        "Threshold": 0.0,
+        "ModelNames": [
+          "#BotAssembler.LeafCoats.Progress0"
+        ]
+      },
+      {
+        "Threshold": 0.001,
+        "ModelNames": [
+          "#BotAssembler.LeafCoats.Progress1"
+        ]
+      },
+      {
+        "Threshold": 0.33,
+        "ModelNames": [
+          "#BotAssembler.LeafCoats.Progress2"
+        ]
+      },
+      {
+        "Threshold": 0.66,
+        "ModelNames": [
+          "#BotAssembler.LeafCoats.Progress3"
+        ]
+      }
+    ]
+  },
+  "WorkshopWorkerHiderSpec": {},
+  "ConstructionSiteProgressVisualizerSpec": {
+    "ProgressThresholds": [
+      0.0
+    ]
+  },
+  "TransputProviderSpec": {
+    "Transputs": [
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Down, Bottom, Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Left, Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 2,
+          "Z": 0
+        },
+        "Directions": "Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Bottom, Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 2,
+          "Z": 0
+        },
+        "Directions": "Up, Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Down, Bottom, Top",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 1,
+          "Z": 0
+        },
+        "Directions": "Right, Bottom",
+        "ReverseRotation": false
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 2,
+          "Z": 0
+        },
+        "Directions": "Bottom",
+        "ReverseRotation": false
+      }
+    ],
+    "IgnoreRotation": false
+  },
+  "MechanicalConnectorTargetSpec": {},
+  "BlockObjectNavMeshSettingsSpec": {
+    "NoAutoWalls": false,
+    "GenerateFloorsOnStackable": true,
+    "EdgeGroups": [
+      {
+        "Cost": 1.0,
+        "Group": {
+          "UseGroup": false,
+          "GroupName": ""
+        },
+        "IsPath": false,
+        "AddedEdges": [
+          {
+            "Start": {
+              "X": 1,
+              "Y": 0,
+              "Z": 0
+            },
+            "End": {
+              "X": 1,
+              "Y": -1,
+              "Z": 0
+            },
+            "IsTwoWay": false
+          }
+        ]
+      }
+    ],
+    "UnblockedCoordinates": [],
+    "BlockedEdges": []
+  },
+  "PneumaticTubeConnectionProviderSpec": {
+    "ConnectionSpecs": [
+      {
+        "Coordinates": {
+          "X": 0,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Down, Bottom, Top"
+      },
+      {
+        "Coordinates": {
+          "X": 1,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Bottom, Top"
+      },
+      {
+        "Coordinates": {
+          "X": 2,
+          "Y": 0,
+          "Z": 0
+        },
+        "Directions": "Down, Bottom, Top"
+      }
+    ]
+  },
+  "PneumaticTubeSupplierSpec": {
+    "OwnGoodsOnly": true
+  },
+  "TemplateAttachmentsSpec": {
+    "Attachments": [
+      {
+        "AttachmentId": "Sparks",
+        "Prefab": "Buildings/Science/BotAssembler/FX/BotAssemblerSparks",
+        "Parent": "#SparksMisc",
+        "Position": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        "Rotation": {
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.0
+        },
+        "Scale": {
+          "X": 1.0,
+          "Y": 1.0,
+          "Z": 1.0
+        },
+        "CreateInstantly": true
+      }
+    ]
+  },
+  "Children": {
+    "#Finished": {
+      "TimbermeshSpec": {
+        "Model": "Buildings/Science/BotAssembler.LeafCoats.Model"
+      },
+      "CollidersSpec": {
+        "BoxColliders": [
+          {
+            "Center": {
+              "X": 1.5,
+              "Y": 0.429539,
+              "Z": 1.5
+            },
+            "Size": {
+              "X": 2.75743,
+              "Y": 0.859078,
+              "Z": 2.74275064
+            }
+          }
+        ],
+        "SphereColliders": [],
+        "CapsuleColliders": []
+      }
+    },
+    "#Unfinished": {
+      "Children": {
+        "ConstructionBase3x3": {
+          "TimbermeshSpec": {
+            "Model": "ConstructionBases/ConstructionBase3x3/ConstructionBase3x3.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 0.05,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 3.0,
+                  "Y": 0.1,
+                  "Z": 3.0
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        },
+        "ConstructionStage0": {
+          "TimbermeshSpec": {
+            "Model": "Buildings/Science/BotAssembler.LeafCoats.ConstructionStage0.Model"
+          },
+          "CollidersSpec": {
+            "BoxColliders": [
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 0.05,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 3.0,
+                  "Y": 0.1,
+                  "Z": 3.0
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 0.429539,
+                  "Z": 1.2
+                },
+                "Size": {
+                  "X": 2.75743,
+                  "Y": 0.859078,
+                  "Z": 2.4
+                }
+              },
+              {
+                "Center": {
+                  "X": 1.5,
+                  "Y": 0.429539,
+                  "Z": 1.5
+                },
+                "Size": {
+                  "X": 1.828034,
+                  "Y": 0.859078,
+                  "Z": 2.76949716
+                }
+              }
+            ],
+            "SphereColliders": [],
+            "CapsuleColliders": []
+          }
+        }
+      }
+    }
+  }
+}
