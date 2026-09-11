@@ -11,6 +11,152 @@ is and how each part works), `wardens/CHANGELOG.md` (what each version added), `
 
 ---
 
+## 2026-09-11, evening: planning iteration 05, a consistent story (game machine, no code changed)
+
+**Plan:** [`iteration-05-consistent-story.md`](iteration-05-consistent-story.md). **Goal:** turn the
+author's eight asks of this evening (steps with per-task scenes, the Iron Teeth set with the first
+beaver, pregenerated sites, an in-game strategy runner, dialogs, one console, savegame starts, the
+missing levels) into packages with acceptance types, and name what the next session does first.
+**Status: the plan is `written`; the offline checks on `main` are `checked` (below). Nothing was built,
+no version bumped, nothing seen in the game this session.**
+
+### What I did
+
+Game machine (Windows 10, Timberborn 1.1.2.4 at `F:\Steam`, .NET SDK now 10.0.401). Local `main` was
+36 commits behind `origin/main`; fast-forwarded to `57e2da5` (PR #24, 0.4.25) before reading anything.
+Three subagent digests over the current tree, relayed into the plan's §0 table: the task/cutscene/
+campaign C#, the faction/bots/UI/save paths, the design documents and every 2026-09-11 playtest finding.
+Read myself: the six newest entries here, the iteration-04 plan, `first-light-opening.md`,
+`WardensLevelTasks.cs`, both task files, PLAYTEST.md's 2026-09-11 sections, the level table, the
+`warden-play` act lists. Diffed the game's `Blueprints.zip` against the faction's collection: 159 Iron
+Teeth buildings, 27 on the Wardens bar (the pool WP2 draws from). Wrote the plan and this entry.
+
+### Evidence
+
+| Command | Result line |
+|---|---|
+| `git pull --ff-only origin main` | `57e2da5 Merge pull request #24 from netzkontrast/feat/first-light-opening` |
+| `uv run --project python --extra dev pytest -q wardens/tools .claude/skills` | `183 passed in 9.92s` |
+| `python wardens/tools/check_cutscenes.py wardens/src` | `cutscenes: 10 (…)`, `problems: none` |
+| `python wardens/tools/check_level_tasks.py wardens/src` | `task files: 2`, `problems: none` |
+| `python wardens/tools/validate.py wardens/src` | `templates: 88 (+9 aliases), goods: 63 … cutscenes: 10`, `problems: none` |
+| `python wardens/tools/mapsmith levels --verify` | `levels: consistent with WardensCampaign.cs` |
+| `check_doc_drift.py` over the three mirrors | `problems: none` (still `UNMARKED`) |
+| `dotnet --version` | `10.0.401` |
+| `dotnet build` / `dotnet test` | **not run** — no code changed this session |
+
+### Publish check
+
+Branch `plan/iteration-05-consistent-story`; the `git ls-remote` line is in the pull request that carries
+this entry (filled in below the entry after the push).
+
+### Disposition of the entry below
+
+- Start level 02 fresh on 0.4.25, watch `TheSump` to the end, screenshot it: **deferred** to the next
+  session's first twenty minutes (plan §3 item 1, WP0 item 1) — the game was not started this session.
+- "Next package: decide how level 02 checks held water": **blocked (question)**, now WP0 item 2 with a
+  recommendation (a `water_depth` check used by Keep it clean and Hold the gorge, the Gorge box at x ≥ 57).
+- "Does the river back up behind the three Levees?" and "task text or check?": **still open**, inside WP0 item 2.
+
+### What I found (all read, none reproduced in the game)
+
+1. **The chapter scenes cannot fire the way the author plays.** `WardensChapters.cs:136,158`: with the
+   tutorial off, `_openAll` marks every chapter opened on the first, silent poll, so `Badwater` … `Green`
+   and `LevelEnd` never play; on level 02 they would hang on level 01's tutorial ids anyway. *Consequence:*
+   the five chapter scenes and the end card are dead content on every real run. *Remedy:* WP1 retires the
+   table; scenes attach to tasks.
+2. **`SaveLevelStarter` looks in the wrong folder.** `WardensLevelTransition.cs:306` hardcodes `Saves/`;
+   this machine saves to `ExperimentalSaves/`, which `TimberbotAutoLoad.cs:73-74` already handles through
+   `GameSaveRepository.DefaultSaveDirectory`. *Consequence:* a shipped save could never be found.
+   *Remedy:* WP7 step 1.
+3. **`dotnet test wardens/test` can run here now.** `dotnet --version` prints 10.0.401; `AGENTS.md`'s
+   Quick Reference and my own notes still say SDK 8 cannot run the net10 test projects. *Remedy:* run it
+   at the next build; the sentence in `AGENTS.md` is corrected when a session has the result line.
+4. **The tool surface is nineteen tools, not six.** `WardensMcpTools.Build()` registers 19; the
+   `driving-iterations` skill says "The tool surface is six tools" and the five-document rule counts on it.
+   *Consequence:* a stale claim in the discipline itself. *Remedy:* a one-line correction in the skill, its
+   own small commit (a changed claim is its own package by the skill's edit tiers).
+5. **Leftovers to sweep in the packages that touch them:** `bot_workforce.py:33-34` still defines
+   `CHAPTER_LOCK = 999999` "equal to `gen_buildings.CHAPTER_LOCK`", which no longer exists (WP2 step 1
+   reuses the value on purpose and fixes the comment); level 09's row is `MapName "Wardens 09 The City"`
+   with title *The Ark* (WP8); two `Ladder.*.blueprint.json` files from the Leaf Coats import sit in no
+   collection.
+6. **Both openings were cut short by the humans who saw them** (Continue at the directive, Skip at shot
+   4 of 11; shots 5–11 of `TheSump` never seen). Nobody wrote "too long"; the behaviour did. Recorded here
+   as the reason WP1 cuts openings to five shots, and WP0 item 1 is the last full viewing.
+
+### Where the mod stands
+
+| Fact | Source |
+|---|---|
+| 0.4.25 on `main`; levels 01 and 02 shipped, both played to their end on 2026-09-11 | the two entries below |
+| Level 02's water at tick 0 and Salvage 20 are `built` (0.4.25), not seen | the entry below |
+| The chapter table gates nothing and fires nothing with the tutorial off | finding 1 |
+| No level starts from a save; every level starts with 13 bots, 10 scrap, no beaver | `WardensStartingPopulation.cs`, `WardensLevelTransition.cs` |
+| 19 MCP tools; no suggestion, strategy or dialog system exists; one choice card (`LevelEnd.end`) | `WardensMcpTools.cs`, the digests |
+| Levels 03, 05, 09, 10: rows only | `WardensCampaign.cs:207-210`, `levels.toml` |
+
+### What you should do, in this order
+
+**Game machine, next session (plan §3):** 1. WP0 item 1, the fresh level 02 on 0.4.25 (20 min).
+2. WP1, the task graph and per-task scenes, through its step 4 on a fresh level 01 and the author's
+day-31 save. 3. WP2 if WP1 is `verified` by mid-session. 4. WP7 steps 1–2 if time.
+
+**Cloud container, any time:** WP3 (mapsmith `sites`, Python only), WP8 level 03's spec and contract
+(`island`, `land_disconnected`), the checker halves of WP1 and WP5. Each its own branch and PR.
+
+### How you know it is done
+
+The plan's §1 table has a state word beside every package; the next entry above this one reports WP0
+item 1 and WP1 in the state words with `Player.log` lines.
+
+### Open questions I could not answer
+
+Four shape the packages and were put to the author as one card at the end of this session (answers, when
+given, are appended under this list):
+
+**1. Openings and chapters (WP1).**
+
+| Option | Cost | Risk | |
+|---|---|---|---|
+| Cut openings to ≤ 5 shots, one 1–2-shot scene per task on going live, retire the chapter table and its five scenes | a day: C#, checkers, two openings re-cut, ~10 task scenes framed by the director | the act list, `chapter` tool and frames change: five documents in one commit | **recommended** |
+| Same, but keep the chapter table beside the tasks | half a day less | two progression systems, one of them dead with the tutorial off | |
+| Keep the openings whole, add task scenes only | the scenes' cost | the openings stay long; the same land is shown twice | |
+
+**2. How the new buildings arrive (WP2).**
+
+| Option | Cost | Risk | |
+|---|---|---|---|
+| Padlocked from the start, open on the first beaver (the mechanism seen on 0.4.1) | the generator batch + `WardensPhases.cs` | the padlock tooltip says "999999 Science" | **recommended** |
+| Hidden until the first beaver, then appear with a toast | + a spike: no tool-button hide call has been used here | an unverified UI API on the critical path | |
+
+**3. What the harness is (WP4).**
+
+| Option | Cost | Risk | |
+|---|---|---|---|
+| A C# strategy runner over WP3's sites, `assist` and `auto` modes, a run record; Claude steers | two packages | the runner places where the human wanted something else (assist is the default) | **recommended first** |
+| An in-game Claude API client that runs the loop itself | the runner anyway, plus a key in `settings.json` and a C# tool loop | cost per playtest, a key on disk | |
+| Both, runner first | the sum | — | |
+
+**4. The first big package of the next session, after the 0.4.25 check.**
+
+| Option | Why | |
+|---|---|---|
+| WP1 steps and scenes | the biggest story lever; verifiable on level 01 the same session | **recommended** |
+| WP7 savegame starts | the author's experiment; needs the author at the keyboard to bake the save | |
+| WP8 level 03 | the story's next beat; a session of Python before anything is seen | |
+| WP2 buildings | the day-31 save is a ready test bed | |
+
+### What I deliberately did not do
+
+I did not start the game or build: a planning session with the state of the tree unknown until the
+fast-forward is not the session to deploy in. I did not edit `AGENTS.md`'s SDK sentence (finding 3) or the
+skill's "six tools" (finding 4): each is a changed claim and gets its own commit. I did not resolve the
+level-02 water checks, the bot count or Science: they are the author's calls and the plan carries a
+recommendation for each. I did not re-run the three subagents' claims in the game.
+
+---
+
 ## 2026-09-11: level 02 reworked, given an opening and six tasks, and played to its end (game machine)
 
 **Plan:** the author asked for the level 02 cutscene and a map overhaul, then for six tasks, better
