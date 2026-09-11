@@ -11,6 +11,142 @@ is and how each part works), `wardens/CHANGELOG.md` (what each version added), `
 
 ---
 
+## 2026-09-11: level 01 ships with its water (game machine)
+
+**Plan:** package 10 of `docs/plan/first-light-opening.md`; the author chose "pre-fill the map" for the
+dry river. **Status: `verified` (0.4.13).**
+
+### What I did
+
+Decoded the 1.1.2.4 water format from the decompile (`WaterColumnPackedListSerializer`,
+`ColumnOutflowsPackedListSerializer`, `WaterMapLoader`, `WaterSimulationMigrator`) and checked it against
+two autosaves: day 15 of the first land and day 3 of the remade one. Added `[water] fill` to mapsmith, and
+a checker that rejects a column token the game's reader would misparse. Filled level 01 to the surface the
+day-3 autosave settled at (4.17 → 4.2; spring 12.02 → 12.25). Deployed with the game closed, started a fresh
+level 01, and read the result through the MCP server and DPI-aware screenshots.
+
+| Command | Result line |
+|---|---|
+| `pytest wardens/tools/test_mapsmith.py` | `100 passed` (9 new: fill by level and by depth, refusals, five bad tokens) |
+| `mapsmith build --level 01` | `problems: none`; 554 wet columns; Sump `1.2:1:0:3:1.2`, spring `0.25:0:0:12:0.25` |
+| `dotnet build … -c Release` (0.4.13) | `0 Warnung(en)`, `0 Fehler`; the deployed map `cmp`-identical to the repo's |
+| `/api/tiles` y 48, tick 1, paused | `water 1.2` on x 36–47 (the Sump and the channel) |
+| Player.log | no exception; `cutscene FirstLight: start (trigger, 12 shots, 99 s)` … `finished at shot 12/12` |
+
+### Publish check
+
+Branch `feat/first-light-opening`; the `git ls-remote` line is in the commit that follows this entry's
+push (see PR #22's head).
+
+### What I found
+
+1. **Every mapsmith map has its source strengths halved on load** (read). `WaterSimulationMigrator` migrates
+   any file without its key and multiplies `SpecifiedStrength` by 0.5. The playtested strengths are the
+   halved ones, so mapsmith deliberately does not write the key. Recorded in `timber-format.md`.
+2. **The water arrives and settles flat** (seen). The game's own equilibrium on day 3 was one surface across
+   the river, the channel and the Sump. A pre-fill at that level loads without a flood wave.
+3. The caption args fix (0.4.11) is seen working: "The Core. 13 Wardens online, charged to full."
+
+### What you should do, in this order
+
+Disposition of the previous entry: "if 0.4.11 did not deploy" **done** (deployed as 0.4.12, the Core
+caption seen); the Skip check **still open**; the director's second pass **still open**; the dry river
+**done** (this entry). **Game machine:** close the game and build once more, so the new Sump caption
+("badwater, 1.2 deep") deploys; press Skip mid-opening once. **Anyone designing levels 03, 04 or 08:**
+`wardens-campaign-map-set.md` §5 is unblocked; take fill levels from an autosave, never guess them.
+
+### How you know it is done
+
+The Sump shot's caption matches the full basin; Skip leaves the game paused and unlocked.
+
+### Open questions I could not answer
+
+None new.
+
+### What I deliberately did not do
+
+I did not write `WaterSimulationMigrator` into maps (it would double every source against what was played).
+I did not copy a save's water into the map: the fill is computed from the spec, so a terrain edit keeps working.
+
+---
+
+## 2026-09-11: the remade level 01 in the game, and its opening cutscene (game machine)
+
+**Plan:** `docs/plan/first-light-opening.md` (the author's goal: the new map starts with an extensive
+cutscene), after the level-01 remake of PR #21. **Status: the opening `verified` (0.4.10); two fixes from
+its first run `built` (0.4.11), deployed when the game next closes. The remade land `verified` for its
+boot and its day-1 Sump.**
+
+### What I did
+
+Game machine, Timberborn 1.1.2.4 at `F:\Steam`, two fresh level-01 starts by the handoff, the author's
+tutorial setting off. Read through the Wardens MCP server (`wardens_status`, `/api/tiles`, `cutscene
+status`, `frame`) and the log; screenshots of the opening every 4 s.
+
+| Command | Result line |
+|---|---|
+| `dotnet build … -c Release` (0.4.10, deployed with the game closed) | `0 Warnung(en)`, `0 Fehler` |
+| the same with `-p:ModDir=<scratch>` (0.4.11, the game running) | `0 Warnung(en)`, `0 Fehler` |
+| `uv run --project python --extra dev pytest wardens/tools .claude/skills -q` | `139 passed in 8.20s` |
+| `python wardens/tools/check_cutscenes.py wardens/src` | `cutscenes: 9 (…, FirstLight, …)`, `problems: none` |
+| `python wardens/tools/validate.py wardens/src` | only the known `level 02 … shipped=false` |
+| `python wardens/tools/gen_tutorial.py`, then `git diff enUS.csv` | only the 12 new rows and the Wake line |
+| Player.log, 0.4.10 start | `level triggers=True (… tutorial=False)`, `cutscene FirstLight: queued by level:01`, `start (trigger, 12 shots, 99 s)`, `finished at shot 12/12` |
+
+### Publish check
+
+Branch `feat/first-light-opening`, stacked on `feat/level-01-remake` (PR #21);
+`git ls-remote origin feat/first-light-opening` -> `4943574345af67b1e84846369fee58a6112c859d` (code and
+docs; this entry is the next commit on it).
+
+### What I found
+
+The six findings, each with symptom, source, consequence and remedy, are in `PLAYTEST.md`, "The remade
+level 01 and its opening". In short: captions with `args` printed `System.Object[]` in every scene that
+has them (fixed, 0.4.11); the river is dry while the opening shows it (the author's decision, below);
+`cutscene_played` ignored a level opening (fixed, 0.4.11); the badtide replays finish vanilla's
+first-badtide tutorial on day 1 (deferred, predates this work); the Warden close-up does not get closer
+(deferred to the next director pass); the speed once would not leave 0 (not found). Verified along the
+way: the 0.4.9 boot line (13 charged, 10 scrap), the land's heights against the spec, and the Sump at
+0.5 on every tile by day 1, 41 %.
+
+### Where the mod stands
+
+| Fact | Source |
+|---|---|
+| A new game on level 01 plays `FirstLight` instead of the Cold Boot, tutorial on or off | the log lines above |
+| `level:<Id>` is a trigger; the Cold Boot still plays on every other map | `WardensCutscenes.OnNewGameInitialized` |
+| `.claude/agents/cutscene-director.md` tunes scenes live over the MCP server | the file; the todo |
+| 0.4.11 is staged, not deployed; a watcher deploys it when Timberborn exits | this session |
+
+### What you should do, in this order
+
+Disposition of the previous entry's items: the in-game `campaign next` run **done** in the earlier Gate
+session (PLAYTEST.md); WP4, the level-01 proof run, **still open**; "five bots or thirteen" **moot** for the
+Wake card (it no longer states a count) and still open for the design.
+
+**Game machine:** if 0.4.11 did not deploy, close the game and run the build. Then start level 01 by the
+handoff and check the Core shot reads "The Core. 13 Wardens online, charged to full.", and press Skip once
+mid-scene: the game must stay paused and unlocked. Run the `cutscene-director` agent for its second pass
+(the Warden close-up's zoom limit), and settle the dry river as the author decides.
+
+### How you know it is done
+
+The Core caption shows the number; `wardens_status.cutscene_played` is true after the opening; the
+todo's state column has no open row but package 10.
+
+### Open questions I could not answer
+
+The dry river (package 10 of the todo), put to the author.
+
+### What I deliberately did not do
+
+I did not turn the author's tutorial setting on for campaign starts; it is theirs. I did not press
+Continue on the directive card or touch the game while the author played. I did not deploy 0.4.11 under
+the running game.
+
+---
+
 ## 2026-09-11: the level loader, compiled and seen in the game (game machine)
 
 **Plan:** the previous entry's game-machine list (build, run the transition, answer

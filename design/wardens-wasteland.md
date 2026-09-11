@@ -68,7 +68,8 @@ Two deliberate choices:
 1. **The file says `GameVersion 0.7.10.0`.** That is the format we verified; the game migrates older maps on
    load (expect an "older version" notice at worst). Claiming 1.1 for a layout nobody has seen from a 1.1
    editor would skip that migration.
-2. **Water starts dry.** The new water map's column encoding for pre-filled water is undocumented, so the
+2. **Water starts dry** (until 2026-09-11: level 01 now ships pre-filled, `[water]` in its spec, with
+   the encoding decoded in the mapsmith skill's `timber-format.md`). The new water map's column encoding for pre-filled water was undocumented, so the
    sources fill the river and the Sump during the first day. Soil contamination in the file is a cosmetic
    estimate; the game recomputes it from the badwater.
 

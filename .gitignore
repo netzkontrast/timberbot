@@ -20,6 +20,8 @@ docs/reachability-investigation.md
 .claude/*
 # ...but shared skills are part of the repo (warden-play, timberborn-mapsmith).
 !.claude/skills/
+# ...and shared agents (cutscene-director).
+!.claude/agents/
 venv/
 venv-*/
 .venv/

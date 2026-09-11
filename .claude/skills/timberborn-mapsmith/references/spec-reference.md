@@ -139,6 +139,28 @@ moisture      = { from = "clean",    offset = 0.0, reach = 7.0, peak = 0.8 }
 caps it. `{ value = 0.3 }` sets a flat field instead. The game recomputes contamination from the
 actual badwater, so this is a starting estimate, not a simulation.
 
+## `[water]`
+
+Water the map holds at tick 0. Without this section every column is dry and the sources fill their
+beds during the first day.
+
+```toml
+[water]
+fill = [
+  { tag = "badwater", level = 4.2, contamination = 1.0 },   # an absolute surface height
+  { tag = "clean",    depth = 0.3 },                         # or a depth above each cell's floor
+]
+```
+
+Each entry fills the cells of a water mask (`tag`, from a `river`, `basin`, `channel` or `crater`
+op) with exactly one of `level` or `depth`; a cell whose floor is at or above `level` stays dry.
+`contamination` is 0 (clean) to 1 (badwater), default 0. Later entries win on shared cells.
+
+Take the levels from the game, not from a guess: build without `[water]`, play a day or three,
+and read the surface (`floor + depth`) off the autosave's `WaterMapNew.WaterColumns`. Water
+filled to the level the simulation settles at loads without a flood wave. The encoding is the
+game's own serializer: `timber-format.md`, "Water".
+
 ## `[checks]`
 
 What `mapsmith check` must be able to prove. Errors fail the build's exit code; warnings do not

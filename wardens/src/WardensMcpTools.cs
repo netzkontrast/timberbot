@@ -706,7 +706,7 @@ namespace Wardens
                 ["campaign"] = _campaign.State(),
                 ["pointers"] = _pointer.Count,
                 ["camera"] = _director.State(),
-                ["cutscene_played"] = _cutscenes.HasPlayed(WardensCutscenes.ColdBootId),
+                ["cutscene_played"] = _cutscenes.OpeningPlayed,
                 ["cutscene"] = _cutscenes.Summary(),
                 ["chat_unread"] = _chat.UndeliveredCount(),
                 ["timberbot"] = new JObject { ["http_port"] = _settings.HttpPort, ["ready"] = _timberbot.AgentState.Ready },

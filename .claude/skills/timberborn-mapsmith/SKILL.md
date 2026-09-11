@@ -313,8 +313,10 @@ The details, and which parts are verified versus assumed, are in
 - **Plants carry no `Orientation`; every other block object does.** This matches the map the game's
   own editor wrote. Set `orientation = "Cw0"` on ruins, sources and the starting location.
 - **The top voxel layer (Z 22) must be air.**
-- **Water starts dry.** Sources fill their beds during the first in-game day; the pre-filled column
-  encoding is undocumented. Do not fake it.
+- **Water starts dry unless the spec fills it.** Without `[water]`, sources fill their beds during
+  the first in-game day. `[water] fill` pre-fills water masks in the game's own column encoding
+  (decoded 2026-09-11, `references/timber-format.md`); take the levels from an autosave of the map,
+  not from a guess.
 - **The file claims the GameVersion whose layout was verified** (`0.7.10.0`), so the game migrates it
   on load. Do not bump this to look current — that skips the migration for a layout nobody checked.
 - **Template names are unverified against the running game.** `RuinColumnH1..H5`, `UndergroundRuins`,

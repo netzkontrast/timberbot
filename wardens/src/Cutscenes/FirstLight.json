@@ -1,0 +1,131 @@
+{
+  "id": "FirstLight",
+  "on": [
+    "level:01"
+  ],
+  "pause": true,
+  "leave_paused": true,
+  "restore_camera": false,
+  "letterbox": true,
+  "skippable": true,
+  "say": "First Light. The opening is playing and the game is paused; Skip is at the top right.",
+  "shots": [
+    {
+      "id": "restart",
+      "badtide": 1,
+      "caption": "Wardens.Cutscene.FirstLight.Restart",
+      "seconds": 8,
+      "camera": [
+        { "t": 0, "anchor": "grid", "x": 48, "y": 48, "z": 8, "v": 70, "zoom": 3.0, "dh": -30 },
+        { "t": 8, "anchor": "grid", "x": 48, "y": 48, "z": 8, "v": 68, "zoom": 2.9, "dh": 10 }
+      ]
+    },
+    {
+      "id": "archive",
+      "badtide": 2,
+      "caption": "Wardens.Cutscene.FirstLight.Archive",
+      "seconds": 8,
+      "camera": [
+        { "t": 8, "anchor": "grid", "x": 48, "y": 48, "z": 8, "v": 64, "zoom": 2.8, "dh": 50 }
+      ]
+    },
+    {
+      "id": "head",
+      "badtide": 3,
+      "caption": "Wardens.Cutscene.FirstLight.Head",
+      "seconds": 8,
+      "camera": [
+        { "t": 3, "anchor": "grid", "x": 35, "y": 5, "z": 4, "v": 50, "zoom": 1.4, "dh": 30 },
+        { "t": 8, "anchor": "grid", "x": 36, "y": 9, "z": 4, "v": 48, "zoom": 1.3, "dh": 15 }
+      ],
+      "highlight": { "anchor": "grid", "x": 34, "y": 1, "z": 4, "seconds": 8 }
+    },
+    {
+      "id": "river",
+      "caption": "Wardens.Cutscene.FirstLight.River",
+      "seconds": 9,
+      "camera": [
+        { "t": 3, "anchor": "grid", "x": 46, "y": 22, "z": 4, "v": 55, "zoom": 1.6, "dh": 0 },
+        { "t": 6, "anchor": "grid", "x": 51, "y": 31, "z": 4, "v": 55, "zoom": 1.6, "dh": -10 },
+        { "t": 9, "anchor": "grid", "x": 47, "y": 42, "z": 4, "v": 55, "zoom": 1.5, "dh": -20 }
+      ]
+    },
+    {
+      "id": "sump",
+      "caption": "Wardens.Cutscene.FirstLight.Sump",
+      "seconds": 9,
+      "camera": [
+        { "t": 3, "anchor": "grid", "x": 39, "y": 48, "z": 3, "v": 55, "zoom": 1.1, "dh": -10 },
+        { "t": 9, "anchor": "grid", "x": 39, "y": 48, "z": 3, "v": 50, "zoom": 1.0, "dh": 30 }
+      ],
+      "highlight": { "anchor": "grid", "x": 41, "y": 49, "z": 3, "seconds": 9 }
+    },
+    {
+      "id": "shore",
+      "caption": "Wardens.Cutscene.FirstLight.Shore",
+      "seconds": 9,
+      "camera": [
+        { "t": 2.5, "anchor": "grid", "x": 31, "y": 40, "z": 6, "v": 40, "zoom": 0.9, "dh": 60 },
+        { "t": 9, "anchor": "grid", "x": 31, "y": 56, "z": 6, "v": 40, "zoom": 0.9, "dh": 75 }
+      ]
+    },
+    {
+      "id": "ruins",
+      "caption": "Wardens.Cutscene.FirstLight.Ruins",
+      "seconds": 8,
+      "camera": [
+        { "t": 3, "anchor": "grid", "x": 17, "y": 43, "z": 7, "v": 50, "zoom": 1.2, "dh": 20 },
+        { "t": 8, "anchor": "grid", "x": 16, "y": 42, "z": 7, "v": 48, "zoom": 1.1, "dh": -10 }
+      ],
+      "highlight": { "anchor": "grid", "x": 19, "y": 42, "z": 7, "seconds": 8 }
+    },
+    {
+      "id": "spring",
+      "caption": "Wardens.Cutscene.FirstLight.Spring",
+      "seconds": 9,
+      "camera": [
+        { "t": 3.5, "anchor": "grid", "x": 82, "y": 15, "z": 12, "v": 45, "zoom": 1.4, "dh": 20 },
+        { "t": 9, "anchor": "grid", "x": 82, "y": 15, "z": 12, "v": 42, "zoom": 1.3, "dh": 80 }
+      ],
+      "highlight": { "anchor": "grid", "x": 82, "y": 14, "z": 12, "seconds": 9 }
+    },
+    {
+      "id": "crossing",
+      "caption": "Wardens.Cutscene.FirstLight.Crossing",
+      "seconds": 8,
+      "camera": [
+        { "t": 3, "anchor": "grid", "x": 58, "y": 30, "z": 6, "v": 65, "zoom": 2.5, "dh": 60 },
+        { "t": 8, "anchor": "grid", "x": 52, "y": 34, "z": 6, "v": 62, "zoom": 2.4, "dh": 20 }
+      ]
+    },
+    {
+      "id": "core",
+      "caption": "Wardens.Cutscene.FirstLight.Core",
+      "args": [ "bots" ],
+      "seconds": 9,
+      "camera": [
+        { "t": 3, "anchor": "core", "v": 38, "zoom": 0.7, "dh": 0 },
+        { "t": 9, "anchor": "core", "v": 35, "zoom": 0.6, "dh": 90 }
+      ],
+      "highlight": { "anchor": "core", "seconds": 9 }
+    },
+    {
+      "id": "warden",
+      "caption": "Wardens.Cutscene.FirstLight.Warden",
+      "seconds": 8,
+      "camera": [
+        { "t": 2.5, "anchor": "bot", "v": 32, "zoom": 0.3, "dh": 120 },
+        { "t": 8, "anchor": "bot", "v": 30, "zoom": 0.25, "dh": 150 }
+      ]
+    },
+    {
+      "id": "directive",
+      "caption": "Wardens.Cutscene.FirstLight.Directive",
+      "seconds": 6,
+      "wait": "continue",
+      "camera": [
+        { "t": 6, "anchor": "start", "dh": 360, "dv": 0, "dzoom": 0 }
+      ]
+    }
+  ]
+}

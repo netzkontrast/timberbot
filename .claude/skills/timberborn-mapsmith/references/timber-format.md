@@ -39,9 +39,25 @@ All of these carry one value per tile and are checked for length:
 
 `HazardousWeatherHistory` and `MapThumbnailCameraMover` are singletons too, without per-cell data.
 
-**Water starts dry.** The encoding for a pre-filled `WaterColumns` is undocumented, so every
-mapsmith map writes zeros and lets the sources fill their beds during the first in-game day. Faking
-a filled river with guessed values risks a map that loads into a broken water simulation.
+**Water.** Decoded on 2026-09-11 from the 1.1.2.4 decompile (`WaterColumnPackedListSerializer`,
+`ColumnOutflowsPackedListSerializer`, `WaterSimulationMigrator`) and a day-15 autosave of a map this
+tool wrote:
+
+- A `WaterColumns` token is `0` for a dry column, else `depth:contamination:overflow:floor:oldDepth`.
+  The reader also takes the first three fields alone (`floor` then defaults to 0, `oldDepth` to
+  `depth`). `floor` is the column's ground top, the first air layer. Contamination runs 0..1.
+- A `ColumnOutflows` token is `0` when empty, else four `index3D|flow` pairs (bottom, left, top,
+  right; `0` for none) plus any extra outflows. The simulation recomputes them; mapsmith writes no
+  flow.
+- A file without a `WaterSimulationMigrator` singleton gets migrated on load, which **halves every
+  water source's `SpecifiedStrength`**. Every mapsmith map is in that case, and its playtested
+  strengths are already the halved ones. Writing the key would double every source against what
+  has been played, so mapsmith does not write it.
+
+Without a `[water]` section mapsmith writes every column dry and the sources fill their beds during
+the first day. With one, the columns it names are written in the encoding above, and the checker
+rejects a token the reader would misparse (field count, a non-number, depth below 0, contamination
+outside 0..1, a floor that is not the ground top).
 
 ## Entities
 

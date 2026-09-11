@@ -5,8 +5,10 @@ The format is the one verified in design/wardens-wasteland.md. Two choices carri
 
   * the file claims the GameVersion whose layout was verified, so the game runs its migration on
     load instead of trusting an unverified newer layout;
-  * water starts dry — the new water map's encoding for pre-filled columns is undocumented, so
-    sources fill their beds during the first day.
+  * water starts dry unless the spec has a `[water]` section: then `fill` pre-fills water masks in
+    the column encoding of the game's own serializer (decompiled 1.1.2.4
+    `WaterColumnPackedListSerializer`: "0" for a dry column, else
+    depth:contamination:overflow:floor:oldDepth). The sources take over from there.
 
 The zip is written with a fixed timestamp so the same spec produces the same bytes.
 """
@@ -47,6 +49,47 @@ def _floats(values: list[float]) -> str:
     return " ".join("0" if v == 0 else f"{v:.4g}" for v in values)
 
 
+def water_fill(b: MapBuild, water: dict | None) -> list[tuple[float, float]]:
+    """(depth, contamination) per cell from `[water] fill`: each entry names a water mask (`tag`) and
+    fills its cells to an absolute surface `level`, or `depth` above each cell's floor, with the
+    water's `contamination` (1 for badwater, 0 for clean). Later entries win on shared cells; a cell
+    whose floor is at or above the level stays dry. No `[water]` section: every column dry."""
+    n = b.size * b.size
+    out = [(0.0, 0.0)] * n
+    if not water:
+        return out
+    from .build import SpecError  # noqa: PLC0415 - keeps the module's import surface as it was
+    for k, entry in enumerate(water.get("fill", [])):
+        where = f"water.fill[{k}]"
+        tag = entry.get("tag")
+        mask = b.masks.get(tag) if isinstance(tag, str) else None
+        if mask is None:
+            raise SpecError(f"{where}: tag {tag!r} is not a water mask (known: {', '.join(sorted(b.masks))})")
+        if ("level" in entry) == ("depth" in entry):
+            raise SpecError(f"{where}: exactly one of level | depth")
+        contamination = float(entry.get("contamination", 0.0))
+        if not 0.0 <= contamination <= 1.0:
+            raise SpecError(f"{where}: contamination {contamination} outside 0..1")
+        for x, y in mask.points():
+            floor = int(b.h(x, y))
+            depth = float(entry["level"]) - floor if "level" in entry else float(entry["depth"])
+            if depth > 0.0:
+                out[y * b.size + x] = (round(depth, 4), contamination)
+    return out
+
+
+def _water_columns(b: MapBuild, fill: list[tuple[float, float]]) -> str:
+    cols = []
+    for i, (depth, contamination) in enumerate(fill):
+        if depth <= 0.0:
+            cols.append("0")
+            continue
+        floor = int(b.height.cells[i])
+        d = f"{depth:.4g}"
+        cols.append(f"{d}:{contamination:.4g}:0:{floor}:{d}")
+    return " ".join(cols)
+
+
 def world_json(b: MapBuild, spec: dict) -> dict:
     size = b.size
     n = size * size
@@ -62,7 +105,7 @@ def world_json(b: MapBuild, spec: dict) -> dict:
             "TerrainMap": {"Voxels": {"Array": b.voxels()}},
             "WaterMapNew": {
                 "Levels": 1,
-                "WaterColumns": {"Array": " ".join(["0"] * n)},
+                "WaterColumns": {"Array": _water_columns(b, water_fill(b, spec.get("water")))},
                 "ColumnOutflows": {"Array": " ".join(["0|0:0|0:0|0:0|0"] * n)},
             },
             "WaterEvaporationMap": {"Levels": 1, "EvaporationModifiers": {"Array": " ".join(["1"] * n)}},

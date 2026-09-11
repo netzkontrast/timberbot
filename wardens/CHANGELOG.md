@@ -4,6 +4,36 @@ The patch number moves with every local build (`tools/bump_version.py`, run by t
 version marks a milestone (`bump_version.py --minor`) and gets an entry here. Nothing below has been
 verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first run must answer.
 
+## 0.4.10: level 01 opens with a cutscene
+
+- **`Cutscenes/FirstLight.json`**, the level's opening: 12 shots, about 100 s, over the new land in the
+  order the level plays it. The dark plateau and the three archived badtides; the river's head at the north
+  edge; the river across the plateau; the Sump and its seep; the terraced shore; the first ruins; the
+  spring; the crossing; the Core with the Warden count; a Warden; the chapter directive, which waits for
+  Continue. The captions are `Wardens.Cutscene.FirstLight.*` rows, every number checked against the built
+  map (walk report, spec, the archive's badtide count).
+- **A `level:<Id>` trigger.** It fires on a new game on campaign level `<Id>` and plays with the vanilla
+  tutorial off, since `DisableTutorial` is the player's own setting. On level 01 the opening replaces the
+  Cold Boot, which still plays on every other map. `check_cutscenes.py` resolves the id against the level
+  table.
+- The Cold Boot's Wake card says "Every Warden online" instead of "Five": the count is the difficulty's
+  (13 on Normal).
+- **`.claude/agents/cutscene-director.md`**: an agent that connects to the running game over the MCP server
+  and tunes scenes live (reload, play, screenshot, fix). Todo: `docs/plan/first-light-opening.md`.
+- 0.4.11, from the first run of the opening: captions with `args` printed `System.Object[]` (every chapter
+  scene too; `ILoc.T` has no `params` overload), and `wardens_status.cutscene_played` now counts a level's
+  opening, not only the Cold Boot.
+
+- 0.4.13: **level 01 ships with its water.** The river, the channel and the Sump are pre-filled to 4.2 (the
+  surface a day-3 autosave of the map settled at: 0.2 deep in the river bed, 1.2 in the Sump), badwater
+  contamination 1; the spring's crater to 12.25, clean. The opening now flies over water, not dry beds.
+  mapsmith gained `[water] fill` and a checker for the column encoding, which is decoded from the 1.1.2.4
+  decompile (`WaterColumnPackedListSerializer`) and a real save; 9 new tests.
+
+State: the opening `verified` on the game machine (0.4.10: it played by itself on a handoff start with the
+tutorial off, all 12 shots, screenshots in PLAYTEST.md); the 0.4.11 fixes deployed as 0.4.12.
+`pytest` 139 passed before the water work, mapsmith 100; `check_cutscenes.py wardens/src` → `problems: none`.
+
 ## 0.4.9: level 01 remade from its playtest
 
 - **New land for `Wardens 01 First Light`** (same name, seed and size; saves on the first land keep it).
