@@ -8,6 +8,11 @@
 // camera director and cutscene runner are faction-agnostic and load in every game.
 
 using Bindito.Core;
+using Timberborn.Emptying;
+using Timberborn.EntityPanelSystem;
+using Timberborn.Hauling;
+using Timberborn.SimpleOutputBuildings;
+using Timberborn.SimpleOutputBuildingsUI;
 using Timberborn.TemplateInstantiation;
 using Timberborn.TutorialSystem;
 
@@ -72,6 +77,12 @@ namespace Wardens
             // Bot, and older saves are moved over once (WardensBotWorkforce.cs).
             Bind<WardensBotWorkforce>().AsTransient();
             Bind<WardensBotWorkforceMigration>().AsSingleton();
+            // The Gate: every map records what its districts produce beyond their needs, and a Gate
+            // on a later map delivers a linked district's surplus (WardensGate.cs).
+            Bind<WardensDistrictExports>().AsSingleton();
+            Bind<WardensMapGate>().AsTransient();
+            Bind<WardensMapGateFragment>().AsSingleton();
+            MultiBind<EntityPanelModule>().ToProvider<WardensGatePanelModuleProvider>().AsSingleton();
             MultiBind<TemplateModule>().ToProvider(ProvideTemplateModule).AsSingleton();
         }
 
@@ -80,6 +91,14 @@ namespace Wardens
             var builder = new TemplateModule.Builder();
             builder.AddDecorator<PollutingBuildingSpec, PollutingBuilding>();
             builder.AddDecorator<WardensBotWorkforceSpec, WardensBotWorkforce>();
+            // The Gate's output is a vanilla SimpleOutputInventory (its spec is in the blueprint);
+            // hauling it away and showing it in the panel are wired per building type in vanilla
+            // (RuinsConfigurator, GatheringConfigurator), so the Gate wires the same four itself.
+            builder.AddDecorator<WardensMapGateSpec, WardensMapGate>();
+            builder.AddDecorator<WardensMapGateSpec, HaulCandidate>();
+            builder.AddDecorator<WardensMapGateSpec, SimpleOutputInventoryHaulBehaviorProvider>();
+            builder.AddDecorator<WardensMapGateSpec, EmptyOutputWorkplaceBehavior>();
+            builder.AddDecorator<WardensMapGateSpec, SimpleOutputInventoryFragmentEnabler>();
             return builder.Build();
         }
     }

@@ -157,6 +157,23 @@ Design and open questions: `design/wardens-cutscenes.md` (§9 is this list, §12
   the letterbox collides with the tutorial panel, and whether the caption is centered (the game's
   `text--centered` class) or needs a fixed width.
 
+## Checks for the Gate (0.4.5)
+
+Two maps are needed: one to leave, one to link it from.
+
+- [ ] On map A, play at least a day with some surplus (scrap piling up). `Player.log` shows no
+      `[Wardens] district exports:` warning; `campaign action=status` → `districts` has map A's district
+      with `exports` per day, and `campaign.json` beside the mod has the same.
+- [ ] Leave map A (Exit to main menu, or `campaign action=next`). The `districts` entry's `day` and
+      `savedUtc` move to the moment you left.
+- [ ] On map B, the Gate is under District Management (30 Scrap Metal). Build it; its panel says how many
+      districts can be linked. *Link next* shows "Linked: District 1, <settlement A>." and what arrives.
+- [ ] Within a game day the Gate's inventory (the vanilla fragment under the panel) fills with those
+      goods, and with a Hauling Post in the district they move into storage.
+- [ ] Save, load: the Gate is still linked to the same district.
+- [ ] On map B, the `districts` entry for B's own district does not count the Gate's deliveries as B's
+      surplus (subtracted), so linking B from a map C does not re-export A's goods.
+
 ## Playtest findings (2026-09-10, Claude Code via the `wardens` MCP)
 
 A session run entirely through the MCP loop (`manual` → `wardens_status` → `timberbot_ready` →

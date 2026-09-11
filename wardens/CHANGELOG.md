@@ -4,6 +4,27 @@ The patch number moves with every local build (`tools/bump_version.py`, run by t
 version marks a milestone (`bump_version.py --minor`) and gets an entry here. Nothing below has been
 verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first run must answer.
 
+## 0.4.5: the Gate
+
+- **A new building, the Gate** (`MapGate.Wardens`, District Management, 30 Scrap Metal, no science).
+  It links a district you left on another map: whatever that district produced beyond its own needs
+  arrives at the Gate every day, and the Hauling Post's haulers carry it into this district. One Gate
+  links one district; build more Gates to link more. The panel shows the link and what arrives, with
+  *Link next* and *Unlink*.
+- **Every map records its districts' surplus** (`WardensDistrictExports`, in `WardensGate.cs`). Each
+  finished district's stock is sampled four times a game day, and its surplus per good is the growth
+  over the last three days minus what Gates delivered into it, so a chain of maps never re-exports the
+  same goods. The readings go into `campaign.json` (`districts`) once a game day and on every way out:
+  Exit to main menu, a level change, quitting. A later visit to the same save replaces its reading.
+  `campaign action=status` lists them.
+- The Gate is the Large Industrial Pile's pad with its stockpile removed and vanilla's public output
+  inventory (`SimpleOutputInventorySpec`, the one flags and the district center use) put in. It is a
+  source, not storage, so it does not count toward the district's capacity.
+
+State: `built` (0.4.5, 0 warnings, 0 errors); `pytest wardens/tools` 118 passed; `validate.py
+wardens/src` clean apart from the known level-02 note. Not yet seen in the game:
+`wardens/playtest/PLAYTEST.md`, "Checks for the Gate", is the first run's list.
+
 ## 0.4.2: bots work everywhere, and the Sludge Reed loads
 
 - **Bots are the default worker in every Wardens building, and nothing about bots costs science.**
