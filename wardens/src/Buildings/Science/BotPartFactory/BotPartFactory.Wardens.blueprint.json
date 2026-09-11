@@ -8,7 +8,7 @@
         "Amount": 30
       }
     ],
-    "ScienceCost": 500,
+    "ScienceCost": 0,
     "PlaceFinished": false,
     "FinishableWithBeaversOnSite": false,
     "DrawRangeBoundsOnIt": false
@@ -24,14 +24,9 @@
   "WorkplaceSpec": {
     "MaxWorkers": 1,
     "DefaultWorkers": 1,
-    "DefaultWorkerType": "Beaver",
+    "DefaultWorkerType": "Bot",
     "DisallowOtherWorkerTypes": false,
-    "WorkerTypeUnlockCosts": [
-      {
-        "WorkerType": "Bot",
-        "ScienceCost": 5000
-      }
-    ]
+    "WorkerTypeUnlockCosts": []
   },
   "EnterableSpec": {
     "OperatingState": "Finished",

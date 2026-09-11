@@ -129,14 +129,9 @@
   "WorkplaceSpec": {
     "MaxWorkers": 10,
     "DefaultWorkers": 4,
-    "DefaultWorkerType": "Beaver",
+    "DefaultWorkerType": "Bot",
     "DisallowOtherWorkerTypes": false,
-    "WorkerTypeUnlockCosts": [
-      {
-        "WorkerType": "Bot",
-        "ScienceCost": 250
-      }
-    ]
+    "WorkerTypeUnlockCosts": []
   },
   "EnterableSpec": {
     "OperatingState": "Finished",

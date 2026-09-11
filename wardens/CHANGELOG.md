@@ -4,6 +4,47 @@ The patch number moves with every local build (`tools/bump_version.py`, run by t
 version marks a milestone (`bump_version.py --minor`) and gets an entry here. Nothing below has been
 verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first run must answer.
 
+## 0.4.5: the Gate
+
+- **A new building, the Gate** (`MapGate.Wardens`, District Management, 30 Scrap Metal, no science).
+  It links a district you left on another map: whatever that district produced beyond its own needs
+  arrives at the Gate every day, and the Hauling Post's haulers carry it into this district. One Gate
+  links one district; build more Gates to link more. The panel shows the link and what arrives, with
+  *Link next* and *Unlink*.
+- **Every map records its districts' surplus** (`WardensDistrictExports`, in `WardensGate.cs`). Each
+  finished district's stock is sampled four times a game day, and its surplus per good is the growth
+  over the last three days minus what Gates delivered into it, so a chain of maps never re-exports the
+  same goods. The readings go into `campaign.json` (`districts`) once a game day and on every way out:
+  Exit to main menu, a level change, quitting. A later visit to the same save replaces its reading.
+  `campaign action=status` lists them.
+- The Gate is the Large Industrial Pile's pad with its stockpile removed and vanilla's public output
+  inventory (`SimpleOutputInventorySpec`, the one flags and the district center use) put in. It is a
+  source, not storage, so it does not count toward the district's capacity.
+
+State: `built` (0.4.5, 0 warnings, 0 errors); `pytest wardens/tools` 118 passed; `validate.py
+wardens/src` clean apart from the known level-02 note. Not yet seen in the game:
+`wardens/playtest/PLAYTEST.md`, "Checks for the Gate", is the first run's list.
+
+## 0.4.2: bots work everywhere, and the Sludge Reed loads
+
+- **Bots are the default worker in every Wardens building, and nothing about bots costs science.**
+  The Warden knows everything there is to know about bots. Every Wardens workplace now defaults to
+  Bot with no per-building unlock cost (vanilla priced bots at 250 to 10,000 science per building),
+  and bot buildings (Bot Assembler, Bot Part Factory) cost no science. The rule lives in
+  `tools/bot_workforce.py`: both generators apply it and `validate.py` fails on any blueprint that
+  breaks it. Exceptions: a building locked to its own worker type (the Power Treadmill a beaver runs,
+  the Data Desk) and a chapter padlock, which is story gating, not science.
+- **The district default is Bot too** (`WardensBotWorkforce.cs`). A finishing workplace copies its
+  district's default worker type over the blueprint's, and vanilla starts every district as Beaver,
+  so the blueprint rule alone never showed. Wardens district centers carry `WardensBotWorkforceSpec`,
+  and saves made before this are moved over once.
+- **Fixed:** hovering the planting tool threw `Material Cattail not found in repository` (the Sludge
+  Reed is vanilla Cattail, whose material only the Folktails collection holds). The faction now also
+  loads the `Folktails` material collection; its names are disjoint from IronTeeth's and Common's.
+
+State: `built` (0.4.2, 0 warnings, 0 errors); `pytest wardens/tools` and `validate.py wardens/src`
+clean apart from the known level-02 `shipped=false` note. Not yet seen in the game.
+
 ## 0.4.1: the level loader, on the game's real API
 
 - **The level transition is rewritten against the 1.1.2.4 decompile** (`WardensLevelTransition.cs`,

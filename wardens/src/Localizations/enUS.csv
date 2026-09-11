@@ -365,3 +365,13 @@ Wardens.Cutscene.Archive.Population,Wardens: {0}. Beavers: {1}.,"Archive reading
 Wardens.Cutscene.Archive.Stock,Data Cores: {0}. Science: {1}. Scrap: {2}.,"Archive reading; {0} Data Cores, {1} science points, {2} scrap"
 Wardens.Cutscene.Archive.Born,First beaver: day {0}. The road east: {1}.,"Archive reading; {0} the birthday mark or none, {1} the level-end choice or none"
 Wardens.Cutscene.Archive.Recorded,Recorded.,Archive reading
+Building.MapGate.DisplayName,Gate,Wardens: links a district on another map
+Building.MapGate.Description,"Links a district you left on another map. What it produced beyond its own needs arrives here every day, for the haulers to carry in.",
+Building.MapGate.FlavorDescription,The maps are not separate. They were never separate; we only lacked the link.,
+Wardens.Gate.Linked,"Linked: {0}, {1}.","Gate panel; {0} district name, {1} settlement name"
+Wardens.Gate.Rates,Arrives per day: {0},"Gate panel; {0} a list like 'Scrap Metal 2.4, Biomass 1.1'"
+Wardens.Gate.NoSurplus,It had no surplus when you left it.,Gate panel
+Wardens.Gate.Unlinked,Not linked. Districts on other maps you can link: {0}.,Gate panel; {0} count
+Wardens.Gate.None,No district on another map yet. Every map you leave records what its districts produce beyond their needs.,Gate panel
+Wardens.Gate.Next,Link next,Gate panel button
+Wardens.Gate.Unlink,Unlink,Gate panel button

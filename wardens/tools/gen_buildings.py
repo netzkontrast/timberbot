@@ -18,6 +18,7 @@ Produces
   Buildings/Water/SludgePump, Power/BadwaterCell, Storage/SludgeTank, Housing/*Pod, Wood/Planter
   Buildings/Paths/Stairs (alias Stairs.Folktails), Paths/Platform, Landscaping/Dam, Storage/Rack,
   DistrictManagement/HaulingPost, Wellbeing/Deck                the ported tutorial's building set
+  Buildings/DistrictManagement/MapGate/MapGate.Wardens         the Gate: a district on another map, linked in
   NaturalResources/Crops/SludgeReed/SludgeReed                cattail re-spec: land crop, ignores contamination
   Goods/Good.Biomass, collections, faction wiring, recipes, loc rows, csproj glob
 Chapter gating: buildings that src/WardensChapters.cs unlocks ship with ScienceCost CHAPTER_LOCK
@@ -261,6 +262,24 @@ labeled(deck, "Deck")
 cost(deck, ("ScrapMetal", 10))
 building("Wellbeing/Deck", "Deck", deck)
 
+# --- Gate: a district on another map, linked in (src/WardensGate.cs) ----------------------------------
+# The Large Industrial Pile's 3x3 pad, entrance and access, with its stockpile taken out: goods from
+# the linked district arrive in a public output inventory (vanilla SimpleOutputInventorySpec, the one
+# flags and the district center use) and the Hauling Post's haulers carry them in. IgnorableCapacity:
+# a source, not storage, so it does not count toward the district's capacity.
+gate = vanilla("Buildings/Storage/LargeIndustrialPile/LargeIndustrialPile.IronTeeth")
+rename(gate, "MapGate.Wardens")
+labeled(gate, "MapGate")
+for spec in ("StockpileSpec", "StockpileGoodPileVisualizerSpec", "StockpilePlaneVisualizerSpec"):
+    gate.pop(spec, None)
+gate["SimpleOutputInventorySpec"] = {"Capacity": 30, "IgnorableCapacity": True}
+gate["WardensMapGateSpec"] = {}
+gate["PlaceableBlockObjectSpec"]["ToolGroupId"] = "DistrictManagement"
+gate["PlaceableBlockObjectSpec"]["ToolOrder"] = 50
+gate["BuildingSpec"]["SelectionSoundName"] = "Pile"
+cost(gate, ("ScrapMetal", 30))
+building("DistrictManagement/MapGate", "MapGate", gate)
+
 # --- Sludge Reed: cattail models on a land-crop body, immune to contamination and drought ------------
 reed = vanilla("NaturalResources/Crops/Cattail/Cattail")
 land = vanilla("NaturalResources/Crops/Kohlrabi/Kohlrabi")
@@ -317,6 +336,11 @@ f = fac["FactionSpec"]
 # exactly one planter building in its bar (see Planter.Wardens).
 f["TemplateCollectionIds"] = ["Buildings.Wardens", "Characters.IronTeeth", "ModularShaftParts.IronTeeth",
                              "NaturalResources.Wardens", "Planes.IronTeeth"]
+# Borrowed Folktails models (the Sludge Reed is vanilla Cattail; the Badwater Rig's underground part is
+# the Folktails one) look their materials up by name in the faction's collections, and without
+# Folktails the Reed's prefab throws "Material Cattail not found in repository". The three vanilla
+# collections have disjoint material names, so loading Folktails adds and never shadows.
+f["MaterialCollectionIds"] = ["IronTeeth", "Folktails"]
 f["StartingBuildingId"] = "Core.Wardens"
 f["BlueprintModifiers"] = [m for m in f["BlueprintModifiers"] if m["Original"].startswith("tutorials/")]
 write("Factions/Faction.Wardens.blueprint.json", fac)
@@ -375,6 +399,17 @@ rows = [
     ("Building.Planter.DisplayName", "Planter Rig", "Wardens forester"),
     ("Building.Planter.Description", "Plants trees and bushes in its range. Nothing grows here yet; one day it will.", ""),
     ("Building.Planter.FlavorDescription", "Directive 2, in hardware.", ""),
+    ("Building.MapGate.DisplayName", "Gate", "Wardens: links a district on another map"),
+    ("Building.MapGate.Description", "Links a district you left on another map. What it produced beyond its own needs arrives here every day, for the haulers to carry in.", ""),
+    ("Building.MapGate.FlavorDescription", "The maps are not separate. They were never separate; we only lacked the link.", ""),
+    # The Gate's panel (src/WardensGateFragment.cs)
+    ("Wardens.Gate.Linked", "Linked: {0}, {1}.", "Gate panel; {0} district name, {1} settlement name"),
+    ("Wardens.Gate.Rates", "Arrives per day: {0}", "Gate panel; {0} a list like 'Scrap Metal 2.4, Biomass 1.1'"),
+    ("Wardens.Gate.NoSurplus", "It had no surplus when you left it.", "Gate panel"),
+    ("Wardens.Gate.Unlinked", "Not linked. Districts on other maps you can link: {0}.", "Gate panel; {0} count"),
+    ("Wardens.Gate.None", "No district on another map yet. Every map you leave records what its districts produce beyond their needs.", "Gate panel"),
+    ("Wardens.Gate.Next", "Link next", "Gate panel button"),
+    ("Wardens.Gate.Unlink", "Unlink", "Gate panel button"),
     ("NaturalResource.SludgeReed.DisplayName", "Sludge Reed", "Wardens crop"),
     ("NaturalResource.SludgeReed.FlavorDescription", "Thrives on contamination. Harvested for Biomass.", ""),
     ("Good.Biomass.DisplayName", "Biomass", "Wardens fuel"),
@@ -413,4 +448,9 @@ for folder in ("Buildings", "NaturalResources", "IlluminationColors"):
     if token not in s:
         s = s.replace(f"Factions{bs}**;", f"Factions{bs}**;{token}", 1)
 open(cp, "w", encoding="utf-8", newline="\n").write(s)
+
+# --- The workforce rule: bots by default, no bot science (tools/bot_workforce.py) ----------------------
+import bot_workforce  # noqa: E402  (same folder; last, so it sees every blueprint written above)
+for p in bot_workforce.apply_tree(SRC):
+    print("botified", p.relative_to(SRC).as_posix())
 print("done")
