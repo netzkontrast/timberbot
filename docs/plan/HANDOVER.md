@@ -47,8 +47,9 @@ Teeth buildings, 27 on the Wardens bar (the pool WP2 draws from). Wrote the plan
 
 ### Publish check
 
-Branch `plan/iteration-05-consistent-story`; the `git ls-remote` line is in the pull request that carries
-this entry (filled in below the entry after the push).
+Branch `plan/iteration-05-consistent-story`; `git ls-remote origin plan/iteration-05-consistent-story` →
+`67ce17be67707258cc2ce2c5cb9aafaabd1a1998` (the plan and this entry; the commit that fills in this line
+follows it on the same branch).
 
 ### Disposition of the entry below
 
