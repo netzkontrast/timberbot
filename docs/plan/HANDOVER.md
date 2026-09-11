@@ -11,6 +11,160 @@ is and how each part works), `wardens/CHANGELOG.md` (what each version added), `
 
 ---
 
+## 2026-09-11: every building on the bar from the first frame of every level (out of plan order)
+
+**Plan:** none — the author asked directly: "include all buildings for all levels right from the start".
+That retires the chapter gate of `wardens-chapter-1-plan.md` §4 (the padlocks), taken ahead of WP1/WP2.
+**Goal:** on every map the Wardens play, the whole building bar is buildable from the first frame, and the
+story (chapters, toasts, cutscenes) still advances with the tutorial line.
+
+**Status: the data, the generators and the checks are `checked` (cloud). The C# is `written` — this
+container has no .NET SDK and no game DLLs, so nothing in `wardens/src` has been compiled.**
+
+### What I did
+
+Cloud container: Linux, Python 3.11, `uv`, no `dotnet`, no game DLLs, no Timberborn. Read `AGENTS.md`,
+`wardens/README.md`, `wardens/CHANGELOG.md`, the two newest entries here, the iteration-04 plan,
+`design/wardens-chapter-1-plan.md`, `design/wardens-campaign-design.md`, `design/leafcoats-port-plan.md`,
+`wardens/playtest/PLAYTEST.md`, the five documents of the agent contract, and the sources
+`WardensChapters.cs`, `WardensFrames.cs`, `WardensCutscenes.cs`, `WardensMcpTools.cs`, `WardensMcpServer.cs`,
+`WardensCampaign.cs`, `gen_buildings.py`, `gen_tutorial.py`, `gen_port.py`, `validate.py`, `check_cutscenes.py`.
+
+Decisions taken without the author (the session was autonomous), each recorded in the changelog:
+
+1. **The data is the gate, and there is no gate.** Every building in `Buildings.Wardens` ships with
+   `ScienceCost: 0`: the nine chapter padlocks (999999) and the science prices of Planter Rig (60),
+   Stairs (70) and Platform (100). Mirrored in `gen_buildings.py` (`CHAPTER_LOCK` is gone).
+2. **Chapters stay as story beats.** `WardensChapters.cs` still announces a chapter when its tutorial
+   finishes (toast, Uplink line, `ChapterOpened` for the cutscene) but unlocks nothing; `Opened()` reads
+   the finished-tutorial set, which also settles the playtest finding "every chapter complete on a fresh
+   save". One safety net at load unlocks anything still carrying a cost and logs it (`unlocked_at_load`).
+   `chapterGating` is retired (a leftover key logs one line).
+3. **The tutorial line follows.** Reforestation goes straight to `build(Planter)` (stage
+   `Wardens.Reforestation.BuildPlanter`), the Science card stops promising unlocks, Vertical architecture
+   requires `Wardens.Wellbeing` alone (stairs are free, so `StairsUnlockedTrigger` has nothing to see; the
+   `Stairs.Folktails` alias stays because the vanilla singleton still resolves the name at load).
+4. **The Leaf Coats port stays out.** All 44 `Buildings.WardensPort` blueprints reference the local-only
+   bundle (`*.LeafCoats.Model`), so wiring the collection into the faction would crash a shipped mod at
+   load. Its science costs are untouched; `gen_port.py`'s docstring says what wiring it in now requires.
+5. **`validate.py` enforces the rule** (no science cost in any collection the faction lists; the chapter
+   table through two pure helpers), and `test_validate.py` runs the same rules against the source tree
+   without the game's files, so CI guards it.
+
+Changed, one branch, one pull request: 12 blueprints, `gen_buildings.py`, `gen_tutorial.py` (and its
+regenerated stages and loc rows: the csv now carries the generator's row order), `enUS.csv`,
+`settings.json`, `manifest.json`, `WardensChapters.cs` (rewritten), `WardensMcpServer.cs`,
+`WardensFrames.cs`, `WardensMcpTools.cs`, `WardensConfigurator.cs`, `validate.py`, `test_validate.py`
+(new), `gen_port.py` (docstring), `README.md` (root and wardens), `AGENTS.md`, `CHANGELOG.md`,
+`PLAYTEST.md`, dated status notes in five design documents and two passages of the iteration-04 plan.
+
+### Evidence
+
+| Command | Result line |
+|---|---|
+| `uv run --project python --extra dev pytest -q wardens/tools .claude/skills/driving-iterations/scripts` | `121 passed in 3.57s` |
+| `python wardens/tools/check_cutscenes.py wardens/src` | `problems: none` |
+| `python wardens/tools/mapsmith check wardens/maps/wardens-wasteland.map.toml` | `problems: none` |
+| `python wardens/tools/mapsmith check --level 02` | `problems: none` |
+| `python wardens/tools/mapsmith levels --verify` | `levels: consistent with WardensCampaign.cs` |
+| `python .claude/skills/driving-iterations/scripts/check_doc_drift.py --root . wardens/WARDEN.md .claude/skills/warden-play/SKILL.md design/wardens-play.md` | three `UNMARKED`, `problems: none` (the five documents did not change) |
+| `python wardens/tools/gen_tutorial.py` (twice) | `tutorials: 18, stages: 40, loc rows: 63 replaced 63`; the second run changed nothing |
+| `ruff check --config python/pyproject.toml wardens/tools/validate.py wardens/tools/test_validate.py` | no findings (the 16 in the two generators predate this entry) |
+| `python wardens/tools/validate.py wardens/src` | **not run here** — needs the game's `Blueprints.zip` |
+| `dotnet build wardens/src/Wardens.csproj -c Release` | **not run here** — no .NET SDK in this container |
+
+### Publish check
+
+Branch `claude/mod-building-all-levels-2q3noz`, PR #16 open against main.
+`git ls-remote origin claude/mod-building-all-levels-2q3noz` -> `33989315566cd2efc51412c985ad20c7723284e5`
+(the change itself; the commit carrying this entry follows it on the same branch).
+
+### What I found
+
+1. **`chapter status` listed every chapter complete on a fresh save because the check read the unlock
+   state** (read: `WardensChapters.cs` before this change, `IsComplete` was true when every template was
+   unlocked, and `_unlockAll` unlocked everything when the tutorial was off or `chapterGating` false).
+   *Symptom:* PLAYTEST.md's finding of 2026-09-10. *Source:* read, not reproduced. *Consequence:* the agent's
+   `chapter.next` attention item was empty on such a save. *Remedy:* `Opened()` reads the finished-tutorial
+   set; the frames and `wardens_status` use it. WP6 item 2 of the iteration-04 plan is marked settled.
+2. **Three tutorial-line steps assumed a lock** (read, `gen_tutorial.py`): `AccumulateScienceForBuildingStepSpec`
+   and `UnlockBuildingTutorialStepSpec` for the Planter Rig, and `StairsUnlockedTrigger` as a requirement of
+   Vertical architecture. *Consequence:* with the rig free the two steps would auto-complete at best; with
+   stairs free the trigger never fires if it listens for an unlock event, and the tutorial never starts.
+   *Remedy:* the steps are gone and the requirement is `Wardens.Wellbeing` alone. Whether the vanilla trigger
+   also checks the initial state was not read (no decompile here); the remedy does not depend on it.
+3. **The port cannot be included** (read): all 44 blueprints reference `*.LeafCoats.Model` assets from the
+   git-ignored bundle. *Consequence:* a load crash if wired in without the local copies. *Remedy:* left out,
+   recorded in the changelog and the README; `gen_port.py`'s docstring names the extra step (ScienceCost 0)
+   for whoever wires it in locally.
+4. **`enUS.csv` was not in the generator's row order** (reproduced: `gen_tutorial.py` moved 34 rows). The
+   chapter and cutscene rows had been appended after the tutorial rows by a later `gen_buildings.py` run.
+   *Consequence:* a larger diff than the edit, nothing else. *Remedy:* none needed; the file now matches
+   what the generator writes.
+
+### Where the mod stands
+
+| Fact | Source |
+|---|---|
+| No building in `Buildings.Wardens` carries a science cost; the bar is open from the first frame | the 20 blueprints; `test_validate.py::test_shipped_bar_is_free_from_the_start` |
+| The chapters announce on tutorial completion and unlock nothing; `complete` means the tutorial finished | `WardensChapters.cs` |
+| `chapterGating` no longer exists; `settings.json` ships without it | `WardensMcpServer.cs`, `wardens/src/settings.json` |
+| The Leaf Coats port is still not in the faction and cannot ship | `Faction.Wardens.blueprint.json`, `gen_port.py` docstring |
+| No C# in this entry is past `written` | no .NET SDK here |
+| Everything in the previous entry still stands (level 02's row unfinished, the transition unverified) | that entry |
+
+### What you should do, in this order
+
+Disposition of the previous entry's items: WP1, WP2, WP5, WP8 (cloud) **deferred** — the author asked for
+the open bar instead, and they are unchanged and still small; WP3, WP4, WP6 (game) **blocked** on the game
+machine as before, with WP4 step 6 and WP6 item 2 rewritten for the open bar; "five bots or thirteen"
+**still open**; stamping the mirrors **deferred** to WP5 as before; the level-02 chapter-table question
+**still open**, and smaller now: a chapter table for level 02 is a list of story beats, not a gate.
+
+**If you are at the game machine:** read this entry, then run
+`dotnet build wardens/src/Wardens.csproj -c Release` (the rewritten `WardensChapters.cs` uses only calls the
+old file or the Timberbot copy used: `UnlockIgnoringCost`, `UnlockInternal`, `_finishedTutorials`,
+`ToolButtons`, `BuildingSpec.ScienceCost`), then `python wardens/tools/validate.py` (expect
+`science-priced: 0 (must be 0)` and `problems: none`). Start a new game on `Wardens 01 First Light`, tutorial
+on, and check: no padlock on the bar; `chapter status` shows `complete: []`, `next: Badwater`,
+`unlocked_at_load: []`; finish the Scrap tutorial (`tutorial next` is fine) and see the "Chapter 2:
+Badwater." toast within a second; grep `Player.log` for `[Wardens] chapters:` and paste the `bar checked`
+line into `wardens/playtest/PLAYTEST.md`. Then continue with WP3 and WP4 as the previous entry says.
+
+**If you are in a cloud container:** WP1 and WP2 from the iteration-04 plan, untouched and still small, each
+its own branch and PR in the state words.
+
+### How you know it is done
+
+The `dotnet build` result line and the `[Wardens] chapters: bar checked, N tool buttons, 0 unlocked at load`
+log line are in a HANDOVER entry; PLAYTEST.md's chapter bullet has been walked once; `AGENTS.md`'s state
+section rewrites the 2026-09-11 update from evidence.
+
+### Open questions I could not answer
+
+**Should Science still exist as a currency?** With nothing to unlock, the Cruncher's Science Points recipe
+is a score, not a resource, and the Signal chapter's line "Science, or Data Cores for the Archive" is a
+choice between a number and a good.
+
+| Option | Cost | Risk | |
+|---|---|---|---|
+| Leave it: Science is a measure, Data Cores are the economy (what this entry ships) | none | the Signal card's choice feels empty to a player who reads it | **recommended until the proof run** |
+| Drop the Science recipe from the Cruncher and reword Signal | an hour: `gen_buildings.py`, the Signal captions, the act list in the `warden-play` skill | the Cruncher's power tension (Core 150 vs. 120) loses its "think about what" framing | |
+| Give Science a use again (a late-game wonder, the Ark) | a design pass | out of scope for Act I | |
+
+What settles it: the author's reading of the Signal chapter on the proof run (WP4).
+
+### What I deliberately did not do
+
+I did not wire `Buildings.WardensPort` into the faction (finding 3). I did not rename the
+`Wardens.Chapter.<Id>.Unlocked` loc rows: the key is historical, the text is new, and a rename touches the
+generator, the C#, the validator and the csv for no behaviour. I did not touch the five documents of the
+agent contract: none of their claims changed (the act list still says a chapter "opens" when its tutorial
+finishes, which is still true). I did not change any cutscene caption. I did not edit older HANDOVER
+entries, and the plan only where it described the padlocks.
+
+---
+
 ## 2026-09-10, night: level 02 and the level transition (out of plan order)
 
 **Plan:** none — the author asked directly for map design and "the functionality to load a map from
