@@ -87,8 +87,9 @@ public static readonly WardensLevel[] Levels = { ... };   // order = campaign or
 Identity is the **map name**: `MapNameService.Name` inside a game, `MapItem.DisplayName` / `MapFileReference.Name`
 in the menu, the file stem on disk. The `Wardens NN` prefix keeps the maps together in the custom-maps
 list and makes the order visible to the player. `validate.py` checks, per level: the map file exists in
-`Maps/`, `EndsWith` is a tutorial id the generator emits, every chapter template exists and is padlocked,
-loc rows for title and cards exist, `Next` points at a level.
+`Maps/`, `EndsWith` is a tutorial id the generator emits, every chapter template exists (and, since
+2026-09-11, no building in the faction's collections carries a science cost: the bar is open from the
+first frame), loc rows for title and cards exist, `Next` points at a level.
 
 ### 3.2 `campaign.json` (mod folder, next to `settings.json`)
 

@@ -441,7 +441,7 @@ namespace Wardens
                 }, offThread: true);
 
             Add("chapter",
-                "Story chapters that gate the building bar (WardensChapters.cs): each chapter opens when its tutorial finishes and unlocks the padlocked buildings. action=status lists every chapter with its gate and per-building lock state; action=unlock opens chapter_id now (dev/testing).",
+                "Story chapters (WardensChapters.cs): the beats of the tutorial line. Nothing is locked: every building is on the bar from the first frame of every level. A chapter opens when its tutorial finishes (toast, Uplink line, its cutscene). action=status lists every chapter with its tutorial, whether the story has reached it (opened) and the buildings it is about; unlocked_at_load names buildings the load check had to unlock (empty when the data is right). action=unlock announces chapter_id now (dev/testing; replays its beat).",
                 Schema(new JObject
                 {
                     ["action"] = Prop("string", "status | unlock", "status"),

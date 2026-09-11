@@ -93,7 +93,7 @@ tbot watch --backend claude                         # long-running agent connect
 
 ## The Wardens
 
-`wardens/` is a second mod built on the same code: a Timberborn faction in which the AI is a character. Bots are the starting population, their wellbeing is Data, a story tutorial opens the building bar chapter by chapter with cutscenes played from scene files, the land is a generated wasteland, and an MCP server inside the game lets Claude Code play beside you: it reads a playbook, lives on a tick-driven `frame` heartbeat that tells it where to look, talks through an in-game panel, and acts through the Timberbot API compiled into the same DLL. Start at [`wardens/README.md`](wardens/README.md); the stance behind it is [`design/wardens-play.md`](design/wardens-play.md).
+`wardens/` is a second mod built on the same code: a Timberborn faction in which the AI is a character. Bots are the starting population, their wellbeing is Data, every building is on the bar from the first frame of every level while a story tutorial advances chapter by chapter with cutscenes played from scene files, the land is a generated wasteland, and an MCP server inside the game lets Claude Code play beside you: it reads a playbook, lives on a tick-driven `frame` heartbeat that tells it where to look, talks through an in-game panel, and acts through the Timberbot API compiled into the same DLL. Start at [`wardens/README.md`](wardens/README.md); the stance behind it is [`design/wardens-play.md`](design/wardens-play.md).
 
 ## Docs
 

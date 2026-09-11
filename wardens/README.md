@@ -27,14 +27,14 @@ The mod is one DLL plus data, and it does four jobs:
    and chapter state, a tick-driven `frame` heartbeat that says where to look, the playbook
    (`WARDEN.md`, via `manual`), and a passthrough to the whole Timberbot API. How the Warden
    plays: [`../design/wardens-play.md`](../design/wardens-play.md).
-4. **The story and the land**: chapters that open the building bar as the tutorial line advances
-   (`WardensChapters.cs`, "How the chapters work" below), cutscenes played from scene files
+4. **The story and the land**: chapters that mark the tutorial line's beats while the whole building
+   bar is open from the first frame (`WardensChapters.cs`, "How the chapters work" below), cutscenes played from scene files
    (`WardensCutscenes.cs`, `Cutscenes/*.json`, "How cutscenes work" below) and the shipped wasteland
    map (`Maps/Wardens 01 First Light.timber`, "The map" below).
 
 ```
 src/
-  manifest.json, settings.json       mod id "Wardens"; Timberbot ports + mcpPort/mcpEnabled, chapterGating, cutscenes
+  manifest.json, settings.json       mod id "Wardens"; Timberbot ports + mcpPort/mcpEnabled, cutscenes, installMaps
   thumbnail.png                      the Mod Manager tile (tools/gen_thumbnail.py: the bot avatar with the logo badge)
   Wardens.csproj                     deploys to Documents/Timberborn/Mods/Wardens
   Factions/Faction.Wardens…          FactionSpec + StartingFactionSpec (enables tutorials)
@@ -46,7 +46,7 @@ src/
   WardensPoweredStep.cs              PoweredBuildingStepSpec: "Power: X" with our own shaft buttons
   WardensPopulationStep.cs           BeaversStepSpec: "Beavers: (n/m)" for the first pod-born beaver
   WardensTriggers.cs                 MissingDam / PlatformBuilt / IdleWardens triggers (optional tutorials)
-  WardensChapters.cs                 story chapters: tutorial progress unlocks the padlocked buildings
+  WardensChapters.cs                 story chapters: toast, Uplink line and scene as the tutorial line advances (nothing locked)
   WardensCutscenes.cs                cutscene runner + triggers (new game, chapter opened, tutorial finished)
   WardensCutsceneScript.cs           the scene format (Cutscenes/*.json) and its parser
   WardensCutsceneOverlay.cs          letterbox, caption, step dots, Skip / Continue
@@ -103,16 +103,17 @@ in. `tools/bump_version.py --minor` marks a milestone; [`CHANGELOG.md`](CHANGELO
 
 ## How the chapters work
 
-`WardensChapters.cs` is the chapter unlock service from the Chapter 1 plan (§4), driven by the tutorial
-line instead of its own goal checks. Buildings a chapter opens ship with `ScienceCost: 999999`
-(`CHAPTER_LOCK` in `tools/gen_buildings.py`), so the bar shows vanilla's padlock; when the chapter's
-tutorial is finished the service unlocks them through `BuildingUnlockingService.UnlockIgnoringCost`,
-refreshes the toolbar button the way Timberbot's `/api/science/unlock` does, and posts a toast plus a
-line in the chat panel (`Wardens.Chapter.<Id>.Title` / `.Unlocked` in `Localizations/enUS.csv`).
+Every building the faction ships is buildable from the first frame of every level: the blueprints
+carry `ScienceCost: 0` (`tools/gen_buildings.py`), the bar shows no padlock and no science price, and
+`tools/validate.py` fails on any other value in the faction's collections. `WardensChapters.cs` keeps
+the chapters as story beats over the tutorial line: when a chapter's tutorial is finished the service
+posts a toast plus a line in the chat panel (`Wardens.Chapter.<Id>.Title` / `.Unlocked` in
+`Localizations/enUS.csv`; the second row keeps the name it had when the chapters were a gate) and
+raises `ChapterOpened`, which plays the chapter's cutscene.
 
-| Chapter | Opens when | Buildings |
+| Chapter | Opens when | What it is about |
 |---|---|---|
-| 1 First Light | new game | Path, Scavenger Flag, Power Shaft, Charging Post, Scrap Pile (never locked) |
+| 1 First Light | new game | Path, Scavenger Flag, Power Shaft, Charging Post, Scrap Pile |
 | 2 Badwater | `Wardens.Scrap` finished | Sludge Pump, Reed Bed, Sludge Tank, Crate Rack |
 | 3 Signal | `Wardens.WorkingHours` finished | The Cruncher |
 | 4 Pods | `Wardens.Storage` finished | Breeding Pod |
@@ -120,17 +121,26 @@ line in the chat panel (`Wardens.Chapter.<Id>.Title` / `.Unlocked` in `Localizat
 | 6 Green | `Wardens.MoreBeavers` finished | Advanced Breeding Pod |
 
 Each chapter opens right before the tutorial that asks for its buildings starts (the tutorial line's
-`RequiredTutorialIds` chain guarantees the order). Planter Rig, Stairs and Platform stay science-gated
-as in vanilla; Dam, Hauler Dock and Observation Deck are free because their tutorials fire on triggers
-(cycle count, stairs unlocked) that do not follow the chapter order.
+`RequiredTutorialIds` chain guarantees the order); the buildings were on the bar all along, so a player
+who knows the game can build ahead of the story. Planter Rig, Stairs and Platform are free too (they
+used to carry vanilla's science price): the Reforestation tutorial goes straight to building the rig,
+and Vertical architecture follows Maintenance instead of waiting for a stairs unlock.
 
-- No save state: finished tutorials and unlocked buildings are both persisted by vanilla, so a loaded
-  game reconciles on its first frame, silently. Tutorial off in the new-game panel, or
-  `"chapterGating": false` in `settings.json`, opens every chapter at load. Other factions are untouched.
-- MCP: `wardens_status` carries `chapter` (complete list, next chapter and the tutorial it waits for);
-  the `chapter` tool lists per-building lock state and `action=unlock` forces a chapter open for testing.
-- `tools/validate.py` cross-checks the C# table against the blueprints: every padlocked template has a
-  chapter, every chapter template exists and is padlocked, the gating tutorial exists, loc rows present.
+- No save state: finished tutorials are persisted by vanilla, so a loaded game reconciles on its first
+  poll, silently. Tutorial off in the new-game panel: the story cannot advance, so every chapter counts
+  as opened. Other factions are untouched. (`chapterGating` in `settings.json` is gone; a leftover key
+  is ignored with a log line.)
+- A safety net: on the first poll that sees the toolbar, a building whose spec still carries a science
+  cost (a stale deployed blueprint, a collection wired in without the rule) is unlocked through
+  `BuildingUnlockingService.UnlockIgnoringCost` and its button refreshed, with a warning naming the
+  template; `chapter status` lists them under `unlocked_at_load`, empty when the data is right.
+- MCP: `wardens_status` carries `chapter` (`complete`: the chapters the story has reached, `next`,
+  `next_waits_for`); the `chapter` tool lists every chapter with its tutorial, `opened`, and the
+  buildings it is about; `action=unlock` announces a chapter now (dev/testing: replays the toast and
+  the scene).
+- `tools/validate.py` cross-checks the C# table against the blueprints (every chapter building exists,
+  the opening tutorial exists, loc rows present) and enforces the free bar; `tools/test_validate.py`
+  runs the same rules against the source tree without the game's files.
 
 Act I only. Out of scope for now: remediation, the Ark, custom art.
 
@@ -275,14 +285,16 @@ Re-run it after the sprites change.
 `tools/gen_buildings.py` re-specs Iron Teeth blueprints from the game's own `Blueprints.zip` into
 `Buildings/`, `NaturalResources/`, `Goods/Good.Biomass` and the two Wardens template collections.
 Models stay vanilla references. Everything costs Scrap Metal (the Scavenger Flag is the only source);
-science cost is 0 for the starting bar, `CHAPTER_LOCK` for the chapter-gated buildings (see above),
-and a real science price only for Planter Rig, Stairs and Platform.
+the science cost is 0 for every building: the whole bar is open from the first frame (see "How the
+chapters work" above), and `validate.py` refuses any other value.
 
 `tools/gen_port.py` ports Leaf Coats buildings the same way, from a live `dump_assets` dump instead
 of a zip (`design/leafcoats-port-plan.md` has the full plan and status). The current batch — 44
 buildings the Iron Teeth re-specs above don't already cover (District management, Power, Science,
 Water, Metal, the larger Storage tier) — sits in `Buildings.WardensPort`, not yet added to the
-faction's `TemplateCollectionIds`.
+faction's `TemplateCollectionIds`. Its blueprints reference the local-only Leaf Coats bundle, so it cannot
+ship; wiring it in locally also means zeroing its 44 science costs, which `validate.py` demands of every
+collection the faction lists.
 
 | Template | From | What changed |
 |---|---|---|

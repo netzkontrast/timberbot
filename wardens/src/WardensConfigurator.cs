@@ -25,7 +25,7 @@ namespace Wardens
             Bind<WardensCameraDirector>().AsSingleton();
             Bind<WardensPointer>().AsSingleton();
             Bind<WardensChat>().AsSingleton();
-            // Story chapters: unlock the padlocked buildings as the tutorial line advances.
+            // Story chapters: toast, Uplink line and scene as the tutorial line advances (nothing is locked).
             Bind<WardensChapterService>().AsSingleton();
             // The campaign: which level this map is, what the run has completed, and the Ledger
             // that crosses maps (campaign.json). The maps themselves are installed at the main

@@ -574,7 +574,8 @@ honestly, because they are the ones the softlock lived in.
   the D1 Ledger line, records it (`campaign action=record`). Every bot is alive at dawn of day 2
   (`bots.energy_min` above 0.35 in the frame).
 - [ ] **6. Badwater opens.** Scrap reaches 10, `Wardens.Scrap` finishes: the "Chapter 2: Badwater."
-  toast, the same line in the Uplink, the four padlocks gone within a second, the `Badwater`
+  toast, the same line in the Uplink (no padlocks to clear since 2026-09-11: the bar is open from
+  the first frame, and `unlocked_at_load` in `chapter status` must be empty), the `Badwater`
   cutscene (two shots, the first caption with the scrap count, the second waiting for Continue, the
   camera restored). `chapter action=status`: `complete` was `[]` before and is `["Badwater"]` after.
 - [ ] **7. The Sump.** Does the basin fill from the river during days 1–2? Is the Sludge Pump
@@ -866,10 +867,10 @@ game-machine build and the relevant WP4 row re-run before the fix is called done
    because no player has it yet). (c) if only the Core and the Scrap Pile flag `Flooded.` with dry
    ground, look at what the game's flood check reads for those two templates
    (`gen_buildings.py` re-specs them from Iron Teeth) and record it in `faction-wardens.md` §3.
-2. **`chapter status` listing every chapter complete on a new save.** `WardensChapterService.IsComplete`
-   is true when every template is unlocked, and `_unlockAll` opens everything when the tutorial is off
-   or `chapterGating` is false. Check the save's tutorial toggle first; if it was on, check
-   `BuildingUnlockingService.Unlocked` for a template with `ScienceCost 999999` on a fresh game.
+2. **`chapter status` listing every chapter complete on a new save.** *Settled on 2026-09-11 by the
+   free-bar change:* `complete` now means the chapter's tutorial has finished (`WardensChapterService.Opened`),
+   not that its buildings are unlocked, and nothing is locked any more. What the run still checks: a
+   fresh save with the tutorial on shows `complete: []`; with the tutorial off it lists every chapter.
 3. **13 Wardens where the design says 5.** `WardensStartingPopulation` replaces every starting beaver
    the game mode spawns (Normal spawns adults and children; 13 is that total). Decide with the author:
    keep the mode's count (then `WARDEN.md`'s `bots 5/5` example, `wardens-campaign-concept.md` §1 and

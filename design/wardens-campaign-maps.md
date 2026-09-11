@@ -137,7 +137,8 @@ map name, its chapter table, the tutorial id that ends the level, and the next l
 service picks the level by map name at `Load()` and behaves exactly as now inside it; when the ending
 tutorial finishes it writes `campaign.json`, posts the toast and the Uplink line, and offers the
 transition (chat button, MCP `campaign` tool, or the dialog from §2 C). `tools/validate.py` extends its
-cross-check to every level (templates padlocked, tutorials exist, loc rows present), and
+cross-check to every level (templates exist and, since 2026-09-11, carry no science cost; tutorials
+exist; loc rows present), and
 `tools/gen_map.py` gets a `--level` preset per map so each level's land is reproducible like the first.
 
 ## 5. Not verified: what the first decompile session must confirm

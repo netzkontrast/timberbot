@@ -28,12 +28,33 @@ verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first 
   is what makes a gorge possible — the spurs are raised after the river carves.
 
 ### Changed
+- **Every building, on every level, from the first frame.** The chapter padlocks are gone: the nine
+  buildings that shipped with `ScienceCost: 999999` (Sludge Pump, Reed Bed, Sludge Tank, Crate Rack,
+  the Cruncher, both pods, Badwater Cell, Sludge Burner) and the three with vanilla's science price
+  (Planter Rig 60, Stairs 70, Platform 100) all ship at 0, in the blueprints and in
+  `tools/gen_buildings.py`. `WardensChapters.cs` keeps the chapters as story beats: the toast, the
+  Uplink line and the cutscene still fire when a chapter's tutorial finishes, but nothing is unlocked,
+  and `chapter status` reports `complete` as the chapters the story has reached (the old check read
+  the unlock state, which is why a fresh save listed every chapter complete). A safety net at load
+  unlocks anything that still carries a cost and names it in the log (`unlocked_at_load`).
+  `tools/validate.py` now refuses a science cost anywhere in the faction's collections, and
+  `tools/test_validate.py` guards the same rule offline. The Leaf Coats port stays out of the faction:
+  its 44 blueprints reference the local-only bundle.
+- The tutorial line follows: Reforestation builds the Planter Rig straight away (no accumulate/unlock
+  steps; the stage is `Wardens.Reforestation.BuildPlanter`), the Science card no longer promises
+  unlocks, and Vertical architecture requires Maintenance alone instead of `StairsUnlockedTrigger`
+  (stairs are free, so there is no unlock for that trigger to see). The chapter opening lines say what
+  the chapter is about instead of what became available.
+- `chapterGating` is removed from `settings.json` and `WardensSettings`; a leftover key logs one line
+  and is ignored.
 - The prototype spec that briefly claimed to be level 02 is now `prototype-two-streams.map.toml`.
   The C# level table is the source: 02 is *The Sump*, 03 is *The Pods*.
 
 ### State (the words in `.claude/skills/driving-iterations`)
 - The maps, the specs and the tools are **`checked`** (cloud): `pytest wardens/tools`,
   `mapsmith check --level 02`, `mapsmith levels --verify` and `check_cutscenes.py` all clean.
+- The free bar is **`checked`** (cloud, 2026-09-11): `pytest wardens/tools` with the new `test_validate.py`,
+  `check_cutscenes.py`, and `gen_tutorial.py` regenerated the stages from its table.
 - Everything under `wardens/src/*.cs` is **`written`** — this was authored where there is no .NET SDK
   and no game DLLs, so no compiler has seen it. Not `built`, not `tested`, not `verified`.
 - Nothing here has been loaded in Timberborn. The level-transition code reaches every unverified game

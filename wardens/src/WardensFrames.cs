@@ -231,7 +231,7 @@ namespace Wardens
         {
             int n = 0;
             foreach (var chapter in WardensChapterService.Chapters)
-                if (_chapters.IsComplete(chapter)) n++;
+                if (_chapters.Opened(chapter)) n++;
             return n;
         }
 

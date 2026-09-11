@@ -3,7 +3,6 @@
     "Id": "Wardens.VerticalArchitecture",
     "NameLocKey": "Tutorial.Wardens.VerticalArchitecture",
     "RequiredTutorialIds": [
-      "StairsUnlockedTrigger",
       "Wardens.Wellbeing"
     ],
     "SkipIfTutorialFinished": "",

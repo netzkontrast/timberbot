@@ -23,7 +23,10 @@ deliberate step (design/wardens-chapter-1-plan.md §4).
 Cost: Leaf Coats' own material costs (Gear/MetalBlock/TreatedPlank/PineResin/...) don't exist in
 the Wardens' Scrap-only economy, so every building gets a Scrap Metal cost from a tier keyed off
 its *own* ScienceCost, which is kept as-is (it already encodes Bobingabout's tech-tree ordering,
-and design/wardens-chapter-1-plan.md §4 plans to reuse ScienceCost as the chapter padlock).
+and design/wardens-chapter-1-plan.md §4 planned to reuse ScienceCost as the chapter padlock).
+Since 2026-09-11 the padlock is gone and tools/validate.py demands ScienceCost 0 of every building in
+a collection the faction lists: wiring this collection in means writing 0 here first (the scrap tier
+stays keyed off the dumped value).
 """
 from __future__ import annotations
 
