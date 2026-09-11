@@ -1,0 +1,69 @@
+{
+  "level": "01",
+  "about": "Level 01, First Light: eight tasks in play order, ending on the first pod-born beaver. WardensLevelTasks.cs checks them; the loc rows are Wardens.Task.01.* in Localizations/enUS.csv.",
+  "tasks": [
+    {
+      "id": "Charge",
+      "title": "Wardens.Task.01.Charge",
+      "text": "Wardens.Task.01.Charge.Text",
+      "checks": [ { "type": "powered", "template": "ChargingPost.Wardens", "count": 2 } ]
+    },
+    {
+      "id": "Scavenge",
+      "title": "Wardens.Task.01.Scavenge",
+      "text": "Wardens.Task.01.Scavenge.Text",
+      "checks": [
+        { "type": "built", "template": "ScavengerFlag.IronTeeth", "count": 2 },
+        { "type": "stock", "good": "ScrapMetal", "count": 30 }
+      ]
+    },
+    {
+      "id": "Sump",
+      "title": "Wardens.Task.01.Sump",
+      "text": "Wardens.Task.01.Sump.Text",
+      "checks": [
+        { "type": "built", "template": "SludgePump.Wardens", "count": 1 },
+        { "type": "stock", "good": "Badwater", "count": 20 }
+      ]
+    },
+    {
+      "id": "Store",
+      "title": "Wardens.Task.01.Store",
+      "text": "Wardens.Task.01.Store.Text",
+      "checks": [
+        { "type": "built", "template": "SludgeTank.Wardens", "count": 2 },
+        { "type": "built", "template": "ScrapPile.Wardens", "count": 1 }
+      ]
+    },
+    {
+      "id": "Reeds",
+      "title": "Wardens.Task.01.Reeds",
+      "text": "Wardens.Task.01.Reeds.Text",
+      "checks": [
+        { "type": "built", "template": "ReedBed.Wardens", "count": 1 },
+        { "type": "stock", "good": "Biomass", "count": 20 }
+      ]
+    },
+    {
+      "id": "Haul",
+      "title": "Wardens.Task.01.Haul",
+      "text": "Wardens.Task.01.Haul.Text",
+      "checks": [ { "type": "workers", "template": "HaulingPost.Wardens", "count": 2 } ]
+    },
+    {
+      "id": "Power",
+      "title": "Wardens.Task.01.Power",
+      "text": "Wardens.Task.01.Power.Text",
+      "checks": [ { "type": "generating", "template": "BadwaterCell.Wardens", "count": 1 } ]
+    },
+    {
+      "id": "FirstLight",
+      "title": "Wardens.Task.01.FirstLight",
+      "text": "Wardens.Task.01.FirstLight.Text",
+      "checks": [
+        { "type": "built", "template": "BreedingPod.Wardens", "count": 1 },
+        { "type": "beavers", "count": 1 }
+      ]
+    }
+  ]
+}

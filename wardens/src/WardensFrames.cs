@@ -85,13 +85,15 @@ namespace Wardens
         private float _poseChangedAt;
         private string _lastSelection;
         private string _lastCutscene;
+        private readonly WardensLevelTasks _tasks;
 
         public WardensFrames(EventBus eventBus, IDayNightCycle dayNightCycle, GameCycleService cycles,
             WeatherService weather, SpeedManager speedManager, PopulationService populationService,
             CharacterPopulation population, DistrictCenterRegistry districts, ScienceService science,
             TutorialService tutorialService, EntitySelectionService selection, WardensCameraDirector director,
-            WardensChat chat, WardensChapterService chapters, WardensCutscenes cutscenes)
+            WardensChat chat, WardensChapterService chapters, WardensCutscenes cutscenes, WardensLevelTasks tasks)
         {
+            _tasks = tasks;
             _eventBus = eventBus;
             _dayNightCycle = dayNightCycle;
             _cycles = cycles;
@@ -115,6 +117,8 @@ namespace Wardens
         public void Load()
         {
             _eventBus.Register(this);
+            _tasks.TaskDone += task => Note("task.done:" + task.Id);
+            _tasks.LevelComplete += () => Note("level.complete");
             _lastPose = _director.Current();
             _poseChangedAt = Time.unscaledTime;
         }
@@ -299,6 +303,7 @@ namespace Wardens
 
             // story
             frame["chapter"] = _chapters.Summary();
+            if (_tasks.Active) frame["task"] = _tasks.Summary();
             frame["cutscene"] = _cutscenes.Summary();
             var open = new JArray();
             foreach (var kv in _tutorialService._activeTutorialStages)

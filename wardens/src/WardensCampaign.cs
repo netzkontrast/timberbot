@@ -195,13 +195,15 @@ namespace Wardens
     {
         private const float PollSeconds = 0.5f;
 
-        // One row per level. Only level 01 has a map; the rest are the arc
+        // One row per level. Levels 01 and 02 have maps; the rest are the arc
         // (design/wardens-campaign-concept.md §2, design/wardens-campaign-map-set.md §1) and are
         // listed so the completion toast can name what comes next and validate.py can see the gap.
+        // A level also ends when every task in Levels/<id>.tasks.json is done (WardensLevelTasks.cs),
+        // which works with the vanilla tutorial off; the ending tutorial is the older path.
         public static readonly WardensLevel[] Levels =
         {
             new WardensLevel("01", "Wardens 01 First Light", "First Light", "Wardens.MoreBeavers", "02", true),
-            new WardensLevel("02", "Wardens 02 The Sump", "The Sump", "", "03", false),
+            new WardensLevel("02", "Wardens 02 The Sump", "The Sump", "", "03", true),
             new WardensLevel("03", "Wardens 03 The Pods", "The Pods", "", "05", false),
             new WardensLevel("05", "Wardens 05 The Archive", "The Archive", "", "09", false),
             new WardensLevel("09", "Wardens 09 The City", "The Ark", "", "10", false),
@@ -341,6 +343,17 @@ namespace Wardens
             if (save) _record.Save();
         }
 
+        /// The level's tasks are all done (WardensLevelTasks). `announce` is false when a save from
+        /// after the win is loaded again: that is old news.
+        public void CompleteByTasks(bool announce)
+        {
+            if (!_enabled || _completed) return;
+            _completed = true;
+            bool alreadyKnown = _record.IsCompleted(_level.Id);
+            MarkCompleted(_level.Id);
+            if (announce && !alreadyKnown) Announce();
+        }
+
         /// Dev/testing and the MCP `campaign` tool: mark a level done without playing it.
         public void MarkCompleted(string levelId)
         {
@@ -425,7 +438,7 @@ namespace Wardens
             string line = next == null
                 ? $"Level {_level.Id} complete: {_level.Title}. The campaign ends here."
                 : next.Shipped
-                    ? $"Level {_level.Id} complete: {_level.Title}. Next: level {next.Id}, {next.Title} — start a new game on the map '{next.MapName}'."
+                    ? $"Level {_level.Id} complete: {_level.Title}. Next: level {next.Id}, {next.Title}. Continue in the task panel, or start a new game on the map '{next.MapName}'."
                     : $"Level {_level.Id} complete: {_level.Title}. Level {next.Id} ({next.Title}) is not built yet.";
             Debug.Log("[Wardens] campaign: " + line);
             try { _quickNotifications.SendNotification(line); }

@@ -51,6 +51,10 @@ the rest is routine.
    Do not do the human's card for them unless they ask.
 6. `chapter.next` — mention only when asked what is next.
 
+The frame's `task` is the level's checklist (`campaign action=tasks` for the per-check detail). When
+the current task stalls, find why and say it in one line with numbers; `task.done:<id>` and
+`level.complete` arrive as events. The panel's Continue is the human's click.
+
 Cadence via `frame every_ticks`: **60** while building, **200** while waiting for growth, **20**
 while a mutation batch is in flight.
 
@@ -58,8 +62,12 @@ On any frame with `since.day_changed`: run the daily routine (§3).
 
 ## 2. Level 01 — First Light: the act list
 
-Map `Wardens 01 First Light`, 96×96. Ends when `Wardens.MoreBeavers` finishes (the first pod-born
-beaver). Scrap is the only building material; power is life; there is exactly one clean spring.
+Map `Wardens 01 First Light`, 96×96. Ends when its eight tasks are done (`Levels/01.tasks.json`, any
+tutorial setting): Charge (2 Posts powered) · Scavenge (2 flags, 30 Scrap) · Down to the Sump (a pump,
+20 Badwater) · Store (2 Sludge Tanks, a Scrap Pile) · Reeds (a Reed Bed, 20 Biomass) · Haul (2 Wardens on
+a Hauling Post) · Second power (a Badwater Cell making power) · First Light (a Breeding Pod, the first
+beaver). With the tutorial on, `Wardens.MoreBeavers` finishing ends it too. Scrap is the only building
+material; there is exactly one clean spring. The chapter table below is the order to *help* in.
 
 Each phase: **enter** when the condition holds, do the acts in order, **leave** when the exit holds.
 
@@ -73,8 +81,9 @@ Each phase: **enter** when the condition holds, do the acts in order, **leave** 
 | **Power** | chapter `Power` opens | 1. Badwater Cell on the Sump. 2. Sludge Burner **only** once Biomass is steady — and say what it will poison before you light it. | power holds through a night | `poisoned` jumping in the Ledger. Name it the day it happens |
 | **Green** | chapter `Green` opens | 1. The first beaver is born: record the day. 2. Planter Rig where the data says trees live — near the spring, the only irrigated ground. 3. From here you take care instead of building. | `Wardens.MoreBeavers` finishes → **level complete** | `green` in the Ledger; the end card is the human's |
 
-On level completion the mod toasts and says which map is next. The human either says so in chat and
-you call `campaign action=next` (see *Ending a level*), or they start it from the New Game screen.
+On level completion the mod toasts, and the task panel becomes the level-end card: **Continue to level
+02** saves this colony and starts The Sump; **Stay** folds it away. The human clicks it, or says so in
+chat and you call `campaign action=next` (see *Ending a level*), or they start it from the New Game screen.
 Before either, write the closing Ledger entry with `campaign action=record` — it is the only thing
 that survives the map change.
 

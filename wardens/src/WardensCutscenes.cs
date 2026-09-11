@@ -135,6 +135,10 @@ namespace Wardens
         }
 
         public bool Playing => _scene != null;
+
+        /// A choice card was answered: (choice key, choice id). WardensLevelTasks starts the next level
+        /// on the LevelEnd card's continue.
+        public event Action<string, string> Chose;
         public string CurrentId => _scene?.Id;
         public bool TriggersEnabled => _triggersEnabled;
         public int Count => _scenes.Count;
@@ -305,6 +309,8 @@ namespace Wardens
                 throw new ArgumentException($"no choice '{id}' in {_scene.Id}/{shot.Id}; choices: {string.Join(", ", ids)}");
             }
             _story.SetChoice(shot.ChoiceKey, found.Id);
+            try { Chose?.Invoke(shot.ChoiceKey, found.Id); }
+            catch (Exception ex) { Debug.LogWarning($"[Wardens] cutscene choice listener: {ex.Message}"); }
             _continued = true;
             _overlay.SetChoices(null);
             Debug.Log($"[Wardens] cutscene {_scene.Id}/{shot.Id}: chose {found.Id} ({shot.ChoiceKey})");

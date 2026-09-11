@@ -9,7 +9,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>Wardens</AssemblyName>
     <RootNamespace>Wardens</RootNamespace>
-    <Version>0.4.18</Version>
+    <Version>0.4.22</Version>
     <LangVersion>9.0</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
@@ -202,7 +202,7 @@
          survive in the deployed mod (a stale tutorial with missing loc keys crashes the load). The
          same for Cutscenes: a renamed scene must not leave a twin behind that fires on the same trigger,
          and the same for Maps: a level renamed in tools/gen_map.py must not ship twice. -->
-    <RemoveDir Directories="$(ModDir)\Maps;$(ModDir)\Tutorials;$(ModDir)\Buildings;$(ModDir)\Collections;$(ModDir)\Recipes;$(ModDir)\Cutscenes;$(ModDir)\Factions;$(ModDir)\Goods;$(ModDir)\Needs;$(ModDir)\Decals;$(ModDir)\WorkerOutfits;$(ModDir)\CharacterCustomizer;$(ModDir)\MaterialPatcher;$(ModDir)\GoodsVisualization;$(ModDir)\BlockObjectToolGroups;$(ModDir)\CustomBeaverByName;$(ModDir)\CustomBeaverNamesList;$(ModDir)\CustomBotByName" />
+    <RemoveDir Directories="$(ModDir)\Maps;$(ModDir)\Tutorials;$(ModDir)\Buildings;$(ModDir)\Collections;$(ModDir)\Recipes;$(ModDir)\Cutscenes;$(ModDir)\Levels;$(ModDir)\Factions;$(ModDir)\Goods;$(ModDir)\Needs;$(ModDir)\Decals;$(ModDir)\WorkerOutfits;$(ModDir)\CharacterCustomizer;$(ModDir)\MaterialPatcher;$(ModDir)\GoodsVisualization;$(ModDir)\BlockObjectToolGroups;$(ModDir)\CustomBeaverByName;$(ModDir)\CustomBeaverNamesList;$(ModDir)\CustomBotByName" />
     <!-- RelativeDir, not RecursiveDir: the latter is relative to each glob's "**" and
          would flatten Factions\X.json to X.json, breaking the FactionSpec.BlueprintModifiers paths. -->
     <Copy SourceFiles="@(ModContent)" DestinationFiles="@(ModContent->'$(ModDir)\%(RelativeDir)%(Filename)%(Extension)')" />

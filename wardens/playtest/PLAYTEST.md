@@ -123,6 +123,32 @@ wakes it every 60 game ticks or when something happens, and tells it where to lo
 - Power budget to verify: Core 150 hp; Charging Post 50; Cruncher 120; Badwater Cell +100 (needs a Sludge
   Pump on badwater and a bot working it); Sludge Burner +200 once Reed Beds deliver Biomass.
 
+## Checks for level tasks (0.4.20+)
+
+- A campaign level shows its tasks in a panel under the goods bar (`LEVEL 01: First Light  n/8`), with the
+  vanilla tutorial on or off. Player.log: `[Wardens] tasks: level 01, 8 task(s), N done`.
+- The current task shows its instruction and a line per check with progress; done ones are ticked.
+  A task-done line appears in the Uplink and as a toast; a save from later in the level ticks through
+  the tasks it already meets, one per half second.
+- When the last task is done: the panel becomes the level-end card (`LEVEL 01 COMPLETE`), the toast names
+  level 02. **Continue to level 02: The Sump** exit-saves and starts level 02; the log shows the
+  transition. **Stay** folds the card; `+` opens it again.
+- MCP: `campaign action=tasks` lists the checks with `have`/`count`; frames carry `task` and the events
+  `task.done:<id>` and `level.complete`.
+- To launch into a save for testing: `autoload.json` in the mod folder,
+  `{"settlement": "First Light", "save": "<save name without .timber>"}` (one-shot, the game's own
+  saves folder, `ExperimentalSaves` on the experimental branch).
+
+### The tasks on the author's day-31 colony (2026-09-11, 0.4.22)
+
+| Check | Result |
+|---|---|
+| Load by `autoload.json` | `[Timberbot] auto-loading: First Light - 2026-09-11 16h27m, Day 2-14.autosave` |
+| Tasks at load | `tasks: level 01, 8 task(s), 0 done`, then Charge … Reeds done within seconds (5/8), each with its Uplink line |
+| Haul, Second power | done once the Hauler Dock had 2 Wardens (7/8); the Badwater Cell making power as soon as haulers fed it |
+| The panel | header and count shown top right; the body was hidden under the selected building's panel on the right, so it moves under the goods bar (0.4.23) |
+| Names | the game calls the tanks, the pile and the dock "Small Tank", "Small Industrial Pile", "Hauler Dock"; the task texts now say so (0.4.23) |
+
 ## Checks for cutscenes
 
 Design and open questions: `design/wardens-cutscenes.md` (§9 is this list, §12 what the run answers).

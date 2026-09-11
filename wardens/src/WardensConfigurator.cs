@@ -48,6 +48,10 @@ namespace Wardens
             Bind<WardensArchivedBadtides>().AsSingleton();
             Bind<WardensCutsceneOverlay>().AsSingleton();
             Bind<WardensCutscenes>().AsSingleton();
+            // The level's tasks (Levels/<id>.tasks.json), checked against the game whatever the tutorial
+            // setting, and their panel, which becomes the level-end card that starts the next level.
+            Bind<WardensLevelTasks>().AsSingleton();
+            Bind<WardensTaskPanel>().AsSingleton();
             // The Warden's heartbeat: sensor frames per N game ticks for the MCP `frame` tool.
             Bind<WardensFrames>().AsSingleton();
             Bind<WardensAssetDump>().AsSingleton();

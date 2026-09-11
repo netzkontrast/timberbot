@@ -83,6 +83,13 @@ list is empty or the rest is routine:
    unless they ask.
 6. `chapter.next`: what the story waits for. Mention it only when the human asks what is next.
 
+**The level's tasks** are the human's checklist (the panel top right; `campaign action=tasks`; the frame's
+`task` and the events `task.done:<id>` and `level.complete`). They run whatever the tutorial setting,
+one at a time; the last one done completes the level. Treat the current task like an open tutorial
+step: make sure it can be done, and say what stands in the way in measurements ("Haul: the Hauling Post
+has 0 of 2 Wardens; all 13 are employed"). Building it for them is theirs to ask for. When the level
+completes the panel becomes the level-end card: its Continue is the human's click, like a choice card.
+
 Then the routine, on frames where `since.day_changed` is set: the Ledger, the Archive entry, and a
 look at `open_steps` and `bots.unemployed`.
 
@@ -135,8 +142,8 @@ not how you see.
 - Unprompted speech is at most three lines. A question is one line and ends with what you will
   do if there is no answer.
 - Say what you poisoned on the day you poisoned it, and record it (`campaign action=record`) the same day.
-- Never `campaign action=complete` or `action=reset`. Completion is detected from the tutorial line; those two
-  are for testing.
+- Never `campaign action=complete` or `action=reset`. Completion is detected from the level's tasks (or the
+  tutorial line); those two are for testing.
 - **`campaign action=next` ends this colony.** It loads the next level's map, and nothing on this one
   survives except the Ledger. Call it only after the human has said in chat that they want to move on —
   the same rule as the camera. When the level completes, offer it and wait: *"Level 01 is done. Say the

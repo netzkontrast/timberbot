@@ -32,6 +32,7 @@ from pathlib import Path
 
 import bot_workforce
 from check_cutscenes import check as check_cutscenes, read_chapters, read_levels
+from check_level_tasks import check_level_tasks, levels_with_tasks
 
 GAME = Path("F:/Steam/steamapps/common/Timberborn/Timberborn_Data/StreamingAssets/Modding")
 DEFAULT_MOD = Path.home() / "Documents/Timberborn/Mods/Wardens"
@@ -294,6 +295,8 @@ def main() -> int:
     if not levels:
         problems.append(f"no levels parsed from {CAMPAIGN_CS}")
     maps = {p.stem for p in (mod / "Maps").glob("*.timber")} if (mod / "Maps").is_dir() else set()
+    with_tasks = levels_with_tasks(mod)
+    shipped_ids = {lid for lid, _, _, _, _, s in levels if s}
     ids: set[str] = set()
     for lid, map_name, title, ends, nxt, shipped in levels:
         if lid in ids:
@@ -307,13 +310,26 @@ def main() -> int:
             problems.append(f"level {lid}: {map_name}.timber exists but the table says shipped=false")
         if ends and ends not in tutorials:
             problems.append(f"level {lid}: ending tutorial unknown: {ends}")
-        if shipped and not ends:
-            problems.append(f"level {lid}: shipped without an ending tutorial, so it can never complete")
+        # A level ends by its tasks (Levels/<id>.tasks.json, any tutorial setting) or its ending
+        # tutorial. The last playable level may have neither: there is nothing to continue to.
+        if shipped and not ends and lid not in with_tasks and nxt in shipped_ids:
+            problems.append(f"level {lid}: shipped without tasks or an ending tutorial, so it can never "
+                            f"complete and level {nxt} can never be reached")
     for lid, _, _, _, nxt, _ in levels:
         if nxt and nxt not in ids:
             problems.append(f"level {lid}: next level {nxt!r} is not in the table")
     for name in sorted(maps - {m for _, m, _, _, _, _ in levels}):
         problems.append(f"{name}.timber ships but no level in WardensCampaign.cs claims it")
+
+    # level tasks (Levels/<id>.tasks.json): how a level ends with the tutorial off; check_level_tasks.py
+    goods = set()
+    for src in (ours, vanilla):
+        for key in src:
+            if "/good." in "/" + key.rsplit("/", 1)[-1] or key.rsplit("/", 1)[-1].startswith("good."):
+                d = blueprint(key)
+                if d and "GoodSpec" in d:
+                    goods.add(d["GoodSpec"].get("Id"))
+    problems += check_level_tasks(mod, templates, goods, loc, ids)
 
     # cutscenes (Cutscenes/*.json): captions, triggers, anchors; see check_cutscenes.py
     cutscene_files = sorted((mod / "Cutscenes").glob("*.json")) if (mod / "Cutscenes").is_dir() else []

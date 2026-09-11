@@ -227,8 +227,39 @@ Wardens.Cutscene.LevelEnd.Complete,"Level 01 complete. The land here is spent: t
 Wardens.Cutscene.LevelEnd.End,One beaver. {0} Wardens. One basin that will not hold them. The river to the east is poison at its mouth and clean at its source. That is more than this ground ever offered.,Level end card; {0} bots
 Wardens.Cutscene.LevelEnd.End.Continue,Continue to Level 02,Level end choice
 Wardens.Cutscene.LevelEnd.End.Stay,Stay,Level end choice
-Wardens.Cutscene.LevelEnd.NotYet,Level 02 is not in the firmware yet. Recorded. The bearing holds.,"Level end scene, after Continue"
+Wardens.Cutscene.LevelEnd.NotYet,"The bearing holds. Saving this colony; level 02, The Sump, starts when this scene ends.","Level end scene, after Continue"
 Wardens.Cutscene.LevelEnd.Stay,Stay. The basin is yours a while longer. Recorded.,"Level end scene, after Stay"
+Wardens.Tasks.Header,LEVEL {0}: {1},"Task panel (WardensTaskPanel.cs); {0} level id, {1} title"
+Wardens.Tasks.Complete,LEVEL {0} COMPLETE: {1},"Task panel (WardensTaskPanel.cs); {0} level id, {1} title"
+Wardens.Tasks.CompleteText,"{0} is done. Level {1}, {2}, is ready. Continue saves this colony and starts the next map; Stay keeps you here, and this card stays one click away.","Task panel (WardensTaskPanel.cs); {0} this level's title, {1} next id, {2} next title"
+Wardens.Tasks.LastText,{0} is done. This is the last level built so far.,Task panel (WardensTaskPanel.cs); {0} title
+Wardens.Tasks.Continue,Continue to level {0}: {1},"Task panel (WardensTaskPanel.cs) button; {0} next id, {1} next title"
+Wardens.Tasks.Stay,Stay,Task panel (WardensTaskPanel.cs) button
+Wardens.Tasks.Done,Task done: {0}.,Toast and Uplink line; {0} task title
+Wardens.Tasks.Next,Next: {0}.,Appended to the task-done line; {0} next task title
+Wardens.Tasks.Starting,Saving this colony. Level {0} starts now.,Uplink line before the next level loads; {0} next title
+Wardens.Tasks.Check.built,{0} built: {1}/{2},"Task panel (WardensTaskPanel.cs) check; {0} building, {1} have, {2} need"
+Wardens.Tasks.Check.powered,{0} powered: {1}/{2},"Task panel (WardensTaskPanel.cs) check; {0} building, {1} have, {2} need"
+Wardens.Tasks.Check.generating,{0} making power: {1}/{2},"Task panel (WardensTaskPanel.cs) check; {0} building, {1} have, {2} need"
+Wardens.Tasks.Check.workers,Wardens at the {0}: {1}/{2},"Task panel (WardensTaskPanel.cs) check; {0} building, {1} have, {2} need"
+Wardens.Tasks.Check.stock,{0} in stock: {1}/{2},"Task panel (WardensTaskPanel.cs) check; {0} good, {1} have, {2} need"
+Wardens.Tasks.Check.beavers,Beavers awake: {1}/{2},"Task panel (WardensTaskPanel.cs) check; {1} have, {2} need ({0} unused)"
+Wardens.Task.01.Charge,Charge,Level 01 task (Levels/01.tasks.json)
+Wardens.Task.01.Charge.Text,Build two Charging Posts touching the Core. They draw its power; a Warden recharges there after its shift.,Level 01 task (Levels/01.tasks.json)
+Wardens.Task.01.Scavenge,Scavenge,Level 01 task (Levels/01.tasks.json)
+Wardens.Task.01.Scavenge.Text,Put two Scavenger Flags by the three ruins on the pad's west edge and run paths to the Core. Scrap Metal is the only building material.,Level 01 task (Levels/01.tasks.json)
+Wardens.Task.01.Sump,Down to the Sump,Level 01 task (Levels/01.tasks.json)
+Wardens.Task.01.Sump.Text,"Wardens walk on one level: build Stairs down the two terraces east of the Core, then a Sludge Pump on the Sump's west shelf.",Level 01 task (Levels/01.tasks.json)
+Wardens.Task.01.Store,Store,Level 01 task (Levels/01.tasks.json)
+Wardens.Task.01.Store.Text,"Two Small Tanks for the Badwater and a Small Industrial Pile for the metal, near the Core.",Level 01 task (Levels/01.tasks.json)
+Wardens.Task.01.Reeds,Reeds,Level 01 task (Levels/01.tasks.json)
+Wardens.Task.01.Reeds.Text,"A Reed Bed on flat poisoned ground, with reed marked for planting. Reed is Biomass, and Biomass wakes the first beavers.",Level 01 task (Levels/01.tasks.json)
+Wardens.Task.01.Haul,Haul,Level 01 task (Levels/01.tasks.json)
+Wardens.Task.01.Haul.Text,A Hauler Dock by the Core with two Wardens on it. Nothing moves between buildings unless someone carries it; free two Wardens from other work if you must.,Level 01 task (Levels/01.tasks.json)
+Wardens.Task.01.Power,Second power,Level 01 task (Levels/01.tasks.json)
+Wardens.Task.01.Power.Text,"A Badwater Cell touching the power network, burning Badwater. The Core alone makes 150, and the Posts and Pods want more.",Level 01 task (Levels/01.tasks.json)
+Wardens.Task.01.FirstLight,First Light,Level 01 task (Levels/01.tasks.json)
+Wardens.Task.01.FirstLight.Text,"A Breeding Pod on the network, stocked with Biomass. The level ends when the first beaver wakes.",Level 01 task (Levels/01.tasks.json)
 Wardens.Cutscene.Archive.Day,"ARCHIVE. Day {0}, cycle {1}.","Archive reading (Cutscenes/Archive.json); {0} day, {1} cycle"
 Wardens.Cutscene.Archive.Population,Wardens: {0}. Beavers: {1}.,"Archive reading; {0} bots, {1} beavers"
 Wardens.Cutscene.Archive.Stock,Data Cores: {0}. Science: {1}. Scrap: {2}.,"Archive reading; {0} Data Cores, {1} science points, {2} scrap"

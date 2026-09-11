@@ -70,7 +70,9 @@ namespace Timberbot
                     saveName = GetArg(args, "--tb-save");
                 }
 
-                string saveDir = Path.Combine(UserDataFolder.Folder, "Saves");
+                // The repository's own folder: "Saves", or "ExperimentalSaves" on the experimental
+                // branch (GameSaveRepository.SaveDirectories), where a hardcoded "Saves" finds nothing.
+                string saveDir = _gameSaveRepository.DefaultSaveDirectory;
                 var settlementRef = new SettlementReference(settlement, saveDir);
 
                 SaveReference saveRef;

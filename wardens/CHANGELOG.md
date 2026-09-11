@@ -4,6 +4,23 @@ The patch number moves with every local build (`tools/bump_version.py`, run by t
 version marks a milestone (`bump_version.py --minor`) and gets an entry here. Nothing below has been
 verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first run must answer.
 
+## 0.4.20: level tasks, and the level-end card that starts level 02
+
+- **Tasks for the player** (`Levels/<id>.tasks.json`, `WardensLevelTasks.cs`), shown in a panel top right
+  (`WardensTaskPanel.cs`) and checked every half second against the game, whatever the vanilla tutorial
+  setting: the old ending (the tutorial line) never fired with it off, because a stage advances only on the
+  hidden card's Continue. One task at a time; a done task stays done in the save. Check types: built,
+  powered, generating, workers, stock, beavers.
+- **Level 01's eight tasks**, picked from a playthrough scouted over MCP: Charge · Scavenge · Down to the
+  Sump · Store · Reeds · Haul · Second power · First Light (the first pod-born beaver).
+- **The level-end card.** When the last task is done the panel becomes a card: *Continue to level 02:
+  The Sump* exit-saves this colony and starts the next map; *Stay* folds it. The LevelEnd scene's own
+  Continue (tutorial on) starts it too. Level 02 is marked shipped; its map has not been played yet.
+- MCP: `campaign action=tasks`, tasks in `campaign status`, the frame's `task`, events `task.done:<id>`
+  and `level.complete`. `check_level_tasks.py` (run by `validate.py`): types, templates, goods, loc.
+- The save auto-loader (`autoload.json`) looks in the game's own saves folder; it missed
+  `ExperimentalSaves` on the experimental branch. Fixed in `timberbot/src` and re-copied.
+
 ## 0.4.10: level 01 opens with a cutscene
 
 - **`Cutscenes/FirstLight.json`**, the level's opening: 12 shots, about 100 s, over the new land in the
