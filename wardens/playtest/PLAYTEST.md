@@ -31,6 +31,13 @@ uv run --project python wardens/playtest/smoke.py                       # Timber
 The Timberbot API refuses reads/writes until the ready gate is open: press **Launch** in the widget,
 or call the MCP tool `timberbot_ready`.
 
+To skip the menu and open straight onto a level, write the request before launching (the menu
+consumes it once; the vanilla **Mods** dialog at startup still needs its OK first):
+
+```bash
+echo '{ "level": "01" }' > ~/Documents/Timberborn/Mods/Wardens/campaign.handoff.json
+```
+
 ## MCP tools
 
 | Tool | Thread | What |
@@ -180,6 +187,28 @@ required for the very first moves.
   `unstaffed`/`unpowered`/`unreachable`/`status` enum.
 - `chapter status`'s `complete` list already showed Badwater through Green on a brand-new Cold Boot
   save with nothing built — looks like state not reset per playthrough.
+
+## Level start from the main menu (2026-09-11, 0.4.1, game machine)
+
+`campaign.handoff.json` = `{ "level": "01" }`, game launched through Steam, Mods dialog OK'd. Every
+`[Wardens]` line of the run, verbatim from `Player.log`:
+
+```
+[Wardens] removed the retired map 'Wardens Wasteland' from C:\Users\micha\Documents\Timberborn\Maps (it shipped under that name in an earlier version; saves made on it are unaffected)
+[Wardens] maps: 0 installed, 2 already current, 1 retired removed, list refreshed
+[Wardens] handoff: starting level 01 (Wardens 01 First Light); maps 0 installed, 2 already current
+[Wardens] transition: starting level 01 (First Light) on 'Wardens 01 First Light' as a new Wardens game
+Starting new game at 2026-09-11 11:51:01Z:
+FactionId: Wardens, MapFileReference: Name: Wardens 01 First Light, Path: , Resource: False, GameMode: Order: 20
+[Wardens] chapters: 5 gates, gating=True, tutorial=False
+[Wardens] campaign: level 01 (First Light) on 'Wardens 01 First Light'; completed=[]; ends with Wardens.MoreBeavers
+[Wardens] transition: level 01 would start by 'new game'
+[Wardens] MCP server listening on http://127.0.0.1:8090/mcp
+Load time: 18705ms (scene index: 2)
+```
+
+No `missing` lines: nothing in the transition had to fall back. Not run yet: `campaign action=next`
+from inside a level (the in-game switch, with its exit save).
 
 ## What a map needs for this mod to work
 

@@ -36,10 +36,12 @@ namespace Wardens
     {
         // Names this mod shipped under and no longer does. The stale copy in the player's Maps
         // folder is our own leftover, and leaving it there puts a second, near-identical entry in
-        // the campaign's part of the map list. Removed only when the replacement installed cleanly.
+        // the campaign's part of the map list. A second entry here is the signal that this list is
+        // the wrong mechanism and an install manifest is wanted instead.
         private static readonly string[] RetiredMapNames = { "Wardens Wasteland" };
 
         private readonly MapRepository _mapRepository;
+        private bool _done;
 
         public int Installed { get; private set; }
         public int Skipped { get; private set; }
@@ -48,13 +50,17 @@ namespace Wardens
         public WardensMapInstaller(MapRepository mapRepository)
         {
             _mapRepository = mapRepository;
-            // The level transition needs a map source and must not add a binding of its own to find
-            // one (WardensServiceLocator.cs says why). This is a service we are legitimately handed.
-            WardensServiceLocator.Register(mapRepository);
         }
 
-        public void Load()
+        public void Load() => EnsureInstalled();
+
+        /// Idempotent, and safe to call before this singleton's own Load(): WardensHandoff has to
+        /// have the maps in place before it can start one, and the order in which two MainMenu
+        /// singletons load is not ours to choose.
+        public void EnsureInstalled()
         {
+            if (_done) return;
+            _done = true;
             try
             {
                 Install();
@@ -102,14 +108,17 @@ namespace Wardens
                 }
             }
 
-            if (Installed > 0) RemoveRetired(target);
+            // Retirement is a property of the shipped set, not of whether a copy happened on this
+            // launch: after the first launch nothing is installed, and the stale file would survive.
+            int removed = RemoveRetired(target);
 
             // The New Game screen builds its list from MapRepository; without this the maps only
             // show up after a restart.
-            if (Installed > 0)
+            if (Installed > 0 || removed > 0)
             {
                 _mapRepository.NotifyMapRepositoryChanged();
-                Debug.Log($"[Wardens] maps: {Installed} installed, {Skipped} already current, list refreshed");
+                Debug.Log($"[Wardens] maps: {Installed} installed, {Skipped} already current, " +
+                          $"{removed} retired removed, list refreshed");
             }
             else
             {
@@ -130,8 +139,9 @@ namespace Wardens
             return a.Length == b.Length && b.LastWriteTimeUtc >= a.LastWriteTimeUtc;
         }
 
-        private static void RemoveRetired(string target)
+        private static int RemoveRetired(string target)
         {
+            int removed = 0;
             foreach (var retired in RetiredMapNames)
             {
                 var path = Path.Combine(target, retired + ".timber");
@@ -139,6 +149,7 @@ namespace Wardens
                 try
                 {
                     File.Delete(path);
+                    removed++;
                     Debug.Log($"[Wardens] removed the retired map '{retired}' from {target} " +
                               "(it shipped under that name in an earlier version; saves made on it are unaffected)");
                 }
@@ -147,6 +158,7 @@ namespace Wardens
                     Debug.LogWarning($"[Wardens] cannot remove the retired map {retired}: {ex.Message}");
                 }
             }
+            return removed;
         }
 
         // The level table is the campaign; say plainly which of its maps the player will not find.

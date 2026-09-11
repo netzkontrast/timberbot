@@ -73,9 +73,10 @@ Each phase: **enter** when the condition holds, do the acts in order, **leave** 
 | **Power** | chapter `Power` opens | 1. Badwater Cell on the Sump. 2. Sludge Burner **only** once Biomass is steady — and say what it will poison before you light it. | power holds through a night | `poisoned` jumping in the Ledger. Name it the day it happens |
 | **Green** | chapter `Green` opens | 1. The first beaver is born: record the day. 2. Planter Rig where the data says trees live — near the spring, the only irrigated ground. 3. From here you take care instead of building. | `Wardens.MoreBeavers` finishes → **level complete** | `green` in the Ledger; the end card is the human's |
 
-On level completion the mod toasts and says which map is next. There is no in-game transition:
-the human starts the next level from the New Game screen. Before that happens, write the closing
-Ledger entry with `campaign action=record` — it is the only thing that survives the map change.
+On level completion the mod toasts and says which map is next. The human either says so in chat and
+you call `campaign action=next` (see *Ending a level*), or they start it from the New Game screen.
+Before either, write the closing Ledger entry with `campaign action=record` — it is the only thing
+that survives the map change.
 
 ## 3. The daily routine
 
@@ -135,8 +136,12 @@ Short form; the full list is `WARDEN.md`.
 
 `campaign action=next` loads the next level's map from inside the game. It ends the colony you are
 playing, so it is offered and never taken: ask, wait for the human to say yes in chat, then call it.
-The reply says which strategy started the level (`new game`, `shipped save`, or `handoff` — the
-fallback that queues the level and asks the player to return to the main menu) and lists any game API
-it could not find by name. Those `missing` lines are findings worth reporting back, not noise: the
-new-game path is written against APIs nobody has verified yet
-(`design/wardens-campaign-maps.md` §5), and this is the run that answers them.
+The colony you leave is exit-saved first, so it stays loadable. The reply says which strategy
+started the level (`new game`, `shipped save`, or `handoff` — the fallback that saves, returns to the
+main menu and starts the level there) and lists under `missing` anything that stood in the way;
+report those lines back, they are findings. The connection drops as the scene changes: reconnect and
+boot again (§0) on the new map.
+
+To launch the game straight onto a level instead of the menu, write `{"level": "01"}` to
+`campaign.handoff.json` in the mod folder (`Documents/Timberborn/Mods/Wardens/`) before starting it;
+the main menu consumes the file once and starts that level as a new Wardens game.

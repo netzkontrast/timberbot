@@ -18,9 +18,9 @@
 //      new map empty and NewGameMode only covers food and water.
 //
 // The maps themselves are installed by WardensMapInstaller.cs (MainMenu context). Starting level N+1
-// from inside level N is not built: the player picks the next map in the New Game screen, and the
-// completion toast says which one. That is method A in wardens-campaign-maps.md §2; method C (a
-// programmatic new game) waits on GameSceneLoader being bindable in the Game context.
+// from inside level N is WardensLevelTransition.cs (method C in wardens-campaign-maps.md §2, a
+// programmatic new game), reached through the MCP `campaign next` action; the completion toast still
+// names the next map, so a player without an agent can pick it in the New Game screen (method A).
 //
 // The level table is parsed by tools/validate.py, which cross-checks it against the shipped .timber
 // files and the tutorial line. Keep the `new WardensLevel(...)` calls on one line each.
