@@ -21,7 +21,8 @@ The heartbeat is the `frame` tool (`WardensFrames.cs`); everything below assumes
 1. `manual` (this file), then `campaign` (`action=status`): which level this map is, what finishes it, and
    what earlier levels completed. `enabled: false` means this map is not a campaign level — say so and play on.
 2. `wardens_status`: faction must be `Wardens`; note speed, population, tutorial state and the level's tasks.
-3. `timberbot_ready` (once), then `timberbot GET /api/summary`, `/api/population`, `/api/resources`.
+3. `timberbot GET /api/summary`, `/api/population`, `/api/resources`. On a Wardens map the Timberbot gate
+   opens by itself at load; call `timberbot_ready` only if `wardens_status.timberbot.ready` is false.
 4. `campaign action=tasks`: which tasks are live, what each still needs, and which scenes play when the
    next ones go live.
 5. `chat_history`: read what was said before you arrived. Answer anything unanswered first. If `completed` was
@@ -31,6 +32,11 @@ The heartbeat is the `frame` tool (`WardensFrames.cs`); everything below assumes
 
 The step-by-step plan for a level — the act list per task, the failure table — is the `warden-play` skill
 (`.claude/skills/warden-play/SKILL.md`). This file is why; that file is what, in order.
+
+The server's `initialize` instructions list every tool it has (generated from its own table) and where
+the level's story stands (THE STORY NOW: the live tasks, what each misses, its scene). A session that
+develops the story instead of playing it — writing scenes, framing camera paths — is the director: it
+takes the `warden_director` prompt, not this playbook.
 
 If a cutscene is playing (`wardens_status.cutscene.playing`; the frame carries `cutscene` and the
 events `cutscene.start:<id>` / `cutscene.end:<id>`), say nothing and leave the camera until it ends.

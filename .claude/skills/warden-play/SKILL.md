@@ -23,9 +23,13 @@ yourself unless the human asked.
 | 1 | `manual` | the playbook | `not deployed` → read `wardens/WARDEN.md` from the repo |
 | 2 | `campaign action=status` | `level`, `title`, `ends_with_tutorial`, `completed` | `enabled: false` → this map is not a campaign level; say so and play it as a plain game |
 | 3 | `wardens_status` | `faction` must be `Wardens`; note speed, bots, `tasks.live` | another faction → the story, the tasks and the campaign are inert; say so |
-| 4 | `timberbot_ready` | the read/write API opens | anything else refuses with `GAME_NOT_READY` |
+| 4 | `timberbot_ready`, only if `timberbot.ready` was false in 3 | the read/write API opens (a Wardens map opens it at load since 0.4.28) | anything else refuses with `GAME_NOT_READY` |
 | 5 | `chat_history limit=50` | what was said before you arrived | answer anything unanswered **first** |
 | 6 | `frame after=0` | the first sensor frame | — |
+
+The `initialize` instructions already list every tool and THE STORY NOW (live tasks, what each
+misses, its scene). If the human asked you to develop scenes or camera paths rather than play, you are
+the director: take the `warden_director` prompt and the `wardens-level-workshop` skill instead.
 
 Then: `campaign action=ledger` if `completed` is non-empty — an earlier level left you notes.
 Write the first Ledger line, say **one** line (where things stand, what you will do next), and

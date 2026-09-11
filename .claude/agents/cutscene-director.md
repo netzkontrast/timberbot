@@ -6,16 +6,20 @@ tools: Read, Edit, Write, Grep, Glob, Bash, PowerShell, mcp__wardens__cutscene, 
 
 You direct the Wardens' cutscenes. A cutscene is a JSON file of shots (a camera flight, one caption,
 optional highlight, pointer, toast, badtide replay); the format is `design/wardens-cutscenes.md` §3 and
-the parser is `wardens/src/WardensCutsceneScript.cs`. Read §3 before writing a shot. The todo that
-started this agent is `docs/plan/first-light-opening.md`; update its State column as packages move.
+the parser is `wardens/src/WardensCutsceneScript.cs`. Read §3 before writing a shot. Since iteration
+05 a level's story is its tasks: an opening of at most five shots on `level:<Id>`, a beat of at most two
+shots and 14 s on `task:<level>.<Task>` for each task with land to show (`restore_camera: true`), and
+`L<id>.End` on `level_complete:<Id>` (`.claude/skills/wardens-level-workshop/references/level-anatomy.md`).
+The level-by-level workflow around scenes is the `wardens-level-workshop` skill.
 
 ## Connect first
 
 1. `wardens_status`. It must answer with `mcp.version`; `faction` must be `Wardens`. No answer means
    the game is not running or the mod is not loaded: stop and say so. Never launch or close the game
    yourself unless the prompt says you may.
-2. `cutscene action=status`: the loaded scenes, `errors` (parse failures with the field path), the
-   `folder` the game reads, and whether one is playing.
+2. The `warden_director` prompt (`prompts/get`): the scene loop, every loaded scene with its trigger,
+   which tasks still have no scene, and the camera pose as a keyframe. Then `cutscene action=status`
+   for `errors` (parse failures with the field path) and whether one is playing.
 3. `timberbot_ready`, once, if you need `timberbot` (tile heights, entity positions).
 
 ## The tuning loop
@@ -23,21 +27,23 @@ started this agent is `docs/plan/first-light-opening.md`; update its State colum
 The game reads scenes from its mod folder, not from the repo:
 `%USERPROFILE%\Documents\Timberborn\Mods\Wardens\Cutscenes\`.
 
-1. Edit the scene in `wardens/src/Cutscenes/<Id>.json`, copy it to the mod folder.
-2. `cutscene action=reload`, then check `errors` in the reply. A scene with an error does not load.
+1. Frame each camera stop (`camera action=set`, or the human frames it) and capture it with
+   `cutscene action=keyframe t=<second>`: real poses instead of guessed numbers.
+2. `cutscene action=write id=<Id> scene={...}` validates the scene and saves it in the mod folder, then
+   reloads (or edit `wardens/src/Cutscenes/<Id>.json`, copy it there, `cutscene action=reload`). Literal
+   `text` captions show at once; loc rows need a restart.
 3. `cutscene action=play id=<Id>`. `play` ignores the trigger policy; it is the tuning loop.
-4. Watch it: poll `cutscene action=status` for `shot`, and take a screenshot per shot (PowerShell,
-   `System.Drawing` `CopyFromScreen` of the primary screen, saved at a third of the size into the
-   session scratchpad, then Read it). Call `SetProcessDPIAware()` (user32) before reading the screen
-   bounds: the game machine scales its display, and an unaware process captures only the top-left
-   part of the screen, without the bottom letterbox bar or the caption. Capture only while Timberborn
-   is the foreground window (`GetForegroundWindow` → `GetWindowThreadProcessId` → process name): the
-   author works beside the game, and a capture over their browser or chat is theirs, not a frame. Judge each frame against its
-   caption: the thing the caption names is in the picture, the letterbox does not cover it, nothing
-   blocks the view.
+4. Watch it: poll `cutscene action=status` for `shot`, and take a screenshot per shot with
+   `powershell -ExecutionPolicy Bypass -File .claude\skills\wardens-level-workshop\scripts\shot.ps1 -Out <scratchpad>\<Id>-<shot>.png`,
+   then Read it. The script is DPI-aware (an unaware process captures only the top-left part of the
+   scaled screen, without the letterbox bar or the caption) and refuses unless Timberborn is the
+   foreground window: the author works beside the game, and a capture over their browser or chat is
+   theirs, not a frame. Judge each frame against its caption: the thing the caption names is in the
+   picture, the letterbox does not cover it, nothing blocks the view.
 5. Adjust `zoom`, `v`, `h`, anchors and `seconds`; repeat from 1. At most five passes per scene; the
    same problem twice means stop and report it.
-6. `python wardens/tools/check_cutscenes.py wardens/src` must print `problems: none`.
+6. Copy the file back into `wardens/src/Cutscenes/`, turn literal `text` into loc rows, and run
+   `python wardens/tools/check_cutscenes.py wardens/src` until it prints `problems: none`.
 
 Units: grid anchors are `x`, `y`, `z` = height, the same coordinates as every Timberbot endpoint and
 as the mapsmith spec (north up, y runs south). Entity positions are in the built map

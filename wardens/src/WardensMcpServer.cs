@@ -38,6 +38,7 @@ namespace Wardens
         public int HttpPort = 8085;          // Timberbot's port, for loopback tools
         public string AuthToken = "";        // Timberbot's bearer token, if any
         public bool Cutscenes = true;        // WardensCutscenes.cs: false keeps the scene triggers off (MCP play still works)
+        public bool AutoReady = true;        // open the Timberbot ready gate on a Wardens map without the Launch click
         public bool InstallMaps = true;      // WardensMapInstaller.cs: false leaves Documents/Timberborn/Maps alone
 
         public static string Path =>
@@ -59,6 +60,7 @@ namespace Wardens
                     if (json["chapterGating"] != null)
                         Debug.LogWarning("[Wardens] settings.json: chapterGating is ignored; every building is on the bar from the start (WardensBar.cs)");
                     s.Cutscenes = json.Value<bool?>("cutscenes") ?? s.Cutscenes;
+                    s.AutoReady = json.Value<bool?>("autoReady") ?? s.AutoReady;
                     s.InstallMaps = json.Value<bool?>("installMaps") ?? s.InstallMaps;
                 }
             }
@@ -72,7 +74,7 @@ namespace Wardens
 
     public class WardensMcpServer : ILoadableSingleton, IUpdatableSingleton, IUnloadableSingleton
     {
-        public const string Version = "0.4.26";
+        public const string Version = "0.4.28";
         private static readonly string[] SupportedProtocolVersions = { "2024-11-05", "2025-03-26", "2025-06-18" };
 
         private class PendingCall
@@ -93,6 +95,7 @@ namespace Wardens
         public WardensSettings Settings { get; private set; }
         public int Port => Settings?.McpPort ?? 8090;
         public bool Running => _running;
+        private bool _autoReadyDone;
 
         public WardensMcpServer(WardensMcpTools tools, WardensChat chat)
         {
@@ -272,6 +275,13 @@ namespace Wardens
             // The initialize reply and the prompts quote live game state, and both are answered on
             // the listener thread. This is where that snapshot is taken (throttled inside).
             _tools.RefreshInstructions();
+            // Once, on the first frame: every singleton has loaded by now, so the Timberbot service's
+            // own reset of the gate (TimberbotAgentState.ResetEphemerals on load) cannot undo it.
+            if (!_autoReadyDone)
+            {
+                _autoReadyDone = true;
+                _tools.AutoReady(Settings.AutoReady);
+            }
             int n = 0;
             while (n++ < 8 && _pending.TryDequeue(out var call))
             {

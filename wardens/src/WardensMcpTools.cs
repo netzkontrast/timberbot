@@ -102,6 +102,7 @@ namespace Wardens
         public string Instructions { get; private set; } = "";
         private float _instructionsRefreshed = -999f;
         private JObject _campaignSnapshot = new JObject();
+        private string _directorBrief = "(not built yet)";
         private readonly WardensLevelTasks _tasks;
         private JArray _ledgerSnapshot = new JArray();
 
@@ -178,6 +179,7 @@ namespace Wardens
                 Instructions = BuildInstructions();
                 _campaignSnapshot = _campaign.State();
                 _ledgerSnapshot = _campaign.Ledger(20);
+                _directorBrief = BuildDirectorBrief();
             }
             catch (Exception ex) { Debug.LogWarning("[Wardens] instructions: " + ex.Message); }
         }
@@ -192,11 +194,13 @@ namespace Wardens
 
             sb.Append("STATE OF THIS RUN\n").Append(StateLine()).Append("\n\n");
 
+            sb.Append("THE STORY NOW\n").Append(StoryNow()).Append('\n');
+
             sb.Append("START HERE, IN THIS ORDER\n")
               .Append("1. `manual` - the playbook (docs/WARDEN.md). Read it once per session, before acting.\n")
               .Append("2. `campaign action=status` - which level this map is, and what earlier levels left you.\n")
               .Append("3. `wardens_status` - faction, speed, population, tutorial state and the level's tasks.\n")
-              .Append("4. `timberbot_ready` - once; the read/write API refuses everything until you call it.\n")
+              .Append("4. `timberbot_ready` - only if STATE says timberbot_ready=no (on a Wardens map the gate opens by itself at load).\n")
               .Append("5. `chat_history` - what was said before you arrived. Answer anything unanswered first.\n")
               .Append("6. `frame` with after=0, and stay in that loop.\n\n");
 
@@ -214,6 +218,15 @@ namespace Wardens
               .Append("`timberbot` the hands: it forwards to the Timberbot HTTP API compiled into this same mod (GET reads, POST acts), ")
               .Append("and `timberbot_routes` lists what it will take. `campaign` (its tasks: the live ones, their checks, their scenes) is the plan; ")
               .Append("`campaign action=record` is the only memory that outlives this map. `selection` is the human pointing at something.\n\n");
+
+            sb.Append("EVERY TOOL THIS SERVER HAS (generated from its own table; `tools/list` has the schemas)\n")
+              .Append(ToolIndex()).Append('\n');
+
+            sb.Append("TWO WAYS TO BE HERE\n")
+              .Append("You are the Warden unless the human's first message says otherwise: you play beside them and follow the story. ")
+              .Append("A session that develops the story instead (writes or tunes scenes, frames camera paths, playtests a level's tasks) ")
+              .Append("is the director: get the `warden_director` prompt first. The director may play and write scenes; the Warden does neither ")
+              .Append("unless asked.\n\n");
 
             sb.Append("RULES THAT DO NOT BEND\n")
               .Append("- Mutations are sequential. Never overlap POST calls through `timberbot`.\n")
@@ -239,8 +252,9 @@ namespace Wardens
             sb.Append("; campaign=");
             if (_campaign.Enabled && level != null)
             {
-                sb.Append("level ").Append(level.Id).Append(" '").Append(level.Title).Append("' on map '").Append(level.MapName)
-                  .Append("', ends when the tutorial ").Append(level.EndsWithTutorial).Append(" finishes");
+                sb.Append("level ").Append(level.Id).Append(" '").Append(level.Title).Append("' on map '").Append(level.MapName).Append("'");
+                if (_tasks.Active) sb.Append(", ends when its ").Append(_tasks.Tasks.Count).Append(" tasks are done (").Append(_tasks.DoneCount).Append(" done)");
+                if (!string.IsNullOrEmpty(level.EndsWithTutorial)) sb.Append(" or the tutorial ").Append(level.EndsWithTutorial).Append(" finishes");
                 if (_campaign.Completed) sb.Append(" (ALREADY COMPLETE)");
             }
             else
@@ -279,6 +293,13 @@ namespace Wardens
                 ["description"] = "Which campaign level this map is, what finishes it, and what earlier levels left in the Ledger.",
                 ["arguments"] = new JArray(),
             },
+            new JObject
+            {
+                ["name"] = "warden_director",
+                ["title"] = "Warden: director",
+                ["description"] = "For a session that develops the story in the running game: the scene loop (capture a camera pose, write, reload, play, judge, copy back), every loaded scene with its trigger, and which tasks still have no scene.",
+                ["arguments"] = new JArray(),
+            },
         };
 
         /// prompts/get. File and cached state only, so it is answered on the listener thread like
@@ -300,6 +321,10 @@ namespace Wardens
                          + _campaignSnapshot.ToString(Formatting.Indented)
                          + "\n\nThe Ledger so far (the last entries written on any level):\n"
                          + _ledgerSnapshot.ToString(Formatting.Indented);
+                    break;
+                case "warden_director":
+                    description = "The director's harness: develop the story in the running game.";
+                    text = _directorBrief;
                     break;
                 default:
                     throw new ArgumentException("unknown prompt: " + name);
@@ -357,6 +382,170 @@ namespace Wardens
             return System.IO.File.Exists(path)
                 ? System.IO.File.ReadAllText(path)
                 : "(WARDEN.md is not deployed; the repo copy is wardens/WARDEN.md)";
+        }
+
+        /// Main thread, once per load (WardensMcpServer.UpdateSingleton). On a Wardens map the Timberbot
+        /// API is how the Warden acts, and its ready gate reset to closed on every load, so every session
+        /// began with a Launch click or a `timberbot_ready` call before anything worked. `autoReady` in
+        /// settings.json (default true) opens it here instead; other factions keep the vanilla Timberbot
+        /// behaviour, where the gate is the player's opt-in.
+        public void AutoReady(bool enabled)
+        {
+            try
+            {
+                bool wardens = _factionService.Current?.Id == WardensStartingPopulation.FactionId;
+                if (!enabled || !wardens || _timberbot.AgentState.Ready) return;
+                _timberbot.AgentState.SetReady(true);
+                Debug.Log("[Wardens] timberbot: ready gate opened at load (autoReady; set \"autoReady\": false in settings.json to keep the Launch click)");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("[Wardens] timberbot auto-ready: " + ex.Message);
+            }
+        }
+
+        // ---- what the instructions and the director are told (main thread) ------------------------
+
+        /// One line per registered tool: name, where it runs, the first sentence of its description,
+        /// and its `action` vocabulary when it has one. Generated, so it cannot drift from the table.
+        private string ToolIndex()
+        {
+            var sb = new StringBuilder();
+            foreach (var t in _tools)
+            {
+                sb.Append("- `").Append(t.Name).Append("` [").Append(t.OffThread ? "listener" : "main").Append("] ")
+                  .Append(FirstSentence(t.Description));
+                var action = t.InputSchema?["properties"]?["action"]?["description"];
+                if (action != null) sb.Append(" Actions: ").Append((string)action).Append('.');
+                sb.Append('\n');
+            }
+            return sb.ToString();
+        }
+
+        private static string FirstSentence(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return "";
+            int i = text.IndexOf(". ", StringComparison.Ordinal);
+            string s = i > 0 ? text.Substring(0, i + 1) : text;
+            return s.Length > 220 ? s.Substring(0, 217) + "..." : s;
+        }
+
+        /// Where the level's story stands: the live tasks with what each still misses, the scene each
+        /// plays, and what waits behind them. The Warden follows this; the director fills its gaps.
+        private string StoryNow()
+        {
+            var level = _campaign.Level;
+            if (!_campaign.Enabled || level == null)
+                return "No campaign level on this map: no tasks and no story beats. On a new game the Cold Boot is the only scene that fires.\n";
+            var sb = new StringBuilder();
+            string opening = string.Join(", ", _cutscenes.ScenesFor(WardensCutsceneScript.TriggerLevelPrefix + level.Id));
+            sb.Append("Level ").Append(level.Id).Append(" '").Append(level.Title).Append("'. Opening: ")
+              .Append(opening == "" ? "none" : opening).Append(".\n");
+            if (!_tasks.Active)
+                return sb.Append("It has no task file (Levels/").Append(level.Id).Append(".tasks.json), so nothing ends it but its tutorial.\n").ToString();
+            sb.Append(_tasks.DoneCount).Append(" of ").Append(_tasks.Tasks.Count).Append(" tasks done").Append(_tasks.Complete ? "; the level is complete.\n" : ".\n");
+            foreach (var task in _tasks.Live)
+            {
+                sb.Append("- LIVE ").Append(task.Id).Append(": ").Append(_tasks.NextStep(task));
+                var scenes = _cutscenes.ScenesFor(LevelTaskFile.TriggerTaskPrefix + level.Id + "." + task.Id);
+                if (scenes.Count > 0) sb.Append(" (its scene: ").Append(string.Join(", ", scenes)).Append(')');
+                sb.Append('\n');
+            }
+            var waiting = new List<string>();
+            foreach (var task in _tasks.Tasks)
+                if (!_tasks.IsDone(task) && !_tasks.IsLive(task))
+                    waiting.Add(task.Id + (task.After.Count > 0 ? " (after " + string.Join(", ", task.After) + ")" : ""));
+            if (waiting.Count > 0) sb.Append("Waiting: ").Append(string.Join("; ", waiting)).Append(".\n");
+            sb.Append("A task's scene plays the moment it goes live: that is the story pointing, not you. Help the live tasks; the human decides which first.\n");
+            return sb.ToString();
+        }
+
+        /// The `warden_director` prompt: the harness for a session that develops the story in the
+        /// running game. Rebuilt with the instructions (main thread), served from the listener thread.
+        private string BuildDirectorBrief()
+        {
+            var sb = new StringBuilder();
+            sb.Append("You are the director of the Wardens' story in this running game. You develop it: you write and tune scenes, frame camera paths, ")
+              .Append("and playtest a level's tasks to see that each beat lands when its task goes live. You do not play the colony for the human ")
+              .Append("unless they ask; when you play to reach a task, say so in the Uplink first.\n\n");
+            sb.Append("STATE\n").Append(StateLine()).Append("\n\n");
+            sb.Append("THE STORY NOW\n").Append(StoryNow()).Append('\n');
+
+            sb.Append("THE SCENE LOOP (design/wardens-cutscenes.md §3 is the format; tools/check_cutscenes.py the rules)\n")
+              .Append("1. Frame the shot: `camera action=set` (grid x,y,z, h, v, zoom) or ask the human to frame it by hand.\n")
+              .Append("2. `cutscene action=keyframe t=<second>` returns that pose as a keyframe; collect one per camera stop.\n")
+              .Append("3. `cutscene action=write id=<Id> scene={...}` validates and saves Cutscenes/<Id>.json in the mod folder and reloads it. ")
+              .Append("Use literal `text` captions while tuning; a loc row (Wardens.Cutscene.<Id>.<Shot> in Localizations/enUS.csv) shows only after a restart.\n")
+              .Append("4. `cutscene action=play id=<Id>`, watch `cutscene action=status` shot by shot; screenshot each shot only while Timberborn is the foreground window.\n")
+              .Append("5. Judge each frame against its caption (the thing it names is in the picture, the letterbox does not cover it). Adjust, write, play again: at most five passes per scene, the same problem twice means stop and report.\n")
+              .Append("6. Copy the file into the repo's wardens/src/Cutscenes/, move `text` into loc rows, run check_cutscenes.py until `problems: none`.\n\n");
+
+            sb.Append("THE SHAPE OF THE STORY\n")
+              .Append("- A level opens with `level:<Id>`: at most five shots and 45 s, the land once, the Core, the directive (waits for Continue).\n")
+              .Append("- Each task with land to show has a beat `T<level>.<Task>` on `task:<level>.<Task>`: at most two shots, 14 s, restore_camera true, leave_paused false. ")
+              .Append("It shows only what that task asks for. `task_done:<level>.<Task>` for a moment that follows a task (the first beaver).\n")
+              .Append("- The level's end is `L<level>.End` on `level_complete:<level>`.\n")
+              .Append("- Captions in the Warden's voice: measurements, not adjectives, at most two sentences, every number true of the built map.\n\n");
+
+            sb.Append("SCENES LOADED NOW\n");
+            foreach (var line in _cutscenes.SceneLines()) sb.Append("- ").Append(line).Append('\n');
+            sb.Append('\n');
+
+            sb.Append("TASKS WITHOUT A SCENE (every task file in the mod folder)\n").Append(TaskGaps()).Append('\n');
+
+            sb.Append("THE CAMERA NOW (a keyframe you could paste)\n").Append(CameraKeyframe(0f)["keyframe"].ToString(Formatting.None)).Append("\n\n");
+
+            sb.Append("LINES THAT DO NOT BEND\n")
+              .Append("- Never deploy a DLL while the game runs; scene files and literal captions reload live, C# and loc rows need a restart.\n")
+              .Append("- Never answer a choice card; leave no scene running when you stop (`cutscene action=skip`).\n")
+              .Append("- Report in the driving-iterations state words: a scene you did not see play in the game is at most `checked`.\n");
+            return sb.ToString();
+        }
+
+        private string TaskGaps()
+        {
+            var sb = new StringBuilder();
+            var folder = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(WardensSettings.Path) ?? "", LevelTaskFile.FolderName);
+            if (!System.IO.Directory.Exists(folder)) return "(no Levels/ folder in the mod)\n";
+            foreach (var file in System.IO.Directory.GetFiles(folder, "*.tasks.json"))
+            {
+                string levelId = System.IO.Path.GetFileName(file).Replace(".tasks.json", "");
+                try
+                {
+                    var tasks = LevelTaskFile.Parse(JObject.Parse(System.IO.File.ReadAllText(file)), new List<string>());
+                    var gaps = new List<string>();
+                    foreach (var task in tasks)
+                        if (_cutscenes.ScenesFor(LevelTaskFile.TriggerTaskPrefix + levelId + "." + task.Id).Count == 0) gaps.Add(task.Id);
+                    sb.Append("- level ").Append(levelId).Append(": ").Append(gaps.Count == 0 ? "every task has a scene" : string.Join(", ", gaps)).Append('\n');
+                }
+                catch (Exception ex)
+                {
+                    sb.Append("- level ").Append(levelId).Append(": unreadable (").Append(ex.Message).Append(")\n");
+                }
+            }
+            return sb.ToString();
+        }
+
+        /// The camera's pose as a scene keyframe (grid anchor: x, y, z = height of the tile the
+        /// camera looks at; h, v in degrees; zoom in CameraService.ZoomLevel units).
+        private JObject CameraKeyframe(float t)
+        {
+            var pose = _director.Current();
+            var grid = (JObject)WardensCameraDirector.At(pose.Target)["grid"];
+            var keyframe = new JObject
+            {
+                ["t"] = Math.Round(t, 2),
+                ["anchor"] = "grid",
+                ["x"] = grid["x"], ["y"] = grid["y"], ["z"] = grid["z"],
+                ["h"] = Math.Round(pose.H, 1),
+                ["v"] = Math.Round(pose.V, 1),
+                ["zoom"] = Math.Round(pose.Zoom, 2),
+            };
+            return new JObject
+            {
+                ["keyframe"] = keyframe,
+                ["note"] = "paste into a shot's camera[]; `t` is the second of the shot the pose is reached at (a first keyframe above 0 eases in, 0 cuts)",
+            };
         }
 
         // ---- schema helpers -----------------------------------------------------------------------
@@ -591,12 +780,14 @@ namespace Wardens
                 });
 
             Add("cutscene",
-                "Cutscenes: scenes from Cutscenes/*.json in the mod folder (design/wardens-cutscenes.md): the Cold Boot, each level's opening (level:<Id>), a beat per task (task:<level>.<Id> when it goes live, task_done:<level>.<Id>), the level's end (level_complete:<Id>), the Archive reading. action=status lists the loaded scenes with their triggers, the running one (shot, caption, waiting: flight | time | continue | choice, the open choices) and the story record (choices, marks); play starts `id` now, replacing a running scene and ignoring the trigger policy (`Archive` reads the Ledger back when the human asks); skip ends the running scene; continue releases a shot that waits for the Continue button; choose answers an open choice card with `choice` (only when the human said which, in chat: a choice is purpose); reload re-reads the files (edit in the mod folder, reload, play: the tuning loop); reset clears the story record (dev). A playing scene owns the camera: leave it and say nothing until the frame reports cutscene.end.",
+                "Cutscenes: scenes from Cutscenes/*.json in the mod folder (design/wardens-cutscenes.md): the Cold Boot, each level's opening (level:<Id>), a beat per task (task:<level>.<Id> when it goes live, task_done:<level>.<Id>), the level's end (level_complete:<Id>), the Archive reading. keyframe returns the camera's pose now as a keyframe to paste into a shot (`t` its second): frame a shot by hand or with `camera`, capture it. write validates `scene` and saves it as Cutscenes/<id>.json in the mod folder, then reloads (literal `text` captions work at once; a loc row needs a restart); copy it into the repo's wardens/src/Cutscenes/ afterwards. action=status lists the loaded scenes with their triggers, the running one (shot, caption, waiting: flight | time | continue | choice, the open choices) and the story record (choices, marks); play starts `id` now, replacing a running scene and ignoring the trigger policy (`Archive` reads the Ledger back when the human asks); skip ends the running scene; continue releases a shot that waits for the Continue button; choose answers an open choice card with `choice` (only when the human said which, in chat: a choice is purpose); reload re-reads the files (edit in the mod folder, reload, play: the tuning loop); reset clears the story record (dev). A playing scene owns the camera: leave it and say nothing until the frame reports cutscene.end.",
                 Schema(new JObject
                 {
-                    ["action"] = Prop("string", "status | list | play | skip | continue | choose | reload | reset", "status"),
-                    ["id"] = Prop("string", "scene id for play", WardensCutscenes.ColdBootId),
+                    ["action"] = Prop("string", "status | list | play | skip | continue | choose | reload | reset | keyframe | write", "status"),
+                    ["id"] = Prop("string", "scene id for play and write", WardensCutscenes.ColdBootId),
                     ["choice"] = Prop("string", "choice id for choose (the open card's ids are in status.choices)"),
+                    ["t"] = Prop("number", "for keyframe: the second of the shot the pose is reached at", 0),
+                    ["scene"] = new JObject { ["type"] = "object", ["description"] = "for write: the whole scene (design/wardens-cutscenes.md §3); `id` is set from `id`" },
                 }),
                 a =>
                 {
@@ -620,6 +811,16 @@ namespace Wardens
                         case "reset":
                             _cutscenes.ResetStory();
                             break;
+                        case "keyframe":
+                            return CameraKeyframe((float)(a["t"] != null && a["t"].Type != JTokenType.Null ? (double)a["t"] : 0.0));
+                        case "write":
+                        {
+                            var id = Str(a, "id") ?? throw new ArgumentException("id required");
+                            if (!(a["scene"] is JObject scene)) throw new ArgumentException("scene required: the scene as a JSON object");
+                            var state = _cutscenes.WriteScene(id, scene);
+                            RefreshInstructions(force: true);
+                            return state;
+                        }
                     }
                     return _cutscenes.State();
                 });

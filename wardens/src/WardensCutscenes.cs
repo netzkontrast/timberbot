@@ -330,6 +330,38 @@ namespace Wardens
             return State();
         }
 
+        /// MCP `cutscene action=write`: validates a scene (the parser the loader uses) and saves it as
+        /// Cutscenes/<id>.json in the mod folder, then reloads every scene. The director's way to add a
+        /// scene without file access; the repo copy (wardens/src/Cutscenes/) is still the source.
+        public JObject WriteScene(string id, JObject scene)
+        {
+            if (string.IsNullOrEmpty(id) || id.Length > 64 || !System.Text.RegularExpressions.Regex.IsMatch(id, "^[A-Za-z0-9][A-Za-z0-9._-]*$") || id.Contains(".."))
+                throw new ArgumentException($"scene id '{id}': letters, digits, '.', '_' and '-' only (it is the file name)");
+            var copy = (JObject)scene.DeepClone();
+            copy["id"] = id;
+            WardensCutsceneScript.Parse(copy);          // throws with the field path, like a bad file would
+            if (!System.IO.Directory.Exists(_folder)) System.IO.Directory.CreateDirectory(_folder);
+            var path = System.IO.Path.Combine(_folder, id + ".json");
+            bool existed = System.IO.File.Exists(path);
+            System.IO.File.WriteAllText(path, copy.ToString(Newtonsoft.Json.Formatting.Indented) + "\n");
+            LoadScenes();
+            Debug.Log($"[Wardens] cutscene {id}: {(existed ? "rewritten" : "written")} by the MCP tool ({path})");
+            var state = State();
+            state["written"] = path;
+            state["next"] = "cutscene action=play id=" + id + "; when it is right, copy it to wardens/src/Cutscenes/ and run tools/check_cutscenes.py";
+            return state;
+        }
+
+        /// One line per loaded scene for the director: id, triggers, shots, seconds.
+        public List<string> SceneLines()
+        {
+            var lines = new List<string>();
+            foreach (var scene in _scenes)
+                lines.Add($"{scene.Id}: on [{string.Join(", ", scene.Triggers)}], {scene.Shots.Count} shot(s), {scene.Seconds:0.#} s");
+            if (_errors.Count > 0) lines.Add("errors: " + string.Join("; ", _errors));
+            return lines;
+        }
+
         public string ResetStory() => _story.Reset();
 
         private void Start(CutsceneScene scene, string why)

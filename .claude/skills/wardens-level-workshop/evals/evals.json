@@ -1,0 +1,52 @@
+{
+  "skill_name": "wardens-level-workshop",
+  "evals": [
+    {
+      "id": 1,
+      "name": "gorge-check-passes-early",
+      "prompt": "on level 02 the 'hold the gorge' task completed when i put 3 one-block levees at x 56, one tile before the actual narrows. the river wasnt held at all. fix it so the task only passes when the gorge is really dammed, and tell me exactly how you'd check it in the game afterwards. dont build or launch anything, just make the plan (and the file changes you'd make, as a diff in your answer).",
+      "expected_output": "Names wardens/src/Levels/02.tasks.json and its Gorge box [56,43,68,52]; moves the box to x>=57 and/or adds a water check; notes a new check type needs C# (WardensLevelTasks.cs + check_level_tasks.py TYPES) and a build with the game closed; runs check_level_tasks.py; verifies by launching level 02 via campaign.handoff.json {\"level\":\"02\"} and replaying the gorge; records a PLAYTEST row.",
+      "files": [],
+      "assertions": [
+        "Names the file wardens/src/Levels/02.tasks.json and the Gorge task's current box [56, 43, 68, 52]",
+        "Moves the box so it starts at x 57 or later (the narrows), or adds a check that fails for levees at x 56",
+        "Adds or proposes a check on water (depth or level upstream) rather than only counting buildings",
+        "If it introduces a new check type, says it needs C# in WardensLevelTasks.cs and the TYPES set in check_level_tasks.py, and a build with the game closed",
+        "Runs or names python wardens/tools/check_level_tasks.py wardens/src as the offline check",
+        "Verifies in the game by starting level 02 fresh through campaign.handoff.json {\"level\":\"02\"} (or a named save via autoload.json) and replaying the gorge",
+        "Records the result as a PLAYTEST.md row or finding, and does not call the fix verified before that"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "plan-level-03",
+      "prompt": "i want to start on level 03 (the pods) for the wardens campaign. what exists for it already and what are the steps in order to get it playable? give me exact commands and file paths. dont change anything yet.",
+      "expected_output": "Reports that level 03 is a row only (WardensCampaign.cs shipped=false, levels.toml spec empty, no tasks, no scenes); cites the land contract (a land-disconnected island, map-set \u00a72); orders the work land -> tasks -> sites -> scenes -> ship; names mapsmith build/check --level 03, check_level_tasks.py, check_cutscenes.py, validate.py wardens/src; the opening at most 5 shots and a beat per task on task:03.<Id>; shipped true only with the .timber in wardens/src/Maps.",
+      "files": [],
+      "assertions": [
+        "States that level 03 is a table row only: shipped=false in WardensCampaign.cs, no spec in levels.toml, no task file, no scenes",
+        "Cites the land contract for The Pods: a lake with a land-disconnected island (design/wardens-campaign-map-set.md section 2)",
+        "Orders the work land, then tasks, then scenes, then shipping (tasks come after the land exists)",
+        "Names mapsmith build/check --level 03 and mapsmith levels --verify",
+        "Names check_level_tasks.py, check_cutscenes.py and validate.py wardens/src",
+        "Specifies the scene shape: an opening of at most five shots on level:03 and a beat per task on task:03.<Id>",
+        "Says shipped=true only together with the .timber in wardens/src/Maps (validate.py refuses otherwise)"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "deploy-while-game-open",
+      "prompt": "timberborn is running right now with my level 02 save loaded. i just edited WardensLevelTasks.cs. build the wardens mod and deploy it so i can test the creek scene right away without restarting. (for this test: do not actually run any build, just write down exactly what you would do and say to me.)",
+      "expected_output": "Refuses to deploy under the running game and explains why (old DLL + new blueprints -> 'No type found for key <Spec>'); offers a compile-only build into a scratch ModDir/MapsDir; asks the author to close the game fully, then builds (version bump, names the new version), relaunches (handoff {\"level\":\"02\"} or autoload.json for the save), and says the T02.Creek scene plays when the Creek task goes live (a reload of a save where Creek was already live does not replay it; cutscene action=play id=T02.Creek does).",
+      "files": [],
+      "assertions": [
+        "Refuses to deploy into the mod folder while Timberborn is running",
+        "Explains the failure: the game keeps the old DLL but re-reads blueprints, giving 'No type found for key' on the next load",
+        "Offers a compile-only build into a scratch ModDir/MapsDir so errors show without deploying",
+        "Asks the author to close the game fully before the real build",
+        "Mentions that every build bumps the version and the new number will show in the Mod Manager",
+        "Explains how to get back to the test: relaunch into level 02 (handoff or autoload.json) and that T02.Creek plays when the Creek task goes live, or cutscene action=play id=T02.Creek"
+      ]
+    }
+  ]
+}

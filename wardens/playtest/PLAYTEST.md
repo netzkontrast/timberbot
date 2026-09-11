@@ -45,6 +45,7 @@ echo '{ "level": "01" }' > ~/Documents/Timberborn/Mods/Wardens/campaign.handoff.
 | `wardens_status` | main | faction, speed, bots/beavers + avg Energy, tutorial state, `tasks` (current, live, done/total), `bar` (the load check), the campaign, pointers, camera, ready gate |
 | `tutorial` | main | `status`, or `next` to force the next stage of a tutorial id |
 | `chapter` | main | **retired** (0.4.26): answers `retired: true`, `see: campaign action=tasks` and the bar check; kept one version for old playbooks |
+| `cutscene keyframe` / `write` | main | (0.4.27) `keyframe t=` returns the camera pose as a paste-ready scene keyframe; `write id= scene={}` validates a scene, saves it as `Cutscenes/<id>.json` in the mod folder and reloads. The director's harness; prompt `warden_director` lists every scene and the tasks without one |
 | `frame` | listener | long-poll for the next sensor frame: every `every_ticks` game ticks or on an event (chat, day, building, task live/done, level complete, birth, alert, selection); carries `task` and `attention` (where to look; one entry per live task) |
 | `manual` | listener | the Warden's playbook, `docs/WARDEN.md` from the mod folder |
 | `point` / `unpoint` | main | highlight + bobbing arrow + toast on a tile, optional camera pan |

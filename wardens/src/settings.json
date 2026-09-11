@@ -8,5 +8,6 @@
   "maxBodyBytes": 1048576,
   "mcpPort": 8090,
   "mcpEnabled": true,
-  "cutscenes": true
+  "cutscenes": true,
+  "autoReady": true
 }

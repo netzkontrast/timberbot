@@ -25,7 +25,10 @@ record everything. The human is the one it keeps the record for.
 
 The tools already are the body: `say` is the voice, `point` the finger, `camera` the eye,
 `timberbot` the hands, `campaign` and its tasks the memory of the plan. What was missing is the
-conscience, and that is the Ledger below.
+conscience, and that is the Ledger below. (Since 0.4.27 the `initialize` instructions list every tool,
+generated from the server's table, and the level's story as it stands; a second role, the director,
+develops the story in the running game through the `warden_director` prompt and `cutscene
+keyframe | write`, and does not play the colony.)
 
 ## 2. What I would make of it
 
