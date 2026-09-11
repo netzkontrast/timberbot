@@ -77,6 +77,45 @@ def _heights(voxels: list[str], size_x: int, size_y: int) -> list[int]:
     return heights
 
 
+def _check_water_columns(r, block: dict, heights: list[int], plane: int) -> None:
+    """Every WaterColumns token as the game's WaterColumnPackedListSerializer reads it: "0" (dry) or
+    depth:contamination:overflow[:floor[:oldDepth]], numbers, depth >= 0, contamination 0..1, and a
+    floor that is the column's ground top (the level the water stands on)."""
+    tokens = block.get("WaterColumns", {}).get("Array", "").split()
+    if len(tokens) != plane:
+        return                                     # the count is reported by the per-cell check
+    bad = 0
+    for i, t in enumerate(tokens):
+        if t == "0":
+            continue
+        parts = t.split(":")
+        problem = None
+        if not 3 <= len(parts) <= 5:
+            problem = f"{len(parts)} fields (3 to 5)"
+        else:
+            try:
+                depth, contamination, overflow = (float(p) for p in parts[:3])
+                floor = int(parts[3]) if len(parts) >= 4 else None
+                if len(parts) == 5:
+                    float(parts[4])
+            except ValueError:
+                problem = "not numbers"
+            else:
+                if depth < 0 or overflow < 0:
+                    problem = "negative depth or overflow"
+                elif not 0 <= contamination <= 1:
+                    problem = f"contamination {contamination} outside 0..1"
+                elif floor is not None and floor != heights[i]:
+                    problem = f"floor {floor}, the ground top is {heights[i]}"
+        if problem:
+            bad += 1
+            if bad <= 3:
+                r.err(f"WaterMapNew.WaterColumns[{i}] (x {i % int(plane ** 0.5)}, y {i // int(plane ** 0.5)}): "
+                      f"{t!r}: {problem}")
+    if bad > 3:
+        r.err(f"WaterMapNew.WaterColumns: {bad - 3} more bad column(s)")
+
+
 def _reachable(heights: list[int], size: int, start: tuple[int, int], blocked: set[tuple[int, int]],
                max_step: int = 1) -> set[tuple[int, int]]:
     if start in blocked:
@@ -160,6 +199,7 @@ def check_world(world: dict, meta: dict, names: set[str], opts: dict | None = No
             r.err(f"{single}: Size missing (the game reads it before the arrays)")
 
     heights = _heights(voxels, size_x, size_y)
+    _check_water_columns(r, sing.get("WaterMapNew", {}), heights, plane)
     entities = world.get("Entities", [])
     ids: set[str] = set()
     cells: dict[tuple[int, int], str] = {}

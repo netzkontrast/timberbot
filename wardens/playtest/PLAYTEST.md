@@ -175,6 +175,8 @@ through the Wardens MCP server and the log.
 | The land | `/api/tiles` heights match the spec: terrace 8 → 7 → shelf 6 at x 26–33, Sump bed 3 at x 34–42, the 3×3 seep at 40–42, 48–50 |
 | The Sump fills on day 1 | at day 1, 41 %: water 0.5 on every Sump tile and along the channel to x 47 (y 47–48) |
 | The opening (0.4.10) | `level triggers=True` with `tutorial=False`; `cutscene FirstLight: queued by level:01`, `start (trigger, 12 shots, 99 s)`, `finished at shot 12/12`; no Cold Boot line. Screenshots: river, Sump (seep lit), shore (Core above the terraces), ruins (one lit beside the Core), spring (lit, grove around it), crossing, Core (lit), a Warden, the directive; each frames what its caption names |
+| Pre-filled water (0.4.13) | a third fresh start: no exception; at tick 1, paused, `water 1.2` on every Sump tile and along the channel to x 47 (`/api/tiles`, y 48); the river shot shows a badwater band across the plateau and the Sump shot a full basin (DPI-aware screenshots, the whole screen with both letterbox bars) |
+| Caption args (0.4.12) | the Core shot reads "The Core. 13 Wardens online, charged to full. Power: the Core, and nothing else." |
 
 Findings:
 
@@ -182,12 +184,13 @@ Findings:
    Wardens online, charged to full." Source (read): `WardensCutscenes.CaptionText` passed the args array to
    `ILoc.T`, which has only `T(key)` and generic `T<T1..T3>` overloads (decompiled `ILoc`), so the array
    bound as one parameter. Consequence: every caption with `args` was wrong: this one, and the Badwater,
-   Pods, Green and Archive scenes. Remedy: `Localize()` calls the overload for the count (0.4.11,
-   built; deploys when the game closes).
+   Pods, Green and Archive scenes. Remedy: `Localize()` calls the overload for the count (0.4.11); seen fixed in 0.4.12.
 2. **The river is dry while the opening shows it.** Symptom: the river and Sump shots show empty beds.
    Source: maps ship dry (the pre-filled water encoding is undocumented, `design/wardens-wasteland.md`),
    and the scene plays at tick 0. Consequence: the captions describe water the picture does not have.
-   Remedy: the author's decision, see HANDOVER.
+   Remedy (the author chose it): the map ships pre-filled. The column encoding was decoded from the
+   decompile and a real autosave, mapsmith writes it with `[water] fill`, the levels are the ones a
+   day-3 autosave of this map settled at (4.17), and the load is clean (0.4.13).
 3. **`cutscene_played` stayed false after the opening.** Source (read): the flag tracked the Cold Boot
    only. Consequence: the Warden's boot check could read a played opening as not played. Remedy:
    `OpeningPlayed` counts a `level:` scene too (0.4.11).

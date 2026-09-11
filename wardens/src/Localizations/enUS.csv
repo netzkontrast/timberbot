@@ -205,7 +205,7 @@ Wardens.Cutscene.FirstLight.Restart,"SYSTEM RESTART. The uptime counter overflow
 Wardens.Cutscene.FirstLight.Archive,"Three badtides in the archive. The sensors logged every one, and nothing answered.",Level 01 opening caption (Cutscenes/FirstLight.json)
 Wardens.Cutscene.FirstLight.Head,Badwater rises at the north edge from three sources. It has not stopped.,Level 01 opening caption (Cutscenes/FirstLight.json)
 Wardens.Cutscene.FirstLight.River,It crosses the whole plateau and leaves at the south edge. The soil along it is poisoned.,Level 01 opening caption (Cutscenes/FirstLight.json)
-Wardens.Cutscene.FirstLight.Sump,"Below the Core, the Sump. A seep fills it on the first day; the river keeps it full.",Level 01 opening caption (Cutscenes/FirstLight.json)
+Wardens.Cutscene.FirstLight.Sump,"Below the Core, the Sump: badwater, 1.2 deep. The seep and the river keep it full.",Level 01 opening caption (Cutscenes/FirstLight.json)
 Wardens.Cutscene.FirstLight.Shore,Its west shore steps down from the Core in terraces. Room for a row of Sludge Pumps.,Level 01 opening caption (Cutscenes/FirstLight.json)
 Wardens.Cutscene.FirstLight.Ruins,Ruins within 14 steps of the Core. Scrap Metal is the only thing left to build with.,Level 01 opening caption (Cutscenes/FirstLight.json)
 Wardens.Cutscene.FirstLight.Spring,"One clean spring, on the hill in the north-east. Almost everything green on this map grows around it.",Level 01 opening caption (Cutscenes/FirstLight.json)

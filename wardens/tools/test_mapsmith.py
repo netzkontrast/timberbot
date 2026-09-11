@@ -804,6 +804,85 @@ def test_first_light_spec_builds_and_passes_its_own_checks():
     assert sum(1 for e in b.entities if e.template.startswith("RuinColumn")) >= 30
 
 
+def test_first_light_opens_with_its_water():
+    """Level 01 pre-fills the level its day-3 autosave settled at, so the opening shows water."""
+    spec = load(FIRST_LIGHT)
+    b = build(spec)
+    cols = world_json(b, spec)["Singletons"]["WaterMapNew"]["WaterColumns"]["Array"].split()
+    sump = cols[48 * b.size + 38].split(":")
+    assert (float(sump[0]), float(sump[1]), int(sump[3])) == (1.2, 1.0, 3)      # bed 3, surface 4.2, badwater
+    spring = cols[14 * b.size + 82].split(":")
+    assert float(spring[1]) == 0.0 and float(spring[0]) > 0                      # clean
+    assert sum(1 for c in cols if c != "0") > 300
+
+
+# --- pre-filled water ------------------------------------------------------------------------------
+#
+# The encoding is the game's (decompiled WaterColumnPackedListSerializer, 1.1.2.4): "0" dry, else
+# depth:contamination:overflow:floor:oldDepth. A floor that is not the ground top, or a field the
+# reader cannot parse, is what would break a load; the checker names both.
+
+def _pond(minimal, water):
+    return deep_merge(minimal, {"terrain": [
+        {"op": "base", "height": 6},
+        {"op": "basin", "at": [24, 24], "radii": [3, 3], "bed": 3, "shore": 6, "tag": "badwater", "name": "pond"},
+        {"op": "pad", "at": [10, 10], "size": 8, "height": 6, "name": "start", "reserve": 2},
+        {"op": "clamp", "min": 3, "max": 19}], "water": water})
+
+
+def _columns(spec):
+    b = build(spec)
+    return b, world_json(b, spec)["Singletons"]["WaterMapNew"]["WaterColumns"]["Array"].split()
+
+
+def test_no_water_section_writes_every_column_dry(minimal):
+    _, cols = _columns(minimal)
+    assert set(cols) == {"0"}
+
+
+def test_water_fill_to_a_level_writes_the_game_encoding(minimal):
+    b, cols = _columns(_pond(minimal, {"fill": [{"tag": "badwater", "level": 4.5, "contamination": 1.0}]}))
+    assert cols[24 * b.size + 24] == "1.5:1:0:3:1.5"
+    assert cols[10 * b.size + 10] == "0"                                         # the pad stays dry
+    assert report_for(_pond(minimal, {"fill": [{"tag": "badwater", "level": 4.5, "contamination": 1.0}]}), b).ok
+
+
+def test_water_fill_by_depth_and_a_level_below_the_floor(minimal):
+    _, cols = _columns(_pond(minimal, {"fill": [{"tag": "badwater", "depth": 0.5}]}))
+    assert "0.5:0:0:3:0.5" in cols
+    _, dry = _columns(_pond(minimal, {"fill": [{"tag": "badwater", "level": 3.0}]}))
+    assert set(dry) == {"0"}                                                     # at the floor: nothing to fill
+
+
+@pytest.mark.parametrize("entry, message", [
+    ({"tag": "lava", "level": 4}, "tag 'lava' is not a water mask"),
+    ({"tag": "badwater"}, "exactly one of level | depth"),
+    ({"tag": "badwater", "level": 4, "depth": 1}, "exactly one of level | depth"),
+    ({"tag": "badwater", "level": 4, "contamination": 2}, "contamination 2.0 outside 0..1"),
+])
+def test_water_fill_refuses_what_it_cannot_write(minimal, entry, message):
+    with pytest.raises(SpecError, match=message):
+        _columns(_pond(minimal, {"fill": [entry]}))
+
+
+@pytest.mark.parametrize("token, message", [
+    ("1.5:1:0:4:1.5", "floor 4, the ground top is 3"),
+    ("1.5:2:0:3:1.5", "contamination 2.0 outside 0..1"),
+    ("1.5:1", "2 fields (3 to 5)"),
+    ("deep:1:0", "not numbers"),
+    ("-1:0:0:3:0", "negative depth or overflow"),
+])
+def test_checker_names_a_water_column_the_game_would_misread(minimal, token, message):
+    spec = _pond(minimal, {"fill": [{"tag": "badwater", "level": 4.5, "contamination": 1.0}]})
+    b = build(spec)
+    world = world_json(b, spec)
+    cols = world["Singletons"]["WaterMapNew"]["WaterColumns"]["Array"].split()
+    cols[24 * b.size + 24] = token
+    world["Singletons"]["WaterMapNew"]["WaterColumns"]["Array"] = " ".join(cols)
+    report = check_world(world, metadata_json(b, spec), set(NAMES), spec.get("checks", {}))
+    assert not report.ok and message in report.summary(), report.summary()
+
+
 # --- terrace, shore and crossing: level 01's shore and its spring ------------------------------------
 #
 # Level 01's first land put the Sump under a four-level cliff (one pump site) and the spring out of

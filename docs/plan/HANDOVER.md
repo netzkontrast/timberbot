@@ -11,6 +11,65 @@ is and how each part works), `wardens/CHANGELOG.md` (what each version added), `
 
 ---
 
+## 2026-09-11: level 01 ships with its water (game machine)
+
+**Plan:** package 10 of `docs/plan/first-light-opening.md`; the author chose "pre-fill the map" for the
+dry river. **Status: `verified` (0.4.13).**
+
+### What I did
+
+Decoded the 1.1.2.4 water format from the decompile (`WaterColumnPackedListSerializer`,
+`ColumnOutflowsPackedListSerializer`, `WaterMapLoader`, `WaterSimulationMigrator`) and checked it against
+two autosaves: day 15 of the first land and day 3 of the remade one. Added `[water] fill` to mapsmith, and
+a checker that rejects a column token the game's reader would misparse. Filled level 01 to the surface the
+day-3 autosave settled at (4.17 → 4.2; spring 12.02 → 12.25). Deployed with the game closed, started a fresh
+level 01, and read the result through the MCP server and DPI-aware screenshots.
+
+| Command | Result line |
+|---|---|
+| `pytest wardens/tools/test_mapsmith.py` | `100 passed` (9 new: fill by level and by depth, refusals, five bad tokens) |
+| `mapsmith build --level 01` | `problems: none`; 554 wet columns; Sump `1.2:1:0:3:1.2`, spring `0.25:0:0:12:0.25` |
+| `dotnet build … -c Release` (0.4.13) | `0 Warnung(en)`, `0 Fehler`; the deployed map `cmp`-identical to the repo's |
+| `/api/tiles` y 48, tick 1, paused | `water 1.2` on x 36–47 (the Sump and the channel) |
+| Player.log | no exception; `cutscene FirstLight: start (trigger, 12 shots, 99 s)` … `finished at shot 12/12` |
+
+### Publish check
+
+Branch `feat/first-light-opening`; the `git ls-remote` line is in the commit that follows this entry's
+push (see PR #22's head).
+
+### What I found
+
+1. **Every mapsmith map has its source strengths halved on load** (read). `WaterSimulationMigrator` migrates
+   any file without its key and multiplies `SpecifiedStrength` by 0.5. The playtested strengths are the
+   halved ones, so mapsmith deliberately does not write the key. Recorded in `timber-format.md`.
+2. **The water arrives and settles flat** (seen). The game's own equilibrium on day 3 was one surface across
+   the river, the channel and the Sump. A pre-fill at that level loads without a flood wave.
+3. The caption args fix (0.4.11) is seen working: "The Core. 13 Wardens online, charged to full."
+
+### What you should do, in this order
+
+Disposition of the previous entry: "if 0.4.11 did not deploy" **done** (deployed as 0.4.12, the Core
+caption seen); the Skip check **still open**; the director's second pass **still open**; the dry river
+**done** (this entry). **Game machine:** close the game and build once more, so the new Sump caption
+("badwater, 1.2 deep") deploys; press Skip mid-opening once. **Anyone designing levels 03, 04 or 08:**
+`wardens-campaign-map-set.md` §5 is unblocked; take fill levels from an autosave, never guess them.
+
+### How you know it is done
+
+The Sump shot's caption matches the full basin; Skip leaves the game paused and unlocked.
+
+### Open questions I could not answer
+
+None new.
+
+### What I deliberately did not do
+
+I did not write `WaterSimulationMigrator` into maps (it would double every source against what was played).
+I did not copy a save's water into the map: the fill is computed from the spec, so a terrain edit keeps working.
+
+---
+
 ## 2026-09-11: the remade level 01 in the game, and its opening cutscene (game machine)
 
 **Plan:** `docs/plan/first-light-opening.md` (the author's goal: the new map starts with an extensive

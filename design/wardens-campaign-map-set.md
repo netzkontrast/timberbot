@@ -230,6 +230,11 @@ the campaign is a different map under the same name.
 
 ## 5. The problem that changes three designs: water starts dry
 
+> **Decoded 2026-09-11 (way out 1).** The column encoding is read from the 1.1.2.4 decompile and a real
+> autosave, and mapsmith pre-fills water masks with `[water] fill` (`timberborn-mapsmith` skill,
+> `references/timber-format.md`). Level 01 ships pre-filled to the level its own autosave settled at. The
+> section below is the problem as it stood; levels 03, 04 and 08 can now separate with water from frame one.
+
 `wardens-wasteland.md` records it as a limitation: the `WaterMapNew` column encoding for pre-filled water is
 undocumented, so maps ship with **zero water** and the sources fill the channels over the first day.
 

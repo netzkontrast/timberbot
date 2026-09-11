@@ -24,9 +24,15 @@ verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first 
   scene too; `ILoc.T` has no `params` overload), and `wardens_status.cutscene_played` now counts a level's
   opening, not only the Cold Boot.
 
+- 0.4.13: **level 01 ships with its water.** The river, the channel and the Sump are pre-filled to 4.2 (the
+  surface a day-3 autosave of the map settled at: 0.2 deep in the river bed, 1.2 in the Sump), badwater
+  contamination 1; the spring's crater to 12.25, clean. The opening now flies over water, not dry beds.
+  mapsmith gained `[water] fill` and a checker for the column encoding, which is decoded from the 1.1.2.4
+  decompile (`WaterColumnPackedListSerializer`) and a real save; 9 new tests.
+
 State: the opening `verified` on the game machine (0.4.10: it played by itself on a handoff start with the
-tutorial off, all 12 shots, screenshots in PLAYTEST.md); the 0.4.11 fixes `built`, deployed when the game
-next closes. `pytest` 139 passed; `check_cutscenes.py wardens/src` → `problems: none`.
+tutorial off, all 12 shots, screenshots in PLAYTEST.md); the 0.4.11 fixes deployed as 0.4.12.
+`pytest` 139 passed before the water work, mapsmith 100; `check_cutscenes.py wardens/src` → `problems: none`.
 
 ## 0.4.9: level 01 remade from its playtest
 
