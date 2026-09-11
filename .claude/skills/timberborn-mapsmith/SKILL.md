@@ -18,9 +18,9 @@ ASCII map and ask whether the land does what the design asked of it.
 ## Start here
 
 ```bash
-python3 wardens/tools/mapsmith preview wardens/maps/wardens-wasteland.map.toml --step 2
-python3 wardens/tools/mapsmith build   wardens/maps/wardens-wasteland.map.toml
-python3 wardens/tools/mapsmith check   wardens/maps/wardens-wasteland.map.toml
+python3 wardens/tools/mapsmith preview --level 01 --step 2
+python3 wardens/tools/mapsmith build   --level 01 --out /tmp/first-light.timber
+python3 wardens/tools/mapsmith check   --level 01
 python3 wardens/tools/mapsmith ops     # every terrain verb and what it takes
 
 python3 wardens/tools/mapsmith levels          # the campaign map index, vs the C# level table
@@ -272,6 +272,19 @@ trusts:
 [note] confluence_upstream: joins at 32%, gorge at 51% — one dam holds both
 ```
 
+Two more, written from level 01's playtest, guard what a colony needs from water it has to work:
+
+```toml
+[contract]
+shore = { at = "sump", radius = 8, min_tiles = 16, min_run = 4 }       # walkable land by the water, off the pad
+crossing = { to = "spring", radius = 8, max_water = 5 }                 # one short bridge away, not on foot
+```
+
+`shore` counts land touching the water that the colony can walk to and that is outside every
+`reserve` ring — a pump stands happily on a cliff top (its pipe reaches down), so the fault it catches
+is a Sump the colony can only reach from its own pad. `crossing` is for rewards across water: it fails
+both when the place is unreachable and when it can be walked to without a bridge.
+
 `mapsmith contracts` lists them with their parameters. Write the contract *before* the terrain: it
 tells you when the land is right, and it is the only reviewer you have.
 
@@ -333,9 +346,8 @@ uv run --project python --extra dev pytest wardens/tools/test_mapsmith.py -q
 
 ## Relationship to gen_map.py
 
-`wardens/tools/gen_map.py` is the older, numpy-based generator that wrote the currently shipped
-`Wardens Wasteland.timber`. It still works and is still the provenance of that file.
-`wardens/maps/wardens-wasteland.map.toml` is the same design as a spec, and mapsmith's checker
-validates the old file too. Until someone loads the spec-built wasteland in the game, do not
-overwrite the shipped `.timber` with it — swap over once it has been seen to load, and retire
-`gen_map.py` then.
+`wardens/tools/gen_map.py` is the older, numpy-based generator that wrote the first level 01. Since
+2026-09-11 the spec owns that level: `wardens/maps/wardens-01-first-light.map.toml` builds the
+shipped `Wardens 01 First Light.timber` (`build --level 01`), remade from what the level did in the
+game (the Sump under a cliff, the Sump filling on day 5, `PLAYTEST.md`). `gen_map.py` stays as the
+record of how the first land was made; do not use it to write a level.

@@ -237,19 +237,21 @@ about that is built in:
 - **Remembering across levels.** Every map is a fresh save, so `campaign.json` (beside `settings.json`)
   carries the levels completed, the current level, and the Ledger the agent appends to with the MCP
   `campaign` tool. Nothing else survives a map change.
-- **Moving to the next level.** Not built. The completion toast names the next map and the player starts it
-  from the New Game screen ([`../design/wardens-campaign-maps.md`](../design/wardens-campaign-maps.md) §2 A).
+- **Moving to the next level.** `campaign action=next` (MCP) starts it as a new game from inside the level, after
+  an exit save; `{"level": "01"}` in `campaign.handoff.json` starts one from the main menu
+  (`WardensLevelTransition.cs`, `WardensHandoff.cs`). The completion toast still names the next map for a player
+  without an agent.
 
 Newer maps are written from specs instead. `tools/mapsmith` builds a `.timber` from a declarative
 `*.map.toml` in [`../wardens/maps/`](maps/), previews it as ASCII (the only way to look at a map
 without the game), and checks it against everything the game would reject — including that the
-colony can actually walk to the scrap. Two specs ship: `wardens-wasteland.map.toml` (the same
-design as above, as data) and `wardens-02-the-pods.map.toml` (campaign level 2). Neither has been
-loaded in-game yet, so `gen_map.py` stays the provenance of the shipped wasteland for now.
+colony can actually walk to the scrap. Every campaign map is a spec now (`maps/levels.toml` is the index):
+`wardens-01-first-light.map.toml` (level 01, remade 2026-09-11 from its playtest, which `gen_map.py` wrote
+first) and `wardens-02-the-sump.map.toml` (level 02).
 
 ```bash
-python tools/mapsmith preview ../wardens/maps/wardens-02-the-pods.map.toml --step 2
-python tools/mapsmith build   ../wardens/maps/wardens-02-the-pods.map.toml    # -> src/Maps/*.timber
+python tools/mapsmith preview --level 01 --step 2
+python tools/mapsmith build   --level 01             # -> src/Maps/Wardens 01 First Light.timber
 python tools/mapsmith ops                                                      # the terrain vocabulary
 ```
 

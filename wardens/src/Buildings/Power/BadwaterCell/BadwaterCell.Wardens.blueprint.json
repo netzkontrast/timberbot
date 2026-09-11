@@ -311,7 +311,7 @@
     "ConsumedGoods": [
       {
         "GoodId": "Badwater",
-        "GoodPerHour": 0.4
+        "GoodPerHour": 0.18
       }
     ]
   },

@@ -83,12 +83,12 @@ any fun. See the skill's `references/timber-format.md` for the verified/assumed 
 
 ## Relationship to gen_map.py
 
-`gen_map.py` remains the provenance of the shipped `Wardens Wasteland.timber` and still runs.
-`wardens/maps/wardens-wasteland.map.toml` is the same design as a spec; its output is equivalent,
-not byte-identical (different RNG). Swap the shipped file over once the spec-built wasteland has
-been seen to load in-game, and retire `gen_map.py` then — not before, because replacing a
-format-verified artefact with an unverified one on the strength of an offline checker is the exact
-trade this tool exists to avoid.
+`gen_map.py` wrote the first level 01 (`Wardens Wasteland.timber`, renamed `Wardens 01 First Light`).
+On 2026-09-11 the spec took the level over: `wardens/maps/wardens-01-first-light.map.toml` was remade
+from what the level did in the game (`wardens/playtest/PLAYTEST.md`) and now builds the shipped file,
+with two new contracts (`shore`, `crossing`) holding the changes. The swap waited, as this section
+used to insist, for a game machine: the spec-built map is loaded and measured there before it ships.
+`gen_map.py` stays as the record of how the first land was made.
 
 ## Found by pointing fresh agents at the skill
 

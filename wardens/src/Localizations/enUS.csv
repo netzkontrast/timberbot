@@ -202,7 +202,7 @@ Wardens.Cutscene.ColdBoot.Orbit,"Nothing has grown here in 3,000 days.",Cold Boo
 Wardens.Cutscene.ColdBoot.Core,We were not built to live here. We were built so that others could.,Cold Boot cutscene caption
 Wardens.Cutscene.ColdBoot.Settle,Chapter 1: First Light. Keep the machines charged. Find metal.,Cold Boot cutscene caption
 Wardens.Cutscene.Badwater.Scrap,Scrap: {0}. The first thing this ground gave us.,Chapter 2 scene (Cutscenes/Badwater.json); {0} scrap in stock
-Wardens.Cutscene.Badwater.Sump,"The Sump is dry; the river is not. Pump what the river brings, and keep every Warden above half charge.",Chapter 2 scene
+Wardens.Cutscene.Badwater.Sump,"The Sump holds badwater now, and the river keeps it full. Pump it, and keep every Warden above half charge.",Chapter 2 scene
 Wardens.Cutscene.Signal.Shifts,The shifts are set. The Wardens do not tire. That is not the same as being fine.,Chapter 3 scene (Cutscenes/Signal.json)
 Wardens.Cutscene.Signal.Cruncher,"The Cruncher turns power into knowledge. The Core can barely feed it. Choose what to think about: Science, or Data Cores for the Archive.",Chapter 3 scene
 Wardens.Cutscene.Pods.Stores,"Stores: Scrap {0}, Badwater {1}, Biomass {2}.",Chapter 4 scene (Cutscenes/Pods.json); stock counts

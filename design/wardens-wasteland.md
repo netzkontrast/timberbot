@@ -13,6 +13,24 @@
 ![top-down preview: ash plateau, the badwater river in purple, the Sump beside the cyan starting pad, grey ruin
 columns, the green spring in the north-east](wardens-wasteland.png)
 
+## The remake (2026-09-11)
+
+Level 01 was played through the MCP server on the game machine (`wardens/playtest/PLAYTEST.md`, "Level 01
+played through the MCP server") and the land failed the play in three places. The level is now built by
+mapsmith from [`wardens/maps/wardens-01-first-light.map.toml`](../wardens/maps/wardens-01-first-light.map.toml)
+(same name, seed and size; saves made on the first land keep it, since a save carries its world):
+
+| Seen in play | The first land | Now | Held by |
+|---|---|---|---|
+| One pump site, on the Core's pad | the Sump against the pad, four levels down; its far rim below the cliff | the river moved east; a terrace 8 → 7 → a shelf at 6 along the Sump | contract `shore` (32 walkable shore tiles off the pad, run of 5; the first land: 11 and 3) |
+| The Sump empty until day 5 | filled only from the river | a `BadwaterSource` seep in the Sump, bed 3 (deeper, a drought reserve), and a channel to the river | `require_at_least BadwaterSource = 4` |
+| Idle Wardens at 0% on day 2 | first scrap 10+ tiles out | three small ruins 7–14 steps from the start (plus: Wardens boot fully charged and the Core holds 10 scrap, `WardensStartingPopulation.cs`) | `reachable_scatter "first light"` |
+| The spring grove unreachable | across the river, with Platforms science-locked | still across, one bridge of at most 5 tiles (Platforms free since the open bar) | contract `crossing` |
+
+The crossing contract passes on the first land too: its spring was always one short bridge away, and what
+stood in the way was the 100-Science Platform. The Badwater Cell now burns 0.18/h (4.3 a day), what one pump
+makes, instead of 0.4/h.
+
 ## What the map has to do
 
 Every pillar of the Chapter 1 plan needs something from the ground:
@@ -69,8 +87,9 @@ properties the play above depends on, restated as assertions:
 | 3-40% of tiles contaminated above 0.5 | poison is a band; a flood and a rumour are both wrong |
 | >= 4 UndergroundRuins | the mines of a later act |
 
-The seed (3000) and the size (96) are pinned in the level class and must never change after the map ships: the
-same name with a different seed is a different map, and level 10 (*Home*) regenerates this exact heightfield.
+The seed (3000) and the size (96) stay. The heightfield itself changed once, on 2026-09-11 (the remake above,
+decided by the author: same name, new land); level 10 (*Home*) regenerates from the same spec, so the two stay
+one place.
 
 ## Open questions (answered by the first in-game load)
 

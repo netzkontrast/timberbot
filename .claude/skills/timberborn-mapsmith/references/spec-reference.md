@@ -72,6 +72,7 @@ to a named mask) and most take `name` (register an anchor point).
 | `crater` | `at`, `radius`, `depth` — sinks relative to the ground already there. |
 | `channel` | `start`, `direction` (`north`/`south`/`east`/`west`), `length`, `drop` (tiles per level climbed), `offset`. |
 | `pad` | `at` (lower-left corner), `size`, `height`, `name`, `reserve` (keep-out ring for scatter). |
+| `terrace` | `box` (`[x1, y1, x2, y2]`, inclusive), `steps` (`[[width, height], …]` bands laid from `side`), `side` (`west`/`east`/`north`/`south`), `avoid`, `name`, `tag` — a walkable shore instead of a cliff (level 01's Sump: `[[2, 7], [3, 6]]` down from a pad at 8). |
 | `smooth` | `passes`, `strength` — box blur. |
 | `clamp` | `min`, `max` — round to integer levels. Run last; the voxel writer needs integers. |
 
@@ -225,7 +226,7 @@ import sys; sys.path.insert(0, "wardens/tools")
 from pathlib import Path
 from mapsmith import load, build, ascii_map, write_timber, check_file
 
-spec = load(Path("wardens/maps/wardens-wasteland.map.toml"))
+spec = load(Path("wardens/maps/wardens-01-first-light.map.toml"))
 for seed in (1, 2, 3):
     m = build({**spec, "seed": seed})
     print(f"--- seed {seed} ---")

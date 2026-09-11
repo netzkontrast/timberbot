@@ -16,12 +16,12 @@
 [levels."01"]
 map = "Wardens 01 First Light"
 title = "First Light"
-spec = ""                                  # provenance is gen_map.py --level 01; see the note below
-generator = "gen_map.py"
-note = """Level 01 shipped from gen_map.py and has been loaded in the game. Its .timber is pinned:
-the map name, seed and size never change (AGENTS.md). `wardens-wasteland.map.toml` is the same
-design as a mapsmith spec and is kept as the port target, but it does not own the shipped file
-until someone has loaded a spec-built copy."""
+spec = "wardens-01-first-light.map.toml"
+generator = "mapsmith"
+note = """Remade 2026-09-11 from the level-01 playtest (PLAYTEST.md): the spec owns the shipped file
+now. gen_map.py wrote the first version (Sump under a cliff, filled on day 5, spring unreachable);
+saves made on it keep that land, since a save carries its world. The name stays, so the campaign
+still finds the level; level 10 regenerates from this spec."""
 
 [levels."02"]
 map = "Wardens 02 The Sump"

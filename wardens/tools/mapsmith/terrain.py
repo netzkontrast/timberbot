@@ -219,6 +219,47 @@ def op_pad(b: MapBuild, *, at, size: int = 8, height: float | None = None, name:
         b.reserve(x0 - reserve, y0 - reserve, x0 + size - 1 + reserve, y0 + size - 1 + reserve)
 
 
+def op_terrace(b: MapBuild, *, box, steps, side: str = "west", avoid=None, name: str | None = None,
+               tag: str | None = None, **_) -> None:
+    """Flatten a rectangle into flat bands that step down (or up) one after another — a shore a
+    colony can walk down to the water, instead of a cliff it can only look over.
+
+    `box` is [x1, y1, x2, y2], inclusive. `steps` is a list of [width, height] bands laid from `side`
+    (west | east | north | south) inwards: `[[2, 7], [3, 6]]` against a pad at 8 gives 8 → 7 → 6, and
+    beavers climb one level unaided. A band that runs past the box is cut at its edge; columns the
+    bands do not reach keep their height. `avoid = "badwater"` leaves those cells alone.
+    """
+    try:
+        x1, y1, x2, y2 = (int(v) for v in box)
+    except (TypeError, ValueError) as exc:
+        raise SpecError(f"terrace: box must be [x1, y1, x2, y2], got {box!r}") from exc
+    if x2 < x1 or y2 < y1:
+        raise SpecError(f"terrace: box {box!r} is empty (x2 < x1 or y2 < y1)")
+    axis = {"west": (x1, 1, "x"), "east": (x2, -1, "x"), "north": (y1, 1, "y"), "south": (y2, -1, "y")}
+    if side not in axis:
+        raise SpecError(f"terrace: unknown side {side!r} (west | east | north | south)")
+    start, direction, along = axis[side]
+    skip = _protected(b, avoid)
+    flat = Mask(b.size)
+    offset = 0
+    for band in steps:
+        width, level = int(band[0]), float(band[1])
+        if width < 1:
+            raise SpecError(f"terrace: band width must be at least 1, got {band!r}")
+        for i in range(offset, offset + width):
+            line = start + direction * i
+            if along == "x" and not x1 <= line <= x2 or along == "y" and not y1 <= line <= y2:
+                continue
+            cells = ((line, y) for y in range(y1, y2 + 1)) if along == "x" else ((x, line) for x in range(x1, x2 + 1))
+            for x, y in cells:
+                if b.height.inside(x, y) and (x, y) not in skip:
+                    b.height.set(x, y, level)
+                    flat.set(x, y)
+        offset += width
+    b.tag(tag, flat)
+    b.anchor(name, ((x1 + x2 + 1) / 2.0, (y1 + y2 + 1) / 2.0))
+
+
 def op_smooth(b: MapBuild, *, passes: int = 1, strength: float = 1.0, **_) -> None:
     """Box-blur the heightfield. Softens noisy ground without moving carved features much."""
     size = b.size
@@ -253,6 +294,7 @@ OPS: dict[str, Callable[..., None]] = {
     "crater": op_crater,
     "channel": op_channel,
     "pad": op_pad,
+    "terrace": op_terrace,
     "smooth": op_smooth,
     "clamp": op_clamp,
 }
