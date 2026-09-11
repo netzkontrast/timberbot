@@ -37,7 +37,6 @@ namespace Wardens
         public bool McpEnabled = true;
         public int HttpPort = 8085;          // Timberbot's port, for loopback tools
         public string AuthToken = "";        // Timberbot's bearer token, if any
-        public bool ChapterGating = true;    // WardensChapters.cs: false opens every chapter at load
         public bool Cutscenes = true;        // WardensCutscenes.cs: false keeps the scene triggers off (MCP play still works)
         public bool InstallMaps = true;      // WardensMapInstaller.cs: false leaves Documents/Timberborn/Maps alone
 
@@ -57,7 +56,8 @@ namespace Wardens
                     s.McpEnabled = json.Value<bool?>("mcpEnabled") ?? s.McpEnabled;
                     s.HttpPort = json.Value<int?>("httpPort") ?? s.HttpPort;
                     s.AuthToken = (json.Value<string>("authToken") ?? "").Trim();
-                    s.ChapterGating = json.Value<bool?>("chapterGating") ?? s.ChapterGating;
+                    if (json["chapterGating"] != null)
+                        Debug.LogWarning("[Wardens] settings.json: chapterGating is ignored; every building is on the bar from the start and the chapters are story beats (WardensChapters.cs)");
                     s.Cutscenes = json.Value<bool?>("cutscenes") ?? s.Cutscenes;
                     s.InstallMaps = json.Value<bool?>("installMaps") ?? s.InstallMaps;
                 }
@@ -72,7 +72,7 @@ namespace Wardens
 
     public class WardensMcpServer : ILoadableSingleton, IUpdatableSingleton, IUnloadableSingleton
     {
-        public const string Version = "0.4.7";
+        public const string Version = "0.4.8";
         private static readonly string[] SupportedProtocolVersions = { "2024-11-05", "2025-03-26", "2025-06-18" };
 
         private class PendingCall

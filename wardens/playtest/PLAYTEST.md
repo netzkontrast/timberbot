@@ -44,7 +44,7 @@ echo '{ "level": "01" }' > ~/Documents/Timberborn/Mods/Wardens/campaign.handoff.
 |---|---|---|
 | `wardens_status` | main | faction, speed, bots/beavers + avg Energy, tutorial + chapter state, pointers, camera, ready gate |
 | `tutorial` | main | `status`, or `next` to force the next stage of a tutorial id |
-| `chapter` | main | `status`: every story chapter with its gating tutorial and per-building lock state; `unlock` forces `chapter_id` open |
+| `chapter` | main | `status`: every story chapter with its tutorial, whether the story has reached it and the buildings it is about (nothing is locked; `unlocked_at_load` is empty when the data is right); `unlock` announces `chapter_id` now |
 | `frame` | listener | long-poll for the next sensor frame: every `every_ticks` game ticks or on an event (chat, day, building, chapter, birth, alert, selection); carries `attention` (where to look) |
 | `manual` | listener | the Warden's playbook, `docs/WARDEN.md` from the mod folder |
 | `point` / `unpoint` | main | highlight + bobbing arrow + toast on a tile, optional camera pan |
@@ -88,25 +88,25 @@ wakes it every 60 game ticks or when something happens, and tells it where to lo
   above 50% (n/5)", Reed Bed, "Plant: Sludge Reed (0/40)"), Working hours (18), Storage (Scrap Pile
   → Scrap Metal, 2 Sludge Tanks → Badwater, Crate Rack → Biomass), Science ("Build: The Cruncher",
   "Power: The Cruncher"), Pods (2 Breeding Pods), Power and pods (Badwater Cell, "Power: Breeding
-  Pod"), First beaver ("Beavers: (0/1)"), Reforestation (accumulate 60 science, unlock + build the
+  Pod"), First beaver ("Beavers: (0/1)"), Reforestation (build the
   Planter Rig, "Plant: Birch (0/20)"), Maintenance (select a Warden, well-being panel, hours 16).
-- Event tutorials: Dams (end of cycle 3 without a Dam), Vertical architecture (unlock Stairs, 70
-  science), Layer tool (first Platform finished), Haulers (cycle ≥ 3 with 3 idle Wardens or 20 bots),
+- Event tutorials: Dams (end of cycle 3 without a Dam), Vertical architecture (after
+  Maintenance), Layer tool (first Platform finished), Haulers (cycle ≥ 3 with 3 idle Wardens or 20 bots),
   Droughts / Badtides (after the first one ends).
 - The building bar shows only the Wardens set (Core is pre-placed; Charging Post, Cruncher, Sludge
   Burner, Power Shaft, Scrap Pile, Reed Bed, Sludge Pump, Badwater Cell, Sludge Tank, two pods,
-  Planter Rig (locked), Stairs (locked), Platform (locked), Dam, Crate Rack, Hauler Dock,
+  Planter Rig, Stairs, Platform, Dam, Crate Rack, Hauler Dock,
   Observation Deck, Scavenger Flag, Path). Placing the Cruncher next to the Core with a Power Shaft
   between them should light its illuminator (Core outputs 150 hp).
-- Chapters (`wardens/README.md`, "How the chapters work"): on a new game the padlock sits on the
-  Sludge Pump, Reed Bed, Sludge Tank, Crate Rack, Cruncher, both pods, Badwater Cell and Sludge
-  Burner; `chapter status` shows `next: Badwater`, `next_waits_for: Wardens.Scrap`. Finishing the
-  Scrap tutorial (or `tutorial next` through it) must clear the first four padlocks within a second,
-  show the "Chapter 2: Badwater." toast and put the same line in the chat panel; the Badwater and
-  Biomass tutorial then starts with its buildings buildable. Reloading the save keeps them unlocked
-  and shows no toast. To test a later building out of order use `chapter unlock chapter_id=Signal`
-  (or start with the tutorial off, which opens every chapter). `"chapterGating": false` in
-  `settings.json` does the same for every game.
+- Chapters (`wardens/README.md`, "How the chapters work"): on a new game **no building is padlocked
+  and none carries a science price** (the whole bar is buildable from the first frame, on every map);
+  `chapter status` shows `complete: []`, `next: Badwater`, `next_waits_for: Wardens.Scrap`, and
+  `unlocked_at_load: []` (a template listed there means a blueprint shipped with a science cost: the log
+  names it, `validate.py` names the file). Finishing the Scrap tutorial (or `tutorial next` through it)
+  must show the "Chapter 2: Badwater." toast within a second and put the same line in the chat panel;
+  `complete` becomes `["Badwater"]`. Reloading the save shows no toast and keeps `complete`. To replay a
+  later chapter's beat use `chapter unlock chapter_id=Signal`; starting with the tutorial off lists every
+  chapter as complete (the story cannot advance without it) and changes nothing on the bar.
 - `python wardens/tools/validate.py` must print `problems: none` before every in-game test (it includes
   `check_cutscenes.py`, which also runs alone and without the game's files:
   `python wardens/tools/check_cutscenes.py wardens/src`).
@@ -245,7 +245,9 @@ required for the very first moves.
 - `/api/alerts` returns `type: "Flooded."` (with the period), not in the documented
   `unstaffed`/`unpowered`/`unreachable`/`status` enum.
 - `chapter status`'s `complete` list already showed Badwater through Green on a brand-new Cold Boot
-  save with nothing built — looks like state not reset per playthrough.
+  save with nothing built — looks like state not reset per playthrough. *(2026-09-11: the check read the
+  unlock state, which the tutorial-off toggle opened at load; `complete` now means the chapter's tutorial
+  has finished, and the bar is open from the start regardless.)*
 
 ## Level start from the main menu (2026-09-11, 0.4.1, game machine)
 

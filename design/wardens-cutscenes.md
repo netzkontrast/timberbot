@@ -163,8 +163,8 @@ whatever the scale turns out to be.
 
 Policy for every trigger, the same one the Cold Boot had: the active faction is the Wardens, the
 tutorial is on (the story is the tutorial), and `"cutscenes": true` in `settings.json` (the default;
-`false` keeps the triggers off for playtest scripts that do not want a 22 s scene, the way
-`chapterGating` works). The MCP `play` action ignores the policy: it is the tuning loop.
+`false` keeps the triggers off for playtest scripts that do not want a 22 s scene). The MCP
+`play` action ignores the policy: it is the tuning loop.
 
 No save state. A trigger fires on an event, events happen once, and a loaded save re-fires none of
 them: a chapter already open at load is reconciled silently, a finished tutorial is in the set
@@ -252,8 +252,9 @@ stopped there. A choice card has no key: the buttons are the answer.
 ### 4.4 `WardensChapterService` (one event)
 
 `public event Action<WardensChapter> ChapterOpened;`, raised in `Open()` under the same condition as
-the toast (announced, and at least one building newly unlocked). Frames keep their own detection;
-nothing else changes.
+the toast (announced: a real opening or a forced one, never the silent reconcile after a load; since
+2026-09-11 nothing is unlocked, the chapters are story beats over an open bar). Frames keep their own
+detection; nothing else changes.
 
 ### 4.5 `WardensFrames` (two events, one field)
 

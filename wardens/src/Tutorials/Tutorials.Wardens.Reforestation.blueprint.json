@@ -9,7 +9,7 @@
     "SkipIfTutorialFinished": "",
     "SortOrder": 80,
     "Stages": [
-      "Wardens.Reforestation.UnlockPlanter",
+      "Wardens.Reforestation.BuildPlanter",
       "Wardens.Reforestation.PlantBirches"
     ]
   }
