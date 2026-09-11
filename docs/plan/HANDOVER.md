@@ -11,6 +11,102 @@ is and how each part works), `wardens/CHANGELOG.md` (what each version added), `
 
 ---
 
+## 2026-09-11: the level loader, compiled and seen in the game (game machine)
+
+**Plan:** the previous entry's game-machine list (build, run the transition, answer
+`wardens-campaign-maps.md` §5). **Goal:** the game starts on the right map, from the mod.
+
+**Status: `built` (0.4.1). The main-menu level start is `verified`; the in-game `campaign next`
+switch is `built`, not run.**
+
+### What I did
+
+Game machine: Windows 10, .NET SDK 8.0.300, Timberborn 1.1.2.4 at `F:\Steam`. Decompiled
+`Timberborn.GameSceneLoading`, `SceneLoading`, `MainMenuSceneLoading`, `GameSaveRepositorySystemUI`,
+`Autosaving` and `MapRepositorySystem` with `ilspycmd`. Built main as it arrived, then rewrote the
+transition on what the decompile shows and built, deployed and launched again.
+
+| Command | Result line |
+|---|---|
+| `dotnet build wardens/src/Wardens.csproj -c Release -p:GameManagedDir=F:\…\Managed` on main `147e615` (0.3.7) | `0 Warnung(en)`, `0 Fehler` |
+| the same after the rewrite (0.4.1) | `0 Warnung(en)`, `0 Fehler` |
+| launch with `campaign.handoff.json` = `{"level":"01"}` | Player.log `FactionId: Wardens, MapFileReference: Name: Wardens 01 First Light, … GameMode: Order: 20` |
+| `uv run --project python --extra dev pytest -q .claude/skills/driving-iterations/scripts wardens/tools` | `116 passed in 6.78s` |
+| `python wardens/tools/mapsmith levels --verify` | `levels: consistent with WardensCampaign.cs` |
+| `python wardens/tools/check_cutscenes.py wardens/src` | `problems: none` |
+| `python wardens/tools/validate.py` | one problem, pre-existing on main: `level 02: Wardens 02 The Sump.timber exists but the table says shipped=false` |
+| `check_doc_drift.py` over the three mirrors | `problems: none` (all `UNMARKED`, WP5) |
+| `dotnet test wardens/test` | **not run** (SDK 8, tests target net10) |
+
+The full `[Wardens]` log of the run is in `wardens/playtest/PLAYTEST.md`, "Level start from the main menu".
+
+### Publish check
+
+Branch `feat/level-loader-verified`; `git ls-remote origin feat/level-loader-verified` ->
+`07f445936d5983614d352b462dd18a6e59735195` (code and docs; this entry is the next commit on it).
+
+### What I found
+
+1. **The cloud transition compiled and could never have worked** (read). *Symptom:* 0 errors on the
+   first build. *Source:* `ilspycmd Timberborn.GameSceneLoading.dll`: `NewGameConfiguration(string,
+   MapFileReference, GameModeSpec, string)`; 1.1 has no `NewGameMode`; `GameSceneLoader` has
+   `StartNewGame`, `StartNewGameInstantly`, `StartSaveGame*`, no main-menu method; `MapRepository`
+   has no `GetCustomMaps`/`GetUserMaps`; nothing registered `GameSceneLoader` with the locator. *Consequence:*
+   every `campaign next` would have written a handoff that the menu then also failed to start. *Remedy:*
+   the rewrite calls the read API directly (0.4.1).
+2. **Finding 5 of the previous entry is answered: injecting is safe** (read).
+   `GameSceneLoadingConfigurator`, `GameSaveRepositorySystemUIConfigurator` and
+   `MainMenuSceneLoadingConfigurator` are `[Context("Game")]` as well as MainMenu, `AutosavingConfigurator`
+   is Game; `ValidatingGameLoader` (the in-game Load dialog) takes a `GameSceneLoader`. The MCP server
+   came up after the rewrite, so `WardensConfigurator` resolved. *Remedy:* `WardensReflect.cs` and
+   `WardensServiceLocator.cs` deleted, as the locator's own header asked once the bindings were confirmed.
+3. **Starting a game from a MainMenu `Load()` is safe** (read, then seen). `SceneLoader.LoadSceneCoroutine`
+   waits while `_isLoading`, so the request queues behind the menu's own load.
+4. **The retired map never left** (seen). *Symptom:* `Wardens Wasteland.timber` still in the Maps folder.
+   *Source:* `RemoveRetired` ran only when `Installed > 0`. *Consequence:* a second near-identical map in
+   the list. *Remedy:* removed on every launch; the run logged `1 retired removed`.
+5. **Leaving a level can keep the old colony** (read). `Autosaver.CreateExitSave()` is what *Exit to main
+   menu* does; the new-game strategy calls it first. Not yet seen in a run.
+
+### Where the mod stands
+
+| Fact | Source |
+|---|---|
+| `{"level":"01"}` in `campaign.handoff.json` opens the game on level 01 as a Wardens new game | PLAYTEST.md, the run above |
+| `campaign action=next` (in a game) exit-saves and starts the level; not yet run | `WardensLevelTransition.cs` |
+| Level 02 still `shipped: false`, so `next` to 02 is refused by every strategy | `WardensCampaign.cs` `Levels`; `validate.py` |
+| The vanilla Mods dialog still needs one click at every launch | seen |
+
+### What you should do, in this order
+
+Disposition of the previous entry's items: game machine "build and run the transition" **done**
+(findings 1–3, §5 items 3 and 6 answered in `wardens-campaign-maps.md`); WP1, WP2, WP5, WP8 (cloud)
+**deferred**, untouched; WP3, WP4, WP6 (game) **still open**; level 02 chapter table **blocked** on WP4
+as recommended; "five bots or thirteen" **still open**.
+
+**Game machine:** in a level-01 game, call `campaign action=next level_id=01 force=true` through the MCP
+server and paste the reply and the `[Wardens] transition` lines into PLAYTEST.md; check an autosave
+appeared under `Saves/First Light/`. Then WP4, the level-01 proof run.
+
+**Cloud container:** WP1, WP2 as before.
+
+### How you know it is done
+
+The in-game `next` reply shows `started: true, strategy: new game` and the new map loads; PLAYTEST.md
+has its log lines.
+
+### Open questions I could not answer
+
+None new. The level-02 question of the previous entry stands.
+
+### What I deliberately did not do
+
+I did not run `campaign next` in the game the human had just started (it ends that colony). I did not
+flip level 02 to `shipped: true`. I did not keep the reflection strategies as a fallback: the API they
+guessed at is now read, and a second path that cannot work is noise in every log.
+
+---
+
 ## 2026-09-10, night: level 02 and the level transition (out of plan order)
 
 **Plan:** none — the author asked directly for map design and "the functionality to load a map from
