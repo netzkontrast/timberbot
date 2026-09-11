@@ -129,7 +129,12 @@ namespace Wardens
             try
             {
                 if (!File.Exists(Path)) return r;
-                var json = JObject.Parse(File.ReadAllText(Path));
+                // DateParseHandling.None: the timestamps stay the ISO strings they were written as,
+                // instead of coming back in the machine's culture format and being written that way.
+                JObject json;
+                using (var reader = new Newtonsoft.Json.JsonTextReader(new StringReader(File.ReadAllText(Path)))
+                       { DateParseHandling = Newtonsoft.Json.DateParseHandling.None })
+                    json = JObject.Load(reader);
                 r.Version = json.Value<int?>("version") ?? CurrentVersion;
                 r.Level = json.Value<string>("level") ?? "";
                 r.LastMap = json.Value<string>("lastMap") ?? "";
@@ -319,11 +324,14 @@ namespace Wardens
         public WardensDistrictExport FindDistrict(string id) =>
             string.IsNullOrEmpty(id) ? null : _record.Districts.Find(d => d.Id == id);
 
-        /// A new reading replaces the one with the same id (the latest visit wins). campaign.json has
-        /// one writer, this service, so the district sampler hands its readings over rather than
-        /// writing the file itself.
-        public void RecordDistricts(IEnumerable<WardensDistrictExport> readings, bool save)
+        /// This game's readings replace everything recorded under its settlement: the latest visit
+        /// wins, and a new game that reuses a settlement name (every start of a level is named after
+        /// the level) replaces the old game's districts instead of listing them twice. campaign.json
+        /// has one writer, this service, so the sampler hands its readings over.
+        public void RecordDistricts(string settlement, List<WardensDistrictExport> readings, bool save)
         {
+            var current = new HashSet<string>(readings.ConvertAll(r => r.Id));
+            _record.Districts.RemoveAll(d => d.Settlement == settlement && !current.Contains(d.Id));
             foreach (var reading in readings)
             {
                 int i = _record.Districts.FindIndex(d => d.Id == reading.Id);

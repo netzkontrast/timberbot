@@ -53,6 +53,10 @@ namespace Wardens
 
     public class WardensDistrictExports : ILoadableSingleton, IUpdatableSingleton, IUnloadableSingleton
     {
+        // DistrictResourceCounter is a TickableComponent: before its first tick every good reads 0, and
+        // a first sample taken then turns the starting stock into a phantom surplus (seen in play:
+        // Berries 129/day on a map where nobody made a berry).
+        private const float WarmupDays = 0.05f;
         private const float SampleEveryDays = 0.25f;
         private const float WindowDays = 3f;
         private const float MinSpanDays = 0.5f;      // less than half a day says nothing about a rate
@@ -79,6 +83,7 @@ namespace Wardens
         private readonly Dictionary<string, string> _names = new Dictionary<string, string>();
         private readonly Dictionary<string, Dictionary<string, float>> _imported = new Dictionary<string, Dictionary<string, float>>();
         private bool _enabled;
+        private float _firstSeenDay = -1f;
         private float _nextSampleDay = -1f;
         private int _lastPublishedDay = -1;
         private float _nextPoll;
@@ -128,7 +133,8 @@ namespace Wardens
             try
             {
                 float now = _dayNightCycle.PartialDayNumber;
-                if (now < _nextSampleDay) return;
+                if (_firstSeenDay < 0f) _firstSeenDay = now;
+                if (now < _firstSeenDay + WarmupDays || now < _nextSampleDay) return;
                 TakeSample(now);
                 _nextSampleDay = now + SampleEveryDays;
                 if ((int)now > _lastPublishedDay)
@@ -149,7 +155,8 @@ namespace Wardens
             if (!_enabled) return;
             try
             {
-                TakeSample(_dayNightCycle.PartialDayNumber);
+                float now = _dayNightCycle.PartialDayNumber;
+                if (_firstSeenDay >= 0f && now >= _firstSeenDay + WarmupDays) TakeSample(now);
             }
             catch (Exception ex)
             {
@@ -239,7 +246,7 @@ namespace Wardens
                 readings.Add(reading);
             }
             if (readings.Count == 0) return;
-            _campaign.RecordDistricts(readings, save);
+            _campaign.RecordDistricts(settlement, readings, save);
         }
     }
 
