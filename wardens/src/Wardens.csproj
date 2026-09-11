@@ -9,7 +9,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>Wardens</AssemblyName>
     <RootNamespace>Wardens</RootNamespace>
-    <Version>0.4.2</Version>
+    <Version>0.4.5</Version>
     <LangVersion>9.0</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
@@ -104,6 +104,13 @@
     <Reference Include="Timberborn.InventorySystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.InventorySystem.dll</HintPath></Reference>
     <Reference Include="Timberborn.LifeSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.LifeSystem.dll</HintPath></Reference>
     <Reference Include="Timberborn.Localization" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.Localization.dll</HintPath></Reference>
+    <!-- WardensGate.cs / WardensGateFragment.cs: the Gate's output inventory and hauling, its panel,
+         and the settlement name its district readings are keyed by. -->
+    <Reference Include="Timberborn.LocalizationSerialization" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.LocalizationSerialization.dll</HintPath></Reference>
+    <Reference Include="Timberborn.EntityPanelSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.EntityPanelSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.SettlementNameSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.SettlementNameSystem.dll</HintPath></Reference>
+    <Reference Include="Timberborn.SimpleOutputBuildings" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.SimpleOutputBuildings.dll</HintPath></Reference>
+    <Reference Include="Timberborn.SimpleOutputBuildingsUI" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.SimpleOutputBuildingsUI.dll</HintPath></Reference>
     <!-- WardensLevelTransition.cs: MainMenuSceneLoader.SaveAndOpenMainMenu() for the handoff fallback. -->
     <Reference Include="Timberborn.MainMenuSceneLoading" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.MainMenuSceneLoading.dll</HintPath></Reference>
     <Reference Include="Timberborn.MapIndexSystem" Publicize="true"><Private>false</Private><HintPath>$(GameManagedDir)\Timberborn.MapIndexSystem.dll</HintPath></Reference>

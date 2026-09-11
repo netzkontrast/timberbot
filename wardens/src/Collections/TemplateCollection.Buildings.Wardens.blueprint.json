@@ -21,6 +21,7 @@
       "Buildings/Storage/Rack/Rack.Wardens.blueprint",
       "Buildings/DistrictManagement/HaulingPost/HaulingPost.Wardens.blueprint",
       "Buildings/Wellbeing/Deck/Deck.Wardens.blueprint",
+      "Buildings/DistrictManagement/MapGate/MapGate.Wardens.blueprint",
       "Buildings/Metal/ScavengerFlag/ScavengerFlag.IronTeeth.blueprint"
     ]
   }
