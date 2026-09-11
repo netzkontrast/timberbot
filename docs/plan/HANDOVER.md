@@ -11,6 +11,40 @@ is and how each part works), `wardens/CHANGELOG.md` (what each version added), `
 
 ---
 
+## 2026-09-11: level tasks and the level-end card that starts level 02 (game machine)
+
+**Plan:** the author asked for clear tasks whose completion loads level 02, scouted over MCP; they chose
+eight tasks to the first beaver and a card whose Continue loads the next level. **Status:** `built`
+(0.4.22) and `verified` up to 7 of 8 tasks on the author's colony; the level-end card and the transition to
+level 02 not yet seen (the first beaver had not woken when this entry was written).
+
+### What I did
+
+`Levels/01.tasks.json`, `WardensLevelTasks.cs` (checks, save, completion, next level),
+`WardensTaskPanel.cs` (list and card), `check_level_tasks.py` with tests, MCP `campaign action=tasks`
+and frame fields, level 02 marked shipped, the save auto-loader fixed for `ExperimentalSaves`.
+
+| Command | Result line |
+|---|---|
+| `pytest wardens/tools .claude/skills` | `173 passed` |
+| `validate.py wardens/src` | `problems: none` |
+| `dotnet build … -c Release` (0.4.22) | `0 Warnung(en)`, `0 Fehler` |
+| Player.log, autoload | `[Timberbot] auto-loading: First Light - 2026-09-11 16h27m, Day 2-14.autosave` |
+| Player.log, tasks | `tasks: level 01, 8 task(s), 0 done` … `Reeds done (5/8)` … `Haul done (6/8)`, `Power done (7/8)` |
+
+### What you should do, in this order
+
+**Game machine:** when the first beaver wakes, the card appears: press Continue once and read Player.log
+for the transition (`transition: … new game`) and level 02 loading; note anything under `missing`.
+Then close the game and build once (0.4.23: the panel under the goods bar, two task texts with the game's
+building names). Still open from the entry below: a fresh level 01 with no `Can't validate` line, Skip.
+
+### Open questions I could not answer
+
+The colony went from 13 to 19 Wardens while the tasks ran, with no pod-born beaver; the source is not read.
+
+---
+
 ## 2026-09-11: Claude played level 01 — Wardens walk on one level, and the map lost entities on load (game machine)
 
 **Plan:** the author asked Claude to connect over MCP and playtest level 01 itself; the fixes follow the
