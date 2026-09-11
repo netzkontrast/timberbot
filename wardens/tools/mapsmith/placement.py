@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import math
 
-from .build import ON_FOOT, Entity, MapBuild, SpecError, polar_sample
+from .build import ON_FOOT, Entity, MapBuild, SpecError, cells_of, polar_sample
 from .grid import Mask
 
 
@@ -87,6 +87,9 @@ def place(b: MapBuild, rule: dict) -> list[Entity]:
                 mask = b.masks.get(mask_name)
                 if mask is not None and not mask.at(x, y):
                     continue
+                if any(b.occupied.at(cx, cy) for cx, cy in cells_of(template, x, y)
+                       if b.height.inside(cx, cy)):
+                    continue                     # a 3x3 source beside another one loses to it in the game
                 seen.add((x, y))
                 e = _entity(b, template, x, y, rule)
                 b.add(e, _footprint(rule))

@@ -247,7 +247,8 @@ written to tell you the fix:
 | `wanted 3 X, placed 0 — N candidate tiles were outside the map` | The `segment` starts before the path enters the map. Move it inland. |
 | `unknown anchor 'spring'` | The op that would register it runs later, or is spelled differently. Ops run top to bottom. |
 | `[error] ... floating — the ground top here is 9` | An entity's Z is not its column's surface. Almost always a hand-edited coordinate. |
-| `[error] ... buried 3 level(s) under the surface` | Only `UndergroundRuins` (and anything you list in `[checks] buried_ok`) may sit inside terrain. |
+| `[error] ... buried 3 level(s) under the surface; the game deletes it on load` | Nothing mapsmith places is an underground block — not even `UndergroundRuins`, a 5x5 surface object; level 01 lost all six on load. `[checks] buried_ok` is the escape hatch for a template that really is. |
+| `[error] BadwaterSource at …: its 3x3 footprint is not flat` / `overlaps` | A `BadwaterSource` is 3x3 (`StartingLocation` 3x3, `UndergroundRuins` 5x5; `SIZES` in `build.py`). Every block needs ground under it and no other entity; the game logs "Can't validate loaded BlockObject … Deleting it" and shows a Loading issues dialog. Give it a flat pool (`basin`) and room. |
 | `[error] StartingLocation ... pad is not flat` | The pad op ran before something that raised the ground back up, or `at` moved. |
 | `[error] 3 of 7 entities from 'near ruins' cannot be reached from the starting location, even with Stairs` | A cluster listed in `[checks] reachable_scatter` is cut off (water, or a cliff of two levels or more). Move it to the colony's side, or drop it from the list if being cut off is the point. |
 | `[error] 2 of 3 entities from 'first light' need Stairs` | A cluster listed in `[checks] on_foot_scatter` is off the start's level. Place it with `on_foot_from = "start"`. |

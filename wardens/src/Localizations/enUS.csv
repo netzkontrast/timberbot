@@ -203,7 +203,7 @@ Wardens.Cutscene.ColdBoot.Core,We were not built to live here. We were built so 
 Wardens.Cutscene.ColdBoot.Settle,Chapter 1: First Light. Keep the machines charged. Find metal.,Cold Boot cutscene caption
 Wardens.Cutscene.FirstLight.Restart,"SYSTEM RESTART. The uptime counter overflowed 3,000 days ago.",Level 01 opening caption (Cutscenes/FirstLight.json)
 Wardens.Cutscene.FirstLight.Archive,"Three badtides in the archive. The sensors logged every one, and nothing answered.",Level 01 opening caption (Cutscenes/FirstLight.json)
-Wardens.Cutscene.FirstLight.Head,Badwater rises at the north edge from three sources. It has not stopped.,Level 01 opening caption (Cutscenes/FirstLight.json)
+Wardens.Cutscene.FirstLight.Head,Badwater rises from a source at the north edge. It has not stopped.,Level 01 opening caption (Cutscenes/FirstLight.json)
 Wardens.Cutscene.FirstLight.River,It crosses the whole plateau and leaves at the south edge. The soil along it is poisoned.,Level 01 opening caption (Cutscenes/FirstLight.json)
 Wardens.Cutscene.FirstLight.Sump,"Below the Core, the Sump: badwater, 1.2 deep. The seep and the river keep it full.",Level 01 opening caption (Cutscenes/FirstLight.json)
 Wardens.Cutscene.FirstLight.Shore,"Its west shore steps down from the Core in terraces, two Stairs to the water. Room for a row of Sludge Pumps.",Level 01 opening caption (Cutscenes/FirstLight.json)

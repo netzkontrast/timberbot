@@ -13,7 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from .build import LAYERS
+from .build import LAYERS, SIZES, cells_of
 from .world import read_timber
 
 
@@ -205,7 +205,10 @@ def check_world(world: dict, meta: dict, names: set[str], opts: dict | None = No
     cells: dict[tuple[int, int], str] = {}
     starts: list[dict] = []
     templates: dict[str, int] = {}
-    buried_ok = set(opts.get("buried_ok", ["UndergroundRuins"]))
+    # Nothing mapsmith places is an underground block: UndergroundRuins's blocks say Underground false,
+    # and the game deleted every buried one on load (PLAYTEST.md, 2026-09-11).
+    buried_ok = set(opts.get("buried_ok", []))
+    covered: dict[tuple[int, int], str] = {}
 
     for e in entities:
         template = e.get("Template", "?")
@@ -229,10 +232,27 @@ def check_world(world: dict, meta: dict, names: set[str], opts: dict | None = No
             if not solid:
                 r.err(f"{template} at {x},{y},{z}: below the surface but not inside terrain")
             elif template not in buried_ok:
-                r.err(f"{template} at {x},{y},{z}: buried {ground - z} level(s) under the surface. "
-                      f"Only {', '.join(sorted(buried_ok))} may be; everything else stands on top "
-                      f"of its column.")
+                r.err(f"{template} at {x},{y},{z}: buried {ground - z} level(s) under the surface; "
+                      f"the game deletes it on load. Everything mapsmith places stands on top of its "
+                      f"column" + (f" (buried_ok: {', '.join(sorted(buried_ok))})" if buried_ok else "") + ".")
             continue
+        if template in SIZES:
+            sx, sy = SIZES[template]
+            footprint = cells_of(template, x, y)
+            if any(not (0 <= cx < size_x and 0 <= cy < size_y) for cx, cy in footprint):
+                r.err(f"{template} at {x},{y},{z}: its {sx}x{sy} footprint runs off the map")
+            else:
+                uneven = sorted({heights[cy * size_x + cx] for cx, cy in footprint} - {z})
+                if uneven:
+                    r.err(f"{template} at {x},{y},{z}: its {sx}x{sy} footprint is not flat at {z} "
+                          f"(ground at {uneven}); every block needs ground directly below, so the game "
+                          f"deletes it on load")
+                clash = next((covered[c] for c in footprint if c in covered), None)
+                if clash is not None:
+                    r.err(f"{template} at {x},{y},{z}: its {sx}x{sy} footprint overlaps {clash}; the "
+                          f"game keeps the first and deletes the other on load")
+                for c in footprint:
+                    covered.setdefault(c, f"{template} at {x},{y}")
         if solid:
             r.err(f"{template} at {x},{y},{z}: placed inside terrain")
         elif z != ground:
@@ -240,6 +260,12 @@ def check_world(world: dict, meta: dict, names: set[str], opts: dict | None = No
         if (x, y) in cells and template not in ("StartingLocation",):
             r.warn(f"{template} at {x},{y} shares a tile with {cells[(x, y)]}")
         cells[(x, y)] = template
+
+    for (x, y), template in cells.items():            # a one-tile entity under a bigger footprint
+        owner = covered.get((x, y))
+        if owner is not None and template not in SIZES:
+            r.err(f"{template} at {x},{y} stands inside the footprint of {owner}; the game deletes "
+                  f"one of them on load")
 
     if len(starts) != 1:
         r.err(f"{len(starts)} StartingLocation entities, expected exactly 1")

@@ -76,7 +76,15 @@ outside 0..1, a floor that is not the ground top).
   the game's own editor has `Orientation: Cw0` on ruins, sources and the starting location, and
   omits it on `Pine`, `Birch` and `BlueberryBush`.
 - `StartingLocation` needs an orientation, a flat pad, and clear air above it.
-- `UndergroundRuins` is the one template that legitimately sits *inside* terrain.
+- **Footprints are validated block by block at load.** `BlockObject.Coordinates` is the footprint's
+  lower corner; every block of `BadwaterSource` (3x3), `StartingLocation` (3x3) and `UndergroundRuins`
+  (5x5) needs ground directly below it (`MatterBelow: Ground`) and no other entity. One that fails is
+  deleted with "Can't validate loaded BlockObject … It's not backward compatible. Deleting it." in
+  Player.log and a Loading issues dialog (read: `BlockObject.AddToServiceAfterLoad`; seen on level 01,
+  2026-09-11, 0.4.18: two of three side-by-side sources and all six buried `UndergroundRuins`).
+- **Nothing is underground.** `UndergroundRuins`'s blocks say `Underground: false`: despite the name it
+  is a surface object, and burying it gets it deleted.
+- `WaterSource` is 1x1; `BadwaterSource` is 3x3. The asymmetry is the blueprints', not a typo.
 
 ## Template names: verified vs. guessed
 

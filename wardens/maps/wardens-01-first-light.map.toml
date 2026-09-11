@@ -121,11 +121,11 @@ max = 19
 
 # --- water ---------------------------------------------------------------------------------------
 
-[[place]]
-template = "BadwaterSource"
-along = "badwater"
-segment = [0.0, 0.04]              # the head of the river, at the north edge
-count = 3
+[[place]]                          # the head of the river, at the north edge. One source: a BadwaterSource
+template = "BadwaterSource"        # is 3x3, and the three this spec used to place side by side overlapped,
+along = "badwater"                 # so the game kept one and deleted two on every load. One is what every
+segment = [0.0, 0.04]              # playtest ran on, and what the water fill below is measured from.
+count = 1
 strength = 4.0
 orientation = "Cw0"
 
@@ -240,19 +240,6 @@ variants = ["A", "B", "C"]
 orientation = "Cw0"
 yield = { good = "ScrapMetal", amount_per_level = 15 }
 
-[[scatter]]
-name = "underground ruins"         # inside the plateau, for the mines of a later act
-template = "UndergroundRuins"
-around = "start"
-radius = [8, 28]
-count = 6
-spacing = 3
-height_range = [7, 12]
-buried = 3
-margin = 4
-away_from = { shore = 5.0 }
-orientation = "Cw0"
-
 # --- the only green ----------------------------------------------------------------------------------
 
 [[scatter]]
@@ -299,7 +286,7 @@ contamination = { from = "badwater", offset = 2.5, reach = 6.0 }
 
 [checks]
 require = ["StartingLocation", "BadwaterSource", "WaterSource"]
-require_at_least = { RuinColumnH1 = 3, BadwaterSource = 4 }
+require_at_least = { RuinColumnH1 = 3, BadwaterSource = 2 }
 min_reachable = 1500
 # Chapter 1 has to be playable with Stairs; the fields across the river are meant to need a bridge,
 # so they are deliberately absent from this list.

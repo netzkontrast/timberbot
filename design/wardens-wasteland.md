@@ -37,8 +37,8 @@ Every pillar of the Chapter 1 plan needs something from the ground:
 
 | Need | On the map |
 |---|---|
-| Scrap is the only building material | ruin clusters 8 to 13 tiles from the Core (small columns), two rich fields further out, six underground ruins for later mines |
-| Badwater is fuel and Data feedstock | three `BadwaterSource`s at the north edge feed a river that meanders across the map and leaves at the south edge; the Sump, a basin beside the start, fills from it (the Sludge Pump goes there) |
+| Scrap is the only building material | three small columns on the Core's own level (no Stairs), clusters 8 to 13 tiles out one or two levels down, two rich fields further out. The six buried underground ruins were deleted by the game on every load (a 5x5 surface object) and are no longer placed |
+| Badwater is fuel and Data feedstock | one `BadwaterSource` at the north edge (the spec placed three side by side; each is 3x3, so the game kept one) feeds a river that meanders across the map and leaves at the south edge; the Sump, a basin beside the start, fills from it and from its own seep (the Sludge Pump goes there) |
 | Poison is the plot | the river's contamination band covers the middle of the map; the plateau is ash |
 | "Trees only grow on irrigated, green ground. Find some. There is not much." | one clean `WaterSource` in a crater on a hill in the north-east, its overflow running north off the map; pines, birches and blueberries around it, lone birches in the far corners |
 | Dams tutorial ("the nearest river") | the badwater river |
@@ -86,7 +86,7 @@ properties the play above depends on, restated as assertions:
 | exactly 1 clean WaterSource, >= 20 tiles from any badwater source | "there is not much", and it has to stay clean |
 | >= 80 plants | the spring's grove, the only green |
 | 3-40% of tiles contaminated above 0.5 | poison is a band; a flood and a rumour are both wrong |
-| >= 4 UndergroundRuins | the mines of a later act |
+| ~~>= 4 UndergroundRuins~~ | dropped 2026-09-11: never survived a load; a later act places them on flat 5x5 ground |
 
 The seed (3000) and the size (96) stay. The heightfield itself changed once, on 2026-09-11 (the remake above,
 decided by the author: same name, new land); level 10 (*Home*) regenerates from the same spec, so the two stay

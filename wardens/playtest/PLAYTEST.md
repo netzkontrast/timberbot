@@ -208,9 +208,28 @@ Findings:
    passing one to the other points at the wrong place. Remedy (0.4.17): every `at` also carries
    `at.grid`. Not yet seen.
 6. **The Warden close-up has no Warden to show:** at scene time the Wardens are inside the Core.
-   Remedy (0.4.16): the shot looks at the Core's door from the south, where they come out. Not yet seen.
+   Remedy (0.4.16): the shot looks at the Core's door from the south, where they come out. Not yet
+   judged: on the 0.4.18 start the Loading issues dialog (finding 8) covered the frame's centre, and a
+   vanilla "Drought started" banner stayed up from the Ruins shot to the directive (probably held by the
+   modal dialog; look again once the dialog is gone).
 7. **`/api/placement/find` offered no Sludge Pump site on the Sump's west shelf**, only three in the
    channel; the author's pump at 32,47 (height 6, west) placed from the tool bar. Source: not read. Remedy: open.
+8. **Every load of the remade level 01 deleted two of its three river-head sources and all six
+   UndergroundRuins**, behind a Loading issues dialog (seen on the 0.4.18 start; the author's day-3 save
+   of the 0.4.9 land has the same two sources and no UndergroundRuins, so it is as old as the remake).
+   Player.log: `Can't validate loaded BlockObject BadwaterSource(Clone) at (34, 1, 4). It's not backward
+   compatible. Deleting it.` Source (read): `BlockObject.AddToServiceAfterLoad` deletes any block object
+   whose blocks do not validate; a `BadwaterSource` is 3x3 (the three were placed one tile apart) and
+   `UndergroundRuins` is a 5x5 surface object (`Underground: false`), which mapsmith buried three levels
+   deep. Consequence: a dialog over the opening, a river on one third of its designed source (every
+   playtest ran on one), and no underground ruins ever. Remedy (0.4.19 map): mapsmith knows the
+   footprints (`SIZES`), the checker refuses a footprint that is not flat, overlaps or is buried; level 01
+   places the one source it always had and no UndergroundRuins, and its Head caption no longer says three.
+
+Verified on the 0.4.18 start: `/api/tiles` reads `badwater: 1` on the Sump; `speed` answers
+`{"was":0,"speed":1,"applied":true}`; a frame's `at` carries `grid` (`{"x":19,"y":59,"z":6}` for the Stairs
+at 19,59,6); two flags by the pad's ruins (17,49 and 18,49) never showed "Nothing to do in range", and by
+day 1 at 87 % the ruin at 16,48 was gone and the one at 16,46 stood a level lower (H2 → H1).
 
 ## The remade level 01 and its opening (2026-09-11, 0.4.9–0.4.10, game machine)
 

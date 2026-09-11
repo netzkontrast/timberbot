@@ -11,6 +11,72 @@ is and how each part works), `wardens/CHANGELOG.md` (what each version added), `
 
 ---
 
+## 2026-09-11: Claude played level 01 — Wardens walk on one level, and the map lost entities on load (game machine)
+
+**Plan:** the author asked Claude to connect over MCP and playtest level 01 itself; the fixes follow the
+author's choice "ruins on the pad". **Status:** mapsmith and the maps `checked`; 0.4.18 `built` and
+`verified` for the walk fix, the tiles read, the speed tool and `at.grid`; the footprint fix `checked`,
+not yet built (the game was running).
+
+### What I did
+
+Played the scripted opening from the end of the cutscene: two Charging Posts for the 10 starting scrap,
+two Scavenger Flags, paths. Both flags said "Nothing to do in range" for two days; the colony sat at 0
+scrap with 11 of 13 Wardens at 0 Energy. Read why (the nav mesh joins a tile only to same-height
+neighbours), recovered with one Stairs, then fixed mapsmith's walk model and moved the opening's ruins
+onto the pad. Deployed 0.4.18, started fresh: the new flags worked with no Stairs. That start showed a
+Loading issues dialog: the game deletes two of the three river-head sources and all six UndergroundRuins
+on every load, since the remake. Read why (3x3 and 5x5 footprints) and fixed mapsmith and the specs.
+
+| Command | Result line |
+|---|---|
+| `pytest wardens/tools .claude/skills` | `158 passed` (6 new: on foot vs Stairs, `on_foot_scatter`, `on_foot_from`, the pad ruins, source spacing, footprint checks) |
+| `mapsmith check` on all three specs | `problems: none` each; level 01 walk: `first light … on foot`, `near ruins … 1-2 Stairs` |
+| `check_cutscenes.py wardens/src` | `problems: none` |
+| `dotnet build … -c Release` (0.4.18, game closed) | `0 Warnung(en)`, `0 Fehler` |
+| 0.4.18 start, `/api/tiles` Sump | `badwater: 1` (read 0 before) |
+| 0.4.18 start, `speed value=1` | `{"was":0,"speed":1,"applied":true}` |
+| 0.4.18 start, frame | `"at":{"x":19,"y":6,"z":59,"grid":{"x":19,"y":59,"z":6}}` |
+| 0.4.18 start, flags at 17,49 and 18,49 | no alert; ruin 16,48 gone and 16,46 H2 → H1 by day 1 at 87 % |
+| Player.log, 0.4.18 start | `Can't validate loaded BlockObject BadwaterSource(Clone) at (34, 1, 4) … Deleting it.` (and 35,1 and six UndergroundRuins) |
+
+### Publish check
+
+Branch `feat/first-light-opening`; `git ls-remote` after this entry's push is in the PR #22 head.
+
+### What I found
+
+The eight findings are in `wardens/playtest/PLAYTEST.md`, "Level 01 played by Claude over MCP". The two
+that change how maps are made: Wardens walk on one level (a Stairs per level; mapsmith assumed one level
+of climb), and big entities are validated block by block on load (a `BadwaterSource` is 3x3,
+`UndergroundRuins` a 5x5 surface object). Open: idle Wardens at 0 Energy by day 2.8, Wardens at 0 Energy
+still walking (the story says they stop), and `placement/find` missing the pump shelf.
+
+### What you should do, in this order
+
+Disposition of the previous entry: the Sump caption **done** (seen); Skip mid-opening **still open**
+(the author pressed Continue both times); the director's zoom pass **done** (the scale is 1.3^zoom * 32,
+no clamp; the Warden shot now looks at the Core's door, not yet judged). **Game machine:** close the game,
+build once (0.4.19 deploys the footprint fix and the Head caption), start a fresh level 01, and read
+Player.log for `Can't validate`: there must be none, and no Loading issues dialog. Then screenshot the
+Ruins and Warden shots. **Balance pass:** decide what 0 Energy means before tuning Posts.
+
+### How you know it is done
+
+A fresh level 01 opens with no dialog, the first flags work without Stairs, and Player.log has no
+`Can't validate` line.
+
+### Open questions I could not answer
+
+What the game does with a Warden at 0 Energy (the need specs and bot behaviours are not read).
+
+### What I deliberately did not do
+
+I did not restore the three river-head sources: one is what every playtest and the water fill ran on.
+I did not place UndergroundRuins on flat ground for a later act; that needs a flat-5x5 rule.
+
+---
+
 ## 2026-09-11: level 01 ships with its water (game machine)
 
 **Plan:** package 10 of `docs/plan/first-light-opening.md`; the author chose "pre-fill the map" for the

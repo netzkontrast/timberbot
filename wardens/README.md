@@ -208,8 +208,8 @@ Skip; the agent sees `cutscene.start` / `cutscene.end` in its frames and stays o
 ## The map
 
 `tools/gen_map.py` writes `Maps/Wardens 01 First Light.timber`, the wasteland the faction design asks for: a badwater
-river from three sources at the north edge meandering to the south edge, the Sump beside the Core for the
-Sludge Pump, ruin clusters in scavenging range, underground ruins for later mines, and one clean spring in the
+river from a source at the north edge meandering to the south edge, the Sump beside the Core for the
+Sludge Pump, three ruins on the Core's own level and clusters a Stairs or two down, and one clean spring in the
 north-east as the only green. The build deploys it into the mod folder and into `Documents/Timberborn/Maps`
 (override with `-p:MapsDir=...`), where the new-game screen lists it as `[Custom] Wardens 01 First Light`. Design,
 file format and the choices behind them: [`../design/wardens-wasteland.md`](../design/wardens-wasteland.md).

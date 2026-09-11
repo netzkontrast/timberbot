@@ -209,14 +209,20 @@ def test_away_from_an_unknown_name_raises(minimal):
         build(spec)
 
 
-def test_buried_entities_sit_inside_the_terrain(minimal):
+def test_buried_entities_sit_inside_the_terrain_and_the_checker_refuses_them(minimal):
+    """`buried` puts an entity inside the terrain, and the checker says the game deletes it: level 01's
+    six buried UndergroundRuins (a 5x5 surface object) were all deleted on load. `buried_ok` is the
+    escape hatch for a template whose blocks really are underground."""
     spec = deep_merge(minimal, {"scatter": [{"template": "UndergroundRuins", "around": [16, 16],
                                              "radius": 10, "count": 3, "buried": 3, "margin": 2}]})
     b = build(spec)
     ruins = [e for e in b.entities if e.template == "UndergroundRuins"]
     assert len(ruins) == 3
     assert all(e.z == b.h(e.x, e.y) - 3 for e in ruins)
-    assert report_for(spec, b).ok
+    report = report_for(spec, b)
+    assert any("deletes it on load" in str(p) for p in report.errors), report.summary()
+    allowed = deep_merge(spec, {"checks": {"buried_ok": ["UndergroundRuins"]}})
+    assert not any("buried" in str(p) for p in report_for(allowed, b).errors)
 
 
 def test_two_rivers_with_one_tag_must_be_named(minimal):
@@ -860,8 +866,49 @@ def test_first_light_spec_builds_and_passes_its_own_checks():
     report = report_for(spec, b)
     assert report.ok, report.summary()
     templates = {e.template for e in b.entities}
-    assert {"StartingLocation", "BadwaterSource", "WaterSource", "UndergroundRuins"} <= templates
+    assert {"StartingLocation", "BadwaterSource", "WaterSource"} <= templates
+    assert "UndergroundRuins" not in templates, "the game deleted every buried one; see SIZES"
     assert sum(1 for e in b.entities if e.template.startswith("RuinColumn")) >= 30
+
+
+# --- footprints: the game validates every block of a big entity ---
+
+def test_adjacent_badwater_sources_are_not_placed_on_top_of_each_other(minimal):
+    """A BadwaterSource is 3x3. Level 01 placed three side by side; the game kept one."""
+    spec = deep_merge(minimal, {
+        "terrain": [{"op": "base", "height": 6},
+                    {"op": "river", "points": [[16, -2], [16, 34]], "bed": 3, "width": 4.0, "tag": "badwater"},
+                    {"op": "pad", "at": [4, 4], "size": 8, "height": 6, "name": "start", "reserve": 2},
+                    {"op": "clamp", "min": 1, "max": 19}],
+        "place": [{"template": "BadwaterSource", "along": "badwater", "segment": [0.1, 0.5], "count": 2,
+                   "orientation": "Cw0"}]})
+    b = build(spec)
+    src = [(e.x, e.y) for e in b.entities if e.template == "BadwaterSource"]
+    assert len(src) == 2
+    (ax, ay), (bx, by) = src
+    assert abs(ax - bx) >= 3 or abs(ay - by) >= 3, src
+
+
+def _with_entity(world, template, x, y, z):
+    world = copy.deepcopy(world)
+    world["Entities"].append({"Id": f"t-{template}-{x}-{y}", "Template": template, "Components": {
+        "BlockObject": {"Coordinates": {"X": x, "Y": y, "Z": z}, "Orientation": "Cw0"}}})
+    return world
+
+
+def test_checker_catches_a_big_footprint_the_game_would_delete(minimal):
+    world, meta, _ = _good(minimal)
+    ground = 6
+    ok = check_world(_with_entity(world, "BadwaterSource", 24, 24, ground), meta, set(NAMES))
+    assert ok.ok, ok.summary()
+    both = _with_entity(_with_entity(world, "BadwaterSource", 24, 24, ground), "BadwaterSource", 25, 24, ground)
+    assert any("overlaps" in str(p) for p in check_world(both, meta, set(NAMES)).errors)
+    edge = _with_entity(world, "BadwaterSource", 30, 24, ground)
+    assert any("runs off the map" in str(p) for p in check_world(edge, meta, set(NAMES)).errors)
+    buried = _with_entity(world, "UndergroundRuins", 24, 24, ground - 3)
+    assert any("buried" in str(p) for p in check_world(buried, meta, set(NAMES)).errors)
+    under = _with_entity(_with_entity(world, "BadwaterSource", 24, 24, ground), "RuinColumnH1", 25, 25, ground)
+    assert any("inside the footprint" in str(p) for p in check_world(under, meta, set(NAMES)).errors)
 
 
 def test_first_light_opens_with_its_water():

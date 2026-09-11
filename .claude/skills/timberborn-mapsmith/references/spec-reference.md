@@ -176,7 +176,7 @@ unless `--strict`.
 | `on_foot_scatter` | Names of rules whose entities must stand on the start's level, joined to it by flat ground: reachable before the colony builds a single Stairs. The game joins a tile only to neighbours of the same height (`TerrainNavMeshUpdater`); level 01 softlocked when its opening scrap sat one level below the pad. |
 | `reachable` | Template prefixes that must have at least one instance reachable (Stairs allowed). Blunt when several rules share templates, which is the normal case for ruins. |
 | `reachable_fraction` | Warn below this fraction of a prefix's instances being reachable. Default 0.2. A proxy you have to hand-compute against how many clusters are cut off by design; prefer `reachable_scatter`. |
-| `buried_ok` | Templates allowed to sit inside terrain. Default `["UndergroundRuins"]`. |
+| `buried_ok` | Templates allowed to sit inside terrain. Default none: `UndergroundRuins` is a 5x5 surface object and the game deletes it when buried. |
 | `start_pad` / `start_anchor` / `headroom` | Pad geometry the checker assumes. Defaults 8 / 2 / 3. |
 | `max_step` | Levels crossed per step by the "with Stairs" flood fill (`min_reachable`, `reachable_scatter`, `reachable`). Default 1: one Stairs spans one level. On foot is always 0. |
 

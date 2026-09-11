@@ -41,6 +41,12 @@ verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first 
   Ruins and Shore captions follow the land; the Warden shot looks at the Core's door (the Wardens are inside
   it while the scene plays). `/api/tiles` reads the water's contamination (it read 0 everywhere; fixed
   upstream in `timberbot/src` and re-copied). Frame positions carry `at.grid`, the tile `point` takes.
+- Next build (0.4.19): **the map loads without a Loading issues dialog.** A `BadwaterSource` is 3x3 and
+  `UndergroundRuins` a 5x5 surface object; level 01 placed three sources side by side and buried six
+  UndergroundRuins, and the game deleted two sources and all six on every load since the remake. mapsmith
+  knows the footprints and refuses overlap, uneven ground and burying; level 01 ships the one source every
+  playtest ran on and no UndergroundRuins (level 02 and the prototype likewise). The Head caption no
+  longer says three sources.
 
 State: the opening `verified` on the game machine (0.4.10: it played by itself on a handoff start with the
 tutorial off, all 12 shots, screenshots in PLAYTEST.md); the 0.4.11 fixes deployed as 0.4.12.

@@ -20,6 +20,24 @@ NAMESPACE = uuid.UUID("6f1c2d3e-7a1b-4c5d-9e8f-0a1b2c3d4e5f")
 ON_FOOT = 0
 WITH_STAIRS = 1
 
+# Templates whose block is bigger than one tile, as (x, y) from their Coordinates (the blueprints'
+# BlockObjectSpec.Size). Every block needs ground directly below it (MatterBelow "Ground"), so the
+# footprint has to be flat at the entity's Z and must not overlap another entity; otherwise the game
+# logs "Can't validate loaded BlockObject ... Deleting it" and shows a Loading issues dialog. Level 01
+# lost two of its three adjacent river-head sources and every UndergroundRuins that way (PLAYTEST.md,
+# 2026-09-11). UndergroundRuins is a surface object despite its name: its blocks say Underground false.
+SIZES: dict[str, tuple[int, int]] = {
+    "BadwaterSource": (3, 3),
+    "UndergroundRuins": (5, 5),
+    "StartingLocation": (3, 3),
+}
+
+
+def cells_of(template: str, x: int, y: int) -> list[tuple[int, int]]:
+    """The tiles an entity's blocks cover, from its Coordinates (the footprint's lower corner)."""
+    sx, sy = SIZES.get(template, (1, 1))
+    return [(x + dx, y + dy) for dy in range(sy) for dx in range(sx)]
+
 
 @dataclass
 class Entity:
@@ -117,11 +135,11 @@ class MapBuild:
     def add(self, entity: Entity, footprint: int = 1) -> None:
         self.entities.append(entity)
         r = footprint - 1
-        for dy in range(-r, r + 1):
-            for dx in range(-r, r + 1):
-                x, y = entity.x + dx, entity.y + dy
-                if 0 <= x < self.size and 0 <= y < self.size:
-                    self.occupied.set(x, y)
+        cells = {(entity.x + dx, entity.y + dy) for dy in range(-r, r + 1) for dx in range(-r, r + 1)}
+        cells.update(cells_of(entity.template, entity.x, entity.y))
+        for x, y in cells:
+            if 0 <= x < self.size and 0 <= y < self.size:
+                self.occupied.set(x, y)
 
     def reserve(self, x0: int, y0: int, x1: int, y1: int) -> None:
         for y in range(max(0, y0), min(self.size, y1 + 1)):
