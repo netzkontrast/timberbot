@@ -4,6 +4,14 @@ The patch number moves with every local build (`tools/bump_version.py`, run by t
 version marks a milestone (`bump_version.py --minor`) and gets an entry here. Nothing below has been
 verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first run must answer.
 
+## 0.4.25: level 02 starts with water, and its first task is reachable
+
+- **Level 02 is pre-filled** (`[water] fill` in its spec). The river starts at surface 6.3 and the creek at
+  6.8, the levels the game settled at with no dams. The opening now flies over water instead of dry beds.
+- **Salvage asks for 20 scrap in stock, not 40.** At 40 the stock never filled while the colony was building.
+- Level 02 was played through on 0.4.24, all six tasks by day 7; the findings are in
+  `playtest/PLAYTEST.md`.
+
 ## 0.4.24: level 02 reworked, with its opening, its tasks and water-control buildings
 
 - **Level 02's river reaches the gorge.** Played over MCP, the first map was a lake: the creek, carved

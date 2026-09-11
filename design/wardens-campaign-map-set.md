@@ -84,8 +84,24 @@ and that contract is now machine-checked rather than asserted — `mapsmith chec
 
 The gorge is made by two spurs raised *after* the river carves, with `avoid` keeping them out of the
 channel: everywhere else the first dry tile beside the bed stands 2 above it, and at x 58-66 it stands
-5 to 9 above. That single number is the whole level. Still unverified: that the game loads it, and
-whether a 12-tile narrows reads as one obvious dam site to a player rather than to a checker.
+5 to 9 above. That single number is the whole level.
+
+**`verified` (2026-09-11, 0.4.24, game machine).** The first map was a lake. The creek, carved after the
+river, raised the river's bed into a sill at the confluence. On top of that, the river began off the west
+edge, so its source spilled there. Since 0.4.24 a later watercourse only lowers an earlier bed, and the river
+starts at its source. On the reworked map the river runs through the confluence and out east; the game
+settled the river at 6.5 → 6.1 and the creek at 6.9 → 6.7. Since 0.4.25 the map starts with that water in
+place. The level was played to its end through six tasks (`wardens/src/Levels/02.tasks.json`).
+
+What the play showed about the design (findings 3 and 4 in `wardens/playtest/PLAYTEST.md`, level 02
+played through):
+
+- **The one dam decision is not yet forced.** The level is won by building, not by holding water. The
+  Gorge task was ticked off with three one-block Levees at x 56, one tile west of the high banks. Keep it
+  clean passed on the creek as it runs, with no gates. Both checks count things. Neither measures the water
+  the design is about: the river backed up in the gorge, the creek held above the confluence.
+- **Still open:** whether a 12-tile narrows reads as one obvious dam site to a player. Nobody tried to dam
+  it there. Claude built at x 56, on the box's west edge.
 
 ### 03 — The Pods
 

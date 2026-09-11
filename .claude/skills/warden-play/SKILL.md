@@ -1,6 +1,6 @@
 ---
 name: warden-play
-description: The precompiled plan for playing a Wardens campaign level through the in-game MCP server (port 8090) — connect, boot, the frame loop, and the chapter-by-chapter act list for level 01 First Light. Use when asked to play, run, drive or test a Timberborn game as the Warden, or when the `wardens` MCP tools (frame, say, point, timberbot, campaign) are in scope.
+description: The precompiled plan for playing a Wardens campaign level through the in-game MCP server (port 8090) — connect, boot, the frame loop, and the chapter-by-chapter act list for level 01 First Light, and the task list for level 02 The Sump. Use when asked to play, run, drive or test a Timberborn game as the Warden, or when the `wardens` MCP tools (frame, say, point, timberbot, campaign) are in scope.
 ---
 
 # Playing a level as the Warden
@@ -86,6 +86,26 @@ On level completion the mod toasts, and the task panel becomes the level-end car
 chat and you call `campaign action=next` (see *Ending a level*), or they start it from the New Game screen.
 Before either, write the closing Ledger entry with `campaign action=record` — it is the only thing
 that survives the map change.
+
+## 2b. Level 02 — The Sump: the task list
+
+Map `Wardens 02 The Sump`, 96×96. A badwater river from a source at the west edge (5,45) out east;
+a clean creek from the spring (24,3) joining it at (39,44); one gorge with high banks at x 57–68,
+around (62,48). The Core stands on a pad at height 11 (46,28); the river and creek beds are at 5 and 6,
+so every site below needs Stairs. Ends when its six tasks are done (`Levels/02.tasks.json`). The acts
+below are the ones that finished it on 0.4.24 (`playtest/PLAYTEST.md`, level 02 played through).
+
+| Task | Checks | Your acts, in order | Watch |
+|---|---|---|---|
+| **Salvage** | 2 Scavenger Flags, 20 Scrap in stock | 1. Two Charging Posts beside the Core. 2. Flags by the three first wrecks on the Core's level (40,36), (52,39), (58,36). 3. Paths to the Core. | construction spends the scrap the stock check counts |
+| **Close the creek** | 2 Floodgates, Dams or Levees in box x 28–40, y 20–42 | 1. Stairs down to the creek (11 → 6). 2. Two Floodgates across it above the confluence, e.g. (38,42), (39,42). 3. **Raise them to 1.0** (`POST /api/building/floodgate {id, height}`): they are built lower than the creek's surface. | the path router puts Paths on the creek bed; keep the gate sites free |
+| **Keep it clean** | 40 clean water tiles in box x 24–40, y 8–42 | nothing: the creek already meets it | a badwater tile in the box |
+| **Drain the river** | 2 Sludge Pumps, 100 Badwater in stock | 1. Pumps on the river's north bank at z 7, e.g. (43,43), (46,44); `placement/find` offers none, place them by hand. 2. Four Sludge Tanks beside them, e.g. (49–52,44). | tanks full means the stock stops rising |
+| **Hold the gorge** | 3 Dams, Levees or Floodgates in box x 56–68, y 43–52 | Levees across the river, one tile at a time from the bank (each is reachable once the one beside it stands). Give them the same priority as the human's own work, or they wait behind it. | the river backs up behind them: the creek must be closed first |
+| **Second power** | a Badwater Cell making power | a Badwater Cell on the grid, fed from the tanks | supply against the Posts' 200 |
+
+Until level 03 ships, the level-end card shows `Wardens.Tasks.LastText` with no Continue button
+(`WardensTaskPanel.BuildCard`), and the colony plays on.
 
 ## 3. The daily routine
 
