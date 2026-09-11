@@ -11,6 +11,83 @@ is and how each part works), `wardens/CHANGELOG.md` (what each version added), `
 
 ---
 
+## 2026-09-11: the remade level 01 in the game, and its opening cutscene (game machine)
+
+**Plan:** `docs/plan/first-light-opening.md` (the author's goal: the new map starts with an extensive
+cutscene), after the level-01 remake of PR #21. **Status: the opening `verified` (0.4.10); two fixes from
+its first run `built` (0.4.11), deployed when the game next closes. The remade land `verified` for its
+boot and its day-1 Sump.**
+
+### What I did
+
+Game machine, Timberborn 1.1.2.4 at `F:\Steam`, two fresh level-01 starts by the handoff, the author's
+tutorial setting off. Read through the Wardens MCP server (`wardens_status`, `/api/tiles`, `cutscene
+status`, `frame`) and the log; screenshots of the opening every 4 s.
+
+| Command | Result line |
+|---|---|
+| `dotnet build … -c Release` (0.4.10, deployed with the game closed) | `0 Warnung(en)`, `0 Fehler` |
+| the same with `-p:ModDir=<scratch>` (0.4.11, the game running) | `0 Warnung(en)`, `0 Fehler` |
+| `uv run --project python --extra dev pytest wardens/tools .claude/skills -q` | `139 passed in 8.20s` |
+| `python wardens/tools/check_cutscenes.py wardens/src` | `cutscenes: 9 (…, FirstLight, …)`, `problems: none` |
+| `python wardens/tools/validate.py wardens/src` | only the known `level 02 … shipped=false` |
+| `python wardens/tools/gen_tutorial.py`, then `git diff enUS.csv` | only the 12 new rows and the Wake line |
+| Player.log, 0.4.10 start | `level triggers=True (… tutorial=False)`, `cutscene FirstLight: queued by level:01`, `start (trigger, 12 shots, 99 s)`, `finished at shot 12/12` |
+
+### Publish check
+
+Branch `feat/first-light-opening`, stacked on `feat/level-01-remake` (PR #21);
+`git ls-remote origin feat/first-light-opening` -> `4943574345af67b1e84846369fee58a6112c859d` (code and
+docs; this entry is the next commit on it).
+
+### What I found
+
+The six findings, each with symptom, source, consequence and remedy, are in `PLAYTEST.md`, "The remade
+level 01 and its opening". In short: captions with `args` printed `System.Object[]` in every scene that
+has them (fixed, 0.4.11); the river is dry while the opening shows it (the author's decision, below);
+`cutscene_played` ignored a level opening (fixed, 0.4.11); the badtide replays finish vanilla's
+first-badtide tutorial on day 1 (deferred, predates this work); the Warden close-up does not get closer
+(deferred to the next director pass); the speed once would not leave 0 (not found). Verified along the
+way: the 0.4.9 boot line (13 charged, 10 scrap), the land's heights against the spec, and the Sump at
+0.5 on every tile by day 1, 41 %.
+
+### Where the mod stands
+
+| Fact | Source |
+|---|---|
+| A new game on level 01 plays `FirstLight` instead of the Cold Boot, tutorial on or off | the log lines above |
+| `level:<Id>` is a trigger; the Cold Boot still plays on every other map | `WardensCutscenes.OnNewGameInitialized` |
+| `.claude/agents/cutscene-director.md` tunes scenes live over the MCP server | the file; the todo |
+| 0.4.11 is staged, not deployed; a watcher deploys it when Timberborn exits | this session |
+
+### What you should do, in this order
+
+Disposition of the previous entry's items: the in-game `campaign next` run **done** in the earlier Gate
+session (PLAYTEST.md); WP4, the level-01 proof run, **still open**; "five bots or thirteen" **moot** for the
+Wake card (it no longer states a count) and still open for the design.
+
+**Game machine:** if 0.4.11 did not deploy, close the game and run the build. Then start level 01 by the
+handoff and check the Core shot reads "The Core. 13 Wardens online, charged to full.", and press Skip once
+mid-scene: the game must stay paused and unlocked. Run the `cutscene-director` agent for its second pass
+(the Warden close-up's zoom limit), and settle the dry river as the author decides.
+
+### How you know it is done
+
+The Core caption shows the number; `wardens_status.cutscene_played` is true after the opening; the
+todo's state column has no open row but package 10.
+
+### Open questions I could not answer
+
+The dry river (package 10 of the todo), put to the author.
+
+### What I deliberately did not do
+
+I did not turn the author's tutorial setting on for campaign starts; it is theirs. I did not press
+Continue on the directive card or touch the game while the author played. I did not deploy 0.4.11 under
+the running game.
+
+---
+
 ## 2026-09-11: the level loader, compiled and seen in the game (game machine)
 
 **Plan:** the previous entry's game-machine list (build, run the transition, answer
