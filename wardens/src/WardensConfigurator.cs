@@ -30,8 +30,8 @@ namespace Wardens
             Bind<WardensCameraDirector>().AsSingleton();
             Bind<WardensPointer>().AsSingleton();
             Bind<WardensChat>().AsSingleton();
-            // Story chapters: toast, Uplink line and scene as the tutorial line advances (nothing is locked).
-            Bind<WardensChapterService>().AsSingleton();
+            // The bar's safety net: anything still science-priced is unlocked at load, and named.
+            Bind<WardensBar>().AsSingleton();
             // The campaign: which level this map is, what the run has completed, and the Ledger
             // that crosses maps (campaign.json). The maps themselves are installed at the main
             // menu by WardensMapInstaller (WardensMainMenuConfigurator.cs).
@@ -48,8 +48,9 @@ namespace Wardens
             Bind<WardensArchivedBadtides>().AsSingleton();
             Bind<WardensCutsceneOverlay>().AsSingleton();
             Bind<WardensCutscenes>().AsSingleton();
-            // The level's tasks (Levels/<id>.tasks.json), checked against the game whatever the tutorial
-            // setting, and their panel, which becomes the level-end card that starts the next level.
+            // The level's tasks (Levels/<id>.tasks.json), a graph checked against the game whatever the
+            // tutorial setting; each task's scene plays when it goes live (task:<level>.<Id>). Their panel
+            // becomes the level-end card that starts the next level.
             Bind<WardensLevelTasks>().AsSingleton();
             Bind<WardensTaskPanel>().AsSingleton();
             // The Warden's heartbeat: sensor frames per N game ticks for the MCP `frame` tool.

@@ -117,9 +117,12 @@ namespace Wardens
     public static class WardensCutsceneScript
     {
         public const string TriggerNewGame = "new_game";
-        public const string TriggerChapterPrefix = "chapter:";
         public const string TriggerTutorialPrefix = "tutorial:";
         public const string TriggerLevelPrefix = "level:";      // a new game on campaign level <Id>
+        public const string TriggerLevelCompletePrefix = "level_complete:";   // its last task done
+        public const string TriggerTaskPrefix = "task:";          // task:<level>.<Id> went live
+        public const string TriggerTaskDonePrefix = "task_done:"; // task_done:<level>.<Id>, it is done
+        public const string TriggersHelp = "new_game | level:<Id> | level_complete:<Id> | task:<level>.<Id> | task_done:<level>.<Id> | tutorial:<Id>";
         public const string WaitTime = "time";
         public const string WaitContinue = "continue";
         public const string WaitChoice = "choice";          // reported by the runner for a shot with choices
@@ -159,13 +162,14 @@ namespace Wardens
             return scene;
         }
 
-        /// new_game | level:<Id> | chapter:<Id> | tutorial:<Id>. Whether the id exists is the checker's job.
+        /// TriggersHelp. Whether the level, task or tutorial exists is the checker's job
+        /// (tools/check_cutscenes.py); the chapter table these once named is retired.
         public static void ValidateTrigger(string trigger)
         {
             if (trigger == TriggerNewGame) return;
-            foreach (var prefix in new[] { TriggerLevelPrefix, TriggerChapterPrefix, TriggerTutorialPrefix })
+            foreach (var prefix in new[] { TriggerLevelCompletePrefix, TriggerLevelPrefix, TriggerTaskDonePrefix, TriggerTaskPrefix, TriggerTutorialPrefix })
                 if (trigger.StartsWith(prefix, StringComparison.Ordinal) && trigger.Length > prefix.Length) return;
-            throw new FormatException($"scene.on: '{trigger}' (new_game | level:<Id> | chapter:<Id> | tutorial:<Id>)");
+            throw new FormatException($"scene.on: '{trigger}' ({TriggersHelp})");
         }
 
         /// day | cycle | cycle_day | bots | beavers | archive | science | good:<Id> | choice:<key> | mark:<name>.

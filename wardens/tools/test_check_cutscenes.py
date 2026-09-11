@@ -14,15 +14,6 @@ import check_cutscenes as cc
 
 SRC = Path(__file__).resolve().parents[1] / "src"
 
-CHAPTERS_CS = '''
-public static readonly WardensChapter[] Chapters =
-{
-    new WardensChapter("Badwater", "Wardens.Scrap",
-        new[] { "SludgePump.Wardens", "ReedBed.Wardens" }),   // comment with "quotes"
-    new WardensChapter("Signal", "Wardens.WorkingHours", new[] { "Cruncher.Wardens" }),
-};
-'''
-
 CAMPAIGN_CS = '''
 public static readonly WardensLevel[] Levels =
 {
@@ -41,7 +32,7 @@ LOC = [
 
 GOOD = {
     "id": "Scene",
-    "on": ["new_game", "level:01", "chapter:Badwater", "tutorial:Wardens.Scrap"],
+    "on": ["new_game", "level:01", "level_complete:01", "task:01.Charge", "task_done:01.Charge", "tutorial:Wardens.Scrap"],
     "pause": True,
     "leave_paused": False,
     "restore_camera": True,
@@ -96,8 +87,11 @@ def mod(tmp_path: Path) -> Path:
     (tmp_path / "Tutorials").mkdir()
     (tmp_path / "Tutorials" / "Tutorials.Wardens.Scrap.blueprint.json").write_text(
         json.dumps({"TutorialSpec": {"Id": "Wardens.Scrap", "Stages": []}}), encoding="utf-8")
-    (tmp_path / "WardensChapters.cs").write_text(CHAPTERS_CS, encoding="utf-8")
     (tmp_path / "WardensCampaign.cs").write_text(CAMPAIGN_CS, encoding="utf-8")
+    (tmp_path / "Levels").mkdir()
+    (tmp_path / "Levels" / "01.tasks.json").write_text(json.dumps({"level": "01", "tasks": [
+        {"id": "Charge", "title": "T", "text": "T", "checks": [{"type": "beavers"}]},
+        {"id": "Scavenge", "title": "T", "text": "T", "checks": [{"type": "beavers"}]}]}), encoding="utf-8")
     return tmp_path
 
 
@@ -106,14 +100,7 @@ def write(mod: Path, name: str, scene) -> None:
 
 
 def run(mod: Path) -> list[str]:
-    return cc.check(mod, chapters_cs=mod / "WardensChapters.cs", campaign_cs=mod / "WardensCampaign.cs")
-
-
-def test_read_chapters_parses_the_table(mod: Path) -> None:
-    assert cc.read_chapters(mod / "WardensChapters.cs") == [
-        ("Badwater", "Wardens.Scrap", ["SludgePump.Wardens", "ReedBed.Wardens"]),
-        ("Signal", "Wardens.WorkingHours", ["Cruncher.Wardens"]),
-    ]
+    return cc.check(mod, campaign_cs=mod / "WardensCampaign.cs")
 
 
 def test_name_tables_are_read_from_the_mod(mod: Path) -> None:
@@ -177,12 +164,16 @@ def test_id_is_required(mod: Path) -> None:
 
 
 @pytest.mark.parametrize("trigger, expected", [
-    ("chapter:Nope", "chapter unknown: 'Nope'"),
+    ("chapter:Badwater", "the chapter table is retired"),
     ("tutorial:Wardens.Nope", "tutorial unknown: 'Wardens.Nope'"),
     ("level:99", "level unknown: '99' (WardensCampaign.cs has 01, 02)"),
-    ("level:", "'level:' (new_game | level:<Id> | chapter:<Id> | tutorial:<Id>)"),
-    ("chapter:", "'chapter:' (new_game | level:<Id> | chapter:<Id> | tutorial:<Id>)"),
-    ("start", "'start' (new_game | level:<Id> | chapter:<Id> | tutorial:<Id>)"),
+    ("level_complete:99", "level unknown: '99'"),
+    ("level:", "'level:' (" + cc.TRIGGERS_HELP + ")"),
+    ("start", "'start' (" + cc.TRIGGERS_HELP + ")"),
+    ("task:01.Nope", "task unknown: 'Nope' (level 01 has Charge, Scavenge)"),
+    ("task_done:02.Salvage", "level '02' has no task file"),
+    ("task:01", "task:<level>.<task id>"),
+    ("task_done:.Charge", "task_done:<level>.<task id>"),
 ])
 def test_unknown_triggers(mod: Path, trigger: str, expected: str) -> None:
     scene = copy.deepcopy(GOOD)
@@ -393,3 +384,47 @@ def test_booleans_are_not_numbers(mod: Path) -> None:
     problems = run(mod)
     assert "Scene.json: shots[0].seconds: not a number >= 0" in problems
     assert "Scene.json: shots[0].camera[0].t: not a number >= 0" in problems
+
+
+def test_task_triggers_name_a_task_of_the_level(mod: Path) -> None:
+    """task: and task_done: are checked against Levels/<level>.tasks.json, the file the runner fires them from."""
+    for trigger in ("task:01.Charge", "task:01.Scavenge", "task_done:01.Scavenge", "level_complete:02"):
+        scene = copy.deepcopy(GOOD)
+        scene["on"] = [trigger]
+        write(mod, "Scene", scene)
+        assert run(mod) == [], trigger
+
+
+# --- the shipped scenes: short openings, one beat per task (the author's call, 2026-09-11) ----------
+
+def _shipped() -> list[dict]:
+    return [json.loads(p.read_text(encoding="utf-8-sig")) for p in sorted((SRC / "Cutscenes").glob("*.json"))]
+
+
+def test_shipped_level_openings_are_short() -> None:
+    """A level's opening shows the land once and hands over: at most five shots and 45 seconds.
+    What each task needs to see is its own scene (task:<level>.<Id>)."""
+    for d in _shipped():
+        if any(t.startswith("level:") for t in d.get("on", [])):
+            seconds = sum(s.get("seconds", 0) for s in d["shots"])
+            assert len(d["shots"]) <= 5 and seconds <= 45, (d["id"], len(d["shots"]), seconds)
+
+
+def test_shipped_task_scenes_are_beats() -> None:
+    """A task's scene is a beat, not a tour: at most two shots, 14 seconds, and it hands the camera back."""
+    for d in _shipped():
+        if any(t.startswith(("task:", "task_done:")) for t in d.get("on", [])):
+            seconds = sum(s.get("seconds", 0) for s in d["shots"])
+            assert len(d["shots"]) <= 2 and seconds <= 14, (d["id"], len(d["shots"]), seconds)
+            assert d.get("restore_camera") is True, d["id"]
+            assert not d.get("leave_paused", False), d["id"]
+
+
+def test_every_shipped_level_with_tasks_has_scenes_for_its_tasks() -> None:
+    """Every level with a task file opens with a level: scene, and at least half its tasks carry a beat."""
+    from check_level_tasks import read_tasks
+    scenes = _shipped()
+    for level, ids in read_tasks(SRC).items():
+        assert any(f"level:{level}" in d.get("on", []) for d in scenes), level
+        beats = {t.split(".", 1)[1] for d in scenes for t in d.get("on", []) if t.startswith(f"task:{level}.")}
+        assert len(beats) * 2 >= len(ids), (level, sorted(beats), ids)

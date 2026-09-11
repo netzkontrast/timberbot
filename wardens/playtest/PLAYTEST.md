@@ -42,10 +42,10 @@ echo '{ "level": "01" }' > ~/Documents/Timberborn/Mods/Wardens/campaign.handoff.
 
 | Tool | Thread | What |
 |---|---|---|
-| `wardens_status` | main | faction, speed, bots/beavers + avg Energy, tutorial + chapter state, pointers, camera, ready gate |
+| `wardens_status` | main | faction, speed, bots/beavers + avg Energy, tutorial state, `tasks` (current, live, done/total), `bar` (the load check), the campaign, pointers, camera, ready gate |
 | `tutorial` | main | `status`, or `next` to force the next stage of a tutorial id |
-| `chapter` | main | `status`: every story chapter with its tutorial, whether the story has reached it and the buildings it is about (nothing is locked; `unlocked_at_load` is empty when the data is right); `unlock` announces `chapter_id` now |
-| `frame` | listener | long-poll for the next sensor frame: every `every_ticks` game ticks or on an event (chat, day, building, chapter, birth, alert, selection); carries `attention` (where to look) |
+| `chapter` | main | **retired** (0.4.26): answers `retired: true`, `see: campaign action=tasks` and the bar check; kept one version for old playbooks |
+| `frame` | listener | long-poll for the next sensor frame: every `every_ticks` game ticks or on an event (chat, day, building, task live/done, level complete, birth, alert, selection); carries `task` and `attention` (where to look; one entry per live task) |
 | `manual` | listener | the Warden's playbook, `docs/WARDEN.md` from the mod folder |
 | `point` / `unpoint` | main | highlight + bobbing arrow + toast on a tile, optional camera pan |
 | `say` | main | message into the in-game WARDENS UPLINK panel (optional toast) |
@@ -98,15 +98,11 @@ wakes it every 60 game ticks or when something happens, and tells it where to lo
   Planter Rig, Stairs, Platform, Dam, Crate Rack, Hauler Dock,
   Observation Deck, Scavenger Flag, Path). Placing the Cruncher next to the Core with a Power Shaft
   between them should light its illuminator (Core outputs 150 hp).
-- Chapters (`wardens/README.md`, "How the chapters work"): on a new game **no building is padlocked
-  and none carries a science price** (the whole bar is buildable from the first frame, on every map);
-  `chapter status` shows `complete: []`, `next: Badwater`, `next_waits_for: Wardens.Scrap`, and
-  `unlocked_at_load: []` (a template listed there means a blueprint shipped with a science cost: the log
-  names it, `validate.py` names the file). Finishing the Scrap tutorial (or `tutorial next` through it)
-  must show the "Chapter 2: Badwater." toast within a second and put the same line in the chat panel;
-  `complete` becomes `["Badwater"]`. Reloading the save shows no toast and keeps `complete`. To replay a
-  later chapter's beat use `chapter unlock chapter_id=Signal`; starting with the tutorial off lists every
-  chapter as complete (the story cannot advance without it) and changes nothing on the bar.
+- The bar: on a new game **no building is padlocked and none carries a science price** (the whole bar
+  is buildable from the first frame, on every map); `wardens_status.bar` shows `unlocked_at_load: []`
+  (a template listed there means a blueprint shipped with a science cost: the log names it, `validate.py`
+  names the file). Player.log: `[Wardens] bar: checked, N tool buttons, 0 unlocked at load`. The story's
+  beats are the tasks' scenes now ("Checks for task scenes" below); there are no chapter toasts.
 - `python wardens/tools/validate.py` must print `problems: none` before every in-game test (it includes
   `check_cutscenes.py`, which also runs alone and without the game's files:
   `python wardens/tools/check_cutscenes.py wardens/src`).
@@ -188,6 +184,31 @@ Findings:
    against the Core's 150. Remedy: open, the balance pass.
 3. **Only four ruins were on the Core's level, 8–25 tiles away.** Remedy (0.4.24): a "first scrap" rule
    with `on_foot_from`, checked by `on_foot_scatter`.
+
+## Checks for task scenes (0.4.26+, iteration 05 WP1)
+
+- A fresh level 01 by the handoff (`{"level":"01"}`), tutorial on or off: `FirstLight` plays, **5 shots,
+  about 41 s** (`cutscene FirstLight: start (trigger, 5 shots, 41 s)`), and leaves the game paused.
+  Then, without a gap, `T01.Charge` (`queued by task:01.Charge`): one shot on the Core, the camera put
+  back where the opening left it, the game still paused. Player.log in order: `tasks: level 01, 8 task(s),
+  0 done, no saved state (a new game)`, `cutscene FirstLight: queued by level:01`, `tasks: Charge live`,
+  `cutscene T01.Charge: queued by task:01.Charge`. The `FirstLight` line must come before the `T01.Charge`
+  line (the tasks wait for `ShowPrimaryUIEvent`).
+- When Charge is done: the toast "Done: … Next: …", then `T01.Scavenge` (the pad's ruins). Sump done:
+  **two** tasks go live, Store and Reeds; the panel shows both in yellow with their checks, and only
+  `T01.Reeds` plays (Store has no scene). Haul goes live only when both are done.
+- The first beaver: `T01.Born` (her day, then the spring), then `L01.End` (two shots, the second waits
+  for Continue), then the panel's end card. No `LevelEnd` choice card: the panel's Continue is the only one.
+- Skip during a task scene: the game returns to the speed it had before the scene, unlocked.
+- Reload a save made mid-level: no scene plays (`tasks: level 01, 8 task(s), N done`, no `live` line for the
+  task that was live when saved). A save from before 0.4.26 whose last tasks are met: `reconciled N already
+  met, silently`, then at most one `live` line and its scene.
+- Level 02 by the handoff: `TheSump` 4 shots, about 34 s, then `T02.Salvage`. After Salvage, **Close the
+  creek** and **Drain the river** are live together (`T02.Creek` then `T02.Drain` queue back to back);
+  Hold the gorge waits for Keep it clean and Drain. The last task plays `L02.End`.
+- MCP: `campaign action=tasks` lists `after`, `live` and `scenes` per task; a frame's `task.live` names
+  the live tasks and `attention` has one `task:<Id>` entry each with the first check it misses; `chapter`
+  answers `retired: true`.
 
 ## Checks for level tasks (0.4.20+)
 

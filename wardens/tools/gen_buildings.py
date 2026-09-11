@@ -23,9 +23,10 @@ Produces
   Paths/SuspensionBridge2x1, 3x1, 4x1                           level 02 The Sump: water control and crossings
   NaturalResources/Crops/SludgeReed/SludgeReed                cattail re-spec: land crop, ignores contamination
   Goods/Good.Biomass, collections, faction wiring, recipes, loc rows, csproj glob
-Every building ships with ScienceCost 0: the whole bar is open from the first frame of every level
-(src/WardensChapters.cs keeps the chapters as story beats, nothing is locked); tools/validate.py fails
-on any other value. The "# chapter X" notes below say which story beat a building belongs to.
+Every building ships with ScienceCost 0: the whole bar is open from the first frame of every level;
+tools/validate.py fails on any other value. The "# chapter X" notes below say which beat of level 01's
+story a building first belongs to (the chapter table itself is retired: the beats hang on the level's
+tasks, src/Levels/<id>.tasks.json).
 Tutorials: tools/gen_tutorial.py, run after this script.
 """
 from __future__ import annotations
@@ -456,19 +457,6 @@ rows = [
     ("NaturalResource.SludgeReed.FlavorDescription", "Thrives on contamination. Harvested for Biomass.", ""),
     ("Good.Biomass.DisplayName", "Biomass", "Wardens fuel"),
     ("Good.Biomass.PluralDisplayName", "Biomass", "Wardens fuel, plural"),
-    # Chapter toasts (src/WardensChapters.cs): Wardens.Chapter.<Id>.Title / .Unlocked. The ".Unlocked"
-    # row is the chapter's opening line (its historical name); nothing is unlocked, the bar is open
-    # from the start, so the text names what the chapter is about instead of what became available.
-    ("Wardens.Chapter.Badwater.Title", "Chapter 2: Badwater.", "Story chapter title"),
-    ("Wardens.Chapter.Badwater.Unlocked", "Scrap in hand. Now the Sump: a Sludge Pump on the badwater, a Reed Bed on poisoned ground.", "Chapter toast"),
-    ("Wardens.Chapter.Signal.Title", "Chapter 3: Signal.", "Story chapter title"),
-    ("Wardens.Chapter.Signal.Unlocked", "Shifts are set. Now the Cruncher: power in, Science or Data Cores out.", "Chapter toast"),
-    ("Wardens.Chapter.Pods.Title", "Chapter 4: Pods.", "Story chapter title"),
-    ("Wardens.Chapter.Pods.Unlocked", "Stores are full. Now the Breeding Pod. Built for someone else.", "Chapter toast"),
-    ("Wardens.Chapter.Power.Title", "Chapter 5: Power.", "Story chapter title"),
-    ("Wardens.Chapter.Power.Unlocked", "The pods are waiting. Now the Badwater Cell and the Sludge Burner. Every hour of power is an hour of poison.", "Chapter toast"),
-    ("Wardens.Chapter.Green.Title", "Chapter 6: Green.", "Story chapter title"),
-    ("Wardens.Chapter.Green.Unlocked", "The first beaver is awake. Now the Advanced Breeding Pod, and the ground itself.", "Chapter toast"),
 ]
 loc = SRC / "Localizations/enUS.csv"
 existing = list(csv.reader(open(loc, encoding="utf-8", newline="")))

@@ -1,0 +1,64 @@
+{
+  "id": "T02.Gorge",
+  "on": [
+    "task:02.Gorge"
+  ],
+  "pause": true,
+  "leave_paused": false,
+  "restore_camera": true,
+  "letterbox": true,
+  "skippable": true,
+  "shots": [
+    {
+      "id": "gorge",
+      "seconds": 8,
+      "caption": "Wardens.Cutscene.T02.Gorge.Gorge",
+      "camera": [
+        {
+          "t": 3.5,
+          "anchor": "grid",
+          "x": 58,
+          "y": 48,
+          "z": 6,
+          "v": 55,
+          "zoom": 1.4,
+          "dh": 10
+        },
+        {
+          "t": 8,
+          "anchor": "grid",
+          "x": 62,
+          "y": 48,
+          "z": 6,
+          "v": 50,
+          "zoom": 1.2,
+          "dh": 45
+        }
+      ],
+      "highlight": {
+        "anchor": "grid",
+        "x": 62,
+        "y": 48,
+        "z": 5,
+        "seconds": 8
+      }
+    },
+    {
+      "id": "hold",
+      "seconds": 5,
+      "caption": "Wardens.Cutscene.T02.Gorge.Hold",
+      "camera": [
+        {
+          "t": 5,
+          "anchor": "grid",
+          "x": 62,
+          "y": 48,
+          "z": 6,
+          "v": 45,
+          "zoom": 1.0,
+          "dh": 70
+        }
+      ]
+    }
+  ]
+}

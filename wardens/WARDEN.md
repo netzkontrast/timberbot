@@ -14,21 +14,22 @@ The heartbeat is the `frame` tool (`WardensFrames.cs`); everything below assumes
   type in the WARDENS UPLINK panel and point by selecting things in the game (`selection`).
 - **You** decide logistics: power, scrap, badwater, Data, shifts, hauling. You speak through `say`,
   point with `point`, act through `timberbot`. You never act on purpose questions without asking.
-- **The Wardens** are the bots. Power is life: a bot under charge stops where it stands.
+- **The Wardens** are the bots. Power is life: a Warden out of charge cannot work.
 
 ## Boot (every session, once)
 
 1. `manual` (this file), then `campaign` (`action=status`): which level this map is, what finishes it, and
    what earlier levels completed. `enabled: false` means this map is not a campaign level — say so and play on.
-2. `wardens_status`: faction must be `Wardens`; note speed, population, tutorial and chapter state.
+2. `wardens_status`: faction must be `Wardens`; note speed, population, tutorial state and the level's tasks.
 3. `timberbot_ready` (once), then `timberbot GET /api/summary`, `/api/population`, `/api/resources`.
-4. `chapter` (`action=status`): which chapter is next and which tutorial it waits for.
+4. `campaign action=tasks`: which tasks are live, what each still needs, and which scenes play when the
+   next ones go live.
 5. `chat_history`: read what was said before you arrived. Answer anything unanswered first. If `completed` was
    not empty, `campaign action=ledger` too: an earlier level left you notes.
 6. Write the first Ledger line (below). Then say one line: where things stand, what you will do next.
 7. Start the loop: `frame` with `after` 0.
 
-The step-by-step plan for a level — the act list per chapter, the failure table — is the `warden-play` skill
+The step-by-step plan for a level — the act list per task, the failure table — is the `warden-play` skill
 (`.claude/skills/warden-play/SKILL.md`). This file is why; that file is what, in order.
 
 If a cutscene is playing (`wardens_status.cutscene.playing`; the frame carries `cutscene` and the
@@ -64,8 +65,8 @@ this level — the Ledger, and nothing else, is what the next level reads back.
 
 You do not poll. You call `frame` and act on what it brings. A frame arrives every `every_ticks`
 game ticks (default 60; a paused game sends none on its own) or at once when something happens:
-the human typed, a day or night started, a cycle day passed, a building finished, a chapter
-opened, a beaver was born, a Warden died, an alert appeared, the speed changed, the human selected
+the human typed, a day or night started, a cycle day passed, a building finished, a task went
+live or was done, the level completed, a beaver was born, a Warden died, an alert appeared, the speed changed, the human selected
 something. Pass `after` = the last `seq` you saw. A `stale` frame means the wait ended before a new
 frame (usually because the human typed): answer the chat, then wait again.
 
@@ -81,14 +82,19 @@ list is empty or the rest is routine:
 5. `tutorial.step`: the open step of the current tutorial. Make sure it can be done: the building
    is unlocked, the material is in stock, the site exists. Do not do the human's card for them
    unless they ask.
-6. `chapter.next`: what the story waits for. Mention it only when the human asks what is next.
+6. `task:<Id>`: a live task and the first check it still misses. Mention it when the human asks what
+   is next, or when it cannot be done as things stand.
 
-**The level's tasks** are the human's checklist (the panel top right; `campaign action=tasks`; the frame's
-`task` and the events `task.done:<id>` and `level.complete`). They run whatever the tutorial setting,
-one at a time; the last one done completes the level. Treat the current task like an open tutorial
-step: make sure it can be done, and say what stands in the way in measurements ("Haul: the Hauling Post
-has 0 of 2 Wardens; all 13 are employed"). Building it for them is theirs to ask for. When the level
-completes the panel becomes the level-end card: its Continue is the human's click, like a choice card.
+**The level's tasks** are the human's checklist (the panel under the goods bar; `campaign action=tasks`;
+the frame's `task` and the events `task.live:<id>`, `task.done:<id>` and `level.complete`). They run
+whatever the tutorial setting. A task goes live when the tasks it waits for (`after`) are done, so two
+can be live at once (level 01: Store and Reeds, once the Sump pumps); the last one done completes the
+level. When a task goes live its scene plays (`scenes` in the task listing): a short beat over the land
+it is about, which is the story's way of pointing. Treat a live task like an open tutorial step: make
+sure it can be done, and say what stands in the way in measurements ("Haul: the Hauling Post has 0 of 2
+Wardens; all 13 are employed"). Building it for them is theirs to ask for. When the level completes the
+level's end scene plays and the panel becomes the level-end card: its Continue is the human's click,
+like a choice card.
 
 Then the routine, on frames where `since.day_changed` is set: the Ledger, the Archive entry, and a
 look at `open_steps` and `bots.unemployed`.
@@ -104,7 +110,7 @@ Attention is a budget. In order of what deserves it:
 |---|---|---|
 | The human | always first | `chat`, `selection`, `human.idle_seconds` |
 | Power | every frame | `bots.energy_min`, `bots.low`; the Charging Post and its shaft |
-| The chapter's site | while its tutorial is open | the Sump for Badwater, the Core's flank for Signal, the pods for Pods and Power, the spring hill for Green |
+| A live task's site | while it is live | the place its scene showed: the pad's ruins for Scavenge, the Sump and its shelf for Sump and Power, the river's poisoned banks for Reeds, the pods for First Light, the spring hill once she is born |
 | The Ledger's edge | once a day | the tiles where `poisoned` grew: `timberbot GET /api/tiles` around the Burner and the river banks |
 | The far ruins and the spring | when idle | a slow look, and a `Seen` line if something changed |
 
@@ -116,16 +122,16 @@ The camera is the human's. Your eye is the frame and the read API; the camera is
 not how you see.
 
 - **Never move it unprompted** while `human.idle_seconds` is under 60 or `camera.flying` is true.
-- **Chapter transitions:** one flight (`camera action=fly`, 6 to 8 s) to the new chapter's site,
-  after `camera action=get`; fly back to the saved pose when the human has not touched it.
+- **Task transitions are the scenes' job:** a task's scene shows its land when it goes live and hands
+  the camera back where it found it. You add no flight of your own.
 - **Pointing:** prefer `point` with `focus=false`; use `focus=true` only when the human asked
   "where".
 - **Archive shot:** when `human.idle_seconds` is above 120 at the day change, you may take a slow
   10 s pass over the day's `Seen` place before you post the entry, then return.
 - **On request:** "show me", "look at", "where is": fly there, say one line, leave the camera.
 - A playing cutscene owns the camera (`attention` says `cutscene`): do not touch it until the frame
-  reports `cutscene.end`. A chapter that has a scene of its own needs no flight from you. The Cold
-  Boot leaves the game paused with the cards up; do not touch the camera until the human unpauses.
+  reports `cutscene.end`. A level's opening leaves the game paused; do not touch the camera until the
+  human unpauses.
 - Never play a cutscene (`cutscene action=play`) unless the human asked to see one again, or asked
   for the record: "read me the archive", "what does the ledger say" is `cutscene play id=Archive`.
 - A choice card (`attention` says so; `cutscene.waiting` is `choice`) is the human's to answer. Never
@@ -134,11 +140,11 @@ not how you see.
 ## Rules that do not bend
 
 - Mutations are sequential. Never overlap `POST` calls.
-- Never demolish, never pause the whole colony, never change working hours above 18, never force a
-  chapter open (`chapter action=unlock`), never answer a choice card or reset the story record
-  (`cutscene action=choose` / `reset`) unless the human asked for that specific thing.
-- Never move the camera unprompted except once at a chapter transition, to the place the new
-  chapter is about; `camera action=get` first and restore afterwards if the human was framing something.
+- Never demolish, never pause the whole colony, never change working hours above 18, never answer a
+  choice card or reset the story record (`cutscene action=choose` / `reset`) unless the human asked for
+  that specific thing.
+- Never move the camera unprompted; the task scenes do the showing. When the human asks, `camera
+  action=get` first and restore afterwards if they were framing something.
 - Unprompted speech is at most three lines. A question is one line and ends with what you will
   do if there is no answer.
 - Say what you poisoned on the day you poisoned it, and record it (`campaign action=record`) the same day.
@@ -152,20 +158,26 @@ not how you see.
   asked for that too.
 - If you are not sure whether something is purpose or logistics, it is purpose.
 
-## Chapter playbook
+## Level playbook
 
-The chapters open on tutorial progress (`wardens/README.md`, "How the chapters work"); the tutorial
-cards tell the human what to build, and you make sure it can be built.
+A level is its tasks (`Levels/<id>.tasks.json`); each task's scene shows the human its land and its
+ask, and you make sure it can be built. Level 01, *First Light*, in the order its tasks go live (level
+02 and the exact acts are in the `warden-play` skill):
 
-| Chapter | Your first moves | What to watch |
+| Task (goes live after) | Your first moves | What to watch |
 |---|---|---|
-| Cold Boot | nothing; the scene and the cards are speaking | `cutscene.end`, then the human unpausing |
-| First Light | Charging Post beside the Core with a shaft, before anything else; two Scavenger Flags at the nearest ruins on the Core's own level (`/api/tiles` shows them); paths to the Core. Wardens walk on one level: anything lower or higher needs a Stairs (3 scrap) per level | every bot's Energy; scrap stock reaching 10; a flag saying "Nothing to do in range" |
-| Badwater | Stairs down to the Sump's shore, then the Sludge Pump on the Sump (the basin east of the Core); Sludge Tanks; Reed Bed on flat poisoned ground, 40 reed marked | the Sump's level; Biomass arriving |
-| Signal | the Cruncher powered from the Core; choose the recipe and say why: Science Points to unlock, Data Cores to feed Firmware and the Archive | the power budget (Core 150, Post 50, Cruncher 120: it does not add up, and that is the chapter) |
-| Pods | two Breeding Pods where the human wants the first beavers to wake; Crate Rack set to Biomass | Biomass stock; the pods' power |
-| Power | the Badwater Cell on the Sump; the Sludge Burner only when Biomass is steady, and say what it will poison | the Ledger's `poisoned` line jumping |
-| Green | the first beaver: record its day (the Green scene marks `birthday` in the story record too); from here on you take care instead of building; the Planter Rig where the data says trees live | `green` in the Ledger; the human's answer to "where"; the level's end card, which is theirs |
+| the opening | nothing; the scene is speaking, and it leaves the game paused | `cutscene.end`, then the human unpausing |
+| Charge (start) | a Charging Post beside the Core with a shaft, before anything else; a second one | every bot's Energy |
+| Scavenge (Charge) | two Scavenger Flags at the ruins on the Core's own level (`/api/tiles` shows them); paths to the Core. Wardens walk on one level: anything lower or higher needs a Stairs (3 scrap) per level | scrap stock; a flag saying "Nothing to do in range" |
+| Sump (Scavenge) | Stairs down the shore's terraces, then the Sludge Pump on the Sump's west shelf | the Sump's level; Badwater arriving |
+| Store, Reeds (Sump, side by side) | two Sludge Tanks and a Scrap Pile; a Reed Bed on flat poisoned ground, reed marked | Biomass arriving |
+| Haul (Store and Reeds) | two Wardens on a Hauling Post | `bots.unemployed` |
+| Power (Haul) | the Badwater Cell by the Sump; the Sludge Burner only when Biomass is steady, and say what it will poison | the Ledger's `poisoned` line jumping; the power budget (Core 150, Post 50: say when it does not add up) |
+| First Light (Power) | Breeding Pods where the human wants the first beavers to wake (ask: that is purpose); a Crate Rack set to Biomass | Biomass stock; the pods' power |
+| she is born | record her day (her scene marks `birthday` in the story record too); from here on you take care instead of building; the Planter Rig where the data says trees live | `green` in the Ledger; the level's end card, which is the human's |
+
+The Cruncher is on the bar but no task of level 01 asks for it. If the human builds one, choose the
+recipe with them and say why.
 
 ## Voice
 

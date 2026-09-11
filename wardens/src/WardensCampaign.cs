@@ -1,7 +1,7 @@
 // WardensCampaign.cs. Which level is this, and what does the campaign remember?
 //
 // design/wardens-campaign-maps.md §3 and §4. Timberborn has no campaign, scenario or objective
-// system: "level" is our word. A level is a map plus the chapter line that runs on it, and because
+// system: "level" is our word. A level is a map plus the tasks that run on it, and because
 // every map is a new save, everything the campaign remembers across levels has to live outside the
 // save. That file is campaign.json, next to settings.json in the mod folder.
 //
@@ -10,9 +10,10 @@
 //      MapFileReference.Name and is persisted with the save), so the level table is keyed by map
 //      name. A map that is not in the table means "not a campaign level" and this service goes
 //      quiet: a Wardens game on someone else's map is a perfectly good game.
-//   2. When is it done? Each level names the tutorial whose completion ends it (level 01: the first
-//      pod-born beaver, Wardens.MoreBeavers). TutorialService keeps the finished ids and persists
-//      them with the save, so this service polls that set exactly as WardensChapterService does.
+//   2. When is it done? When its tasks are (Levels/<id>.tasks.json, WardensLevelTasks.cs), with the
+//      vanilla tutorial on or off. Level 01 also names the tutorial whose completion ends it (the
+//      first pod-born beaver, Wardens.MoreBeavers); TutorialService keeps the finished ids and
+//      persists them with the save, so this service polls that set twice a second.
 //   3. What crosses over? campaign.json: the levels completed, the current level, and the Ledger
 //      the Warden appends to (WARDEN.md, "The Ledger"). Goods do not cross over; vanilla starts a
 //      new map empty and NewGameMode only covers food and water.
@@ -239,6 +240,8 @@ namespace Wardens
         public WardensLevel Level => _level;
         public bool Enabled => _enabled;
         public bool Completed => _completed;
+        /// campaign.json already lists the level as complete (an earlier session won it).
+        public bool RecordedComplete(string levelId) => _record.IsCompleted(levelId);
         public WardensCampaignRecord Record => _record;
 
         public static WardensLevel ByMapName(string mapName)
@@ -286,7 +289,7 @@ namespace Wardens
         }
 
         // Completion is announced once per session, and never on the reconcile that happens when a
-        // save from after the ending tutorial is reloaded (that is old news, like the chapters).
+        // save from after the ending tutorial is reloaded (that is old news).
         public void UpdateSingleton()
         {
             if (!_enabled || _completed) return;

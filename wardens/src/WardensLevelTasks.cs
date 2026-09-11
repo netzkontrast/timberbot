@@ -3,14 +3,29 @@
 // Timberborn has no objective system, and the Wardens' tutorial line advances only when the player
 // clicks the vanilla card's Continue, which the game hides when the player has the tutorial turned off
 // (TutorialPanels.TutorialIsOn; a level ending on a tutorial then never ends). So a level's tasks live
-// here: Levels/<id>.tasks.json in the mod folder, checked every half second, one at a time in order,
-// whatever the tutorial setting. A done task stays done (saved with the game). When the last one is
-// done the level is complete: the campaign records it, and the task panel (WardensTaskPanel.cs) turns
-// into the level-end card whose Continue starts the next level (WardensLevelTransition.cs).
+// here: Levels/<id>.tasks.json in the mod folder, checked every half second whatever the tutorial
+// setting. A done task stays done (saved with the game). When the last one is done the level is
+// complete: the campaign records it, and the task panel (WardensTaskPanel.cs) turns into the
+// level-end card whose Continue starts the next level (WardensLevelTransition.cs).
 //
 //   { "level": "01",
-//     "tasks": [ { "id": "Charge", "title": "<loc key>", "text": "<loc key>",
+//     "tasks": [ { "id": "Charge", "title": "<loc key>", "text": "<loc key>", "after": ["Scavenge"],
 //                  "checks": [ { "type": "powered", "template": "ChargingPost.Wardens", "count": 2 } ] } ] }
+//
+// The tasks are a graph. A task is live when every task in its `after` is done (without `after`: the
+// task before it in the file, so a plain list still runs in order); several can be live at once and
+// each is checked. The story rides on it: the moment a task goes live the cutscene runner plays the
+// scenes bound to task:<level>.<Id>, and when it is done those bound to task_done:<level>.<Id>; the
+// last one done plays level_complete:<level>. A task scene is a beat about that task's land and ask,
+// which is what replaced the long opening tours and the tutorial-bound chapter table (retired in
+// iteration 05: with the tutorial off, which is how the author plays, the chapters never fired).
+//
+// Two rules keep the scenes honest. The first poll waits for ShowPrimaryUIEvent, the last step of
+// GameInitializer on a new game and a load alike: a new game posts NewGameInitializedEvent (which
+// queues the level's opening) a few frames into play, and a task scene queued before it would play
+// first. And the first poll reconciles silently: tasks a loaded colony already meets tick through with
+// no toast and no scene; a task live when the game was saved plays nothing again; only a task that
+// goes live from here on plays its scene. A new game has no saved state, so its first live tasks do.
 //
 // Check types: built (finished buildings of a template), powered (finished, on a network with a
 // generator), generating (a generator actually making power), workers (Wardens assigned to finished
@@ -42,6 +57,7 @@ using Timberborn.QuickNotificationSystem;
 using Timberborn.ResourceCountingSystem;
 using Timberborn.SingletonSystem;
 using Timberborn.TutorialSteps;
+using Timberborn.UILayoutSystem;
 using Timberborn.WaterSystem;
 using Timberborn.WorkSystem;
 using Timberborn.WorldPersistence;
@@ -65,6 +81,7 @@ namespace Wardens
         public string Id = "";
         public string Title = "";      // loc key
         public string Text = "";       // loc key
+        public readonly List<string> After = new List<string>();   // live once these are done
         public readonly List<LevelTaskCheck> Checks = new List<LevelTaskCheck>();
     }
 
@@ -72,11 +89,16 @@ namespace Wardens
     {
         public const string FolderName = "Levels";
         public static readonly string[] Types = { "built", "powered", "generating", "workers", "stock", "beavers", "built_in", "clean_water" };
+        public const string TriggerTaskPrefix = WardensCutsceneScript.TriggerTaskPrefix;
+        public const string TriggerTaskDonePrefix = WardensCutsceneScript.TriggerTaskDonePrefix;
+        public const string TriggerLevelCompletePrefix = WardensCutsceneScript.TriggerLevelCompletePrefix;
 
         public static string PathFor(string levelId) => System.IO.Path.Combine(
             System.IO.Path.GetDirectoryName(WardensSettings.Path) ?? "", FolderName, levelId + ".tasks.json");
 
-        /// Parses one file; every problem goes to `errors` and the task or check is skipped.
+        /// Parses one file; every problem goes to `errors` and the task or check is skipped. An `after`
+        /// id that names no task is dropped with an error (tools/check_level_tasks.py also catches
+        /// cycles, which the runtime does not look for: a task on a cycle simply never goes live).
         public static List<LevelTask> Parse(JObject json, List<string> errors)
         {
             var tasks = new List<LevelTask>();
@@ -86,6 +108,7 @@ namespace Wardens
                 return tasks;
             }
             var ids = new HashSet<string>();
+            string previous = null;
             foreach (var token in list)
             {
                 if (!(token is JObject o)) { errors.Add("a task is not an object"); continue; }
@@ -96,6 +119,13 @@ namespace Wardens
                     Text = o.Value<string>("text") ?? "",
                 };
                 if (task.Id == "" || !ids.Add(task.Id)) { errors.Add($"task id '{task.Id}' missing or repeated"); continue; }
+                if (o["after"] is JArray after)
+                {
+                    foreach (var t in after)
+                        if (t.Type == JTokenType.String && (string)t != task.Id) task.After.Add((string)t);
+                }
+                else if (previous != null) task.After.Add(previous);
+                previous = task.Id;
                 if (o["checks"] is JArray checks)
                 {
                     foreach (var c in checks)
@@ -129,6 +159,15 @@ namespace Wardens
                 if (task.Checks.Count == 0) { errors.Add($"{task.Id}: no checks, it could never be done"); continue; }
                 tasks.Add(task);
             }
+            var kept = new HashSet<string>();
+            foreach (var task in tasks) kept.Add(task.Id);
+            foreach (var task in tasks)
+                task.After.RemoveAll(id =>
+                {
+                    if (kept.Contains(id)) return false;
+                    errors.Add($"{task.Id}: after names '{id}', which is not a task of this level; ignored");
+                    return true;
+                });
             return tasks;
         }
     }
@@ -136,11 +175,16 @@ namespace Wardens
     public class WardensLevelTasks : ILoadableSingleton, IUpdatableSingleton, ISaveableSingleton
     {
         private const float PollSeconds = 0.5f;
+        // If ShowPrimaryUIEvent never arrives (another mod replaced the start, a game update renamed
+        // it), start polling anyway after this long: a level that never completes is worse than a
+        // task scene that plays before the opening.
+        private const float StartTimeoutSeconds = 20f;
         private static readonly SingletonKey Key = new SingletonKey("WardensLevelTasks");
         private static readonly PropertyKey<string> LevelKey = new PropertyKey<string>("Level");
         private static readonly ListKey<string> DoneKey = new ListKey<string>("Done");
 
         private readonly ISingletonLoader _singletonLoader;
+        private readonly EventBus _eventBus;
         private readonly WardensCampaignService _campaign;
         private readonly WardensLevelTransitionService _transition;
         private readonly WardensCutscenes _cutscenes;
@@ -156,14 +200,17 @@ namespace Wardens
 
         private readonly List<LevelTask> _tasks = new List<LevelTask>();
         private readonly HashSet<string> _done = new HashSet<string>();
+        private readonly HashSet<string> _liveSeen = new HashSet<string>();   // live tasks whose scene has had its turn
         private readonly Dictionary<string, string> _names = new Dictionary<string, string>();
         private string _levelId = "";
         private bool _complete;
         private bool _announced;        // this session saw the level complete (not a reload of an old win)
-        private bool _nextAfterScene;   // the LevelEnd card said continue; start once the scene is over
+        private bool _started;          // ShowPrimaryUIEvent seen: the game's own start is over
+        private bool _reconciled;       // the first poll (silent) is behind us
+        private float _loadedAt;
         private float _nextPoll;
 
-        public WardensLevelTasks(ISingletonLoader singletonLoader, WardensCampaignService campaign,
+        public WardensLevelTasks(ISingletonLoader singletonLoader, EventBus eventBus, WardensCampaignService campaign,
             WardensLevelTransitionService transition, WardensCutscenes cutscenes, WardensChat chat,
             QuickNotificationService notifications, ILoc loc, BuiltBuildingService built,
             BuildingService buildings, DistrictCenterRegistry districts, PopulationService population,
@@ -172,6 +219,7 @@ namespace Wardens
             _waterMap = waterMap;
             _mapIndex = mapIndex;
             _singletonLoader = singletonLoader;
+            _eventBus = eventBus;
             _campaign = campaign;
             _transition = transition;
             _cutscenes = cutscenes;
@@ -184,6 +232,8 @@ namespace Wardens
             _population = population;
         }
 
+        /// A task went live (its `after` done), after the silent first poll. Its scene is queued.
+        public event Action<LevelTask> TaskLive;
         public event Action<LevelTask> TaskDone;
         public event Action LevelComplete;
 
@@ -196,18 +246,39 @@ namespace Wardens
         public bool IsDone(LevelTask task) => _done.Contains(task.Id);
         public int DoneCount => _done.Count;
 
+        /// Not done, and every task it waits for is.
+        public bool IsLive(LevelTask task)
+        {
+            if (_done.Contains(task.Id)) return false;
+            foreach (var id in task.After) if (!_done.Contains(id)) return false;
+            return true;
+        }
+
+        /// The live tasks, in file order.
+        public List<LevelTask> Live
+        {
+            get
+            {
+                var live = new List<LevelTask>();
+                foreach (var task in _tasks) if (IsLive(task)) live.Add(task);
+                return live;
+            }
+        }
+
+        /// The first live task in file order: what the panel's header and a one-line summary name.
         public LevelTask Current
         {
             get
             {
-                foreach (var task in _tasks) if (!_done.Contains(task.Id)) return task;
+                foreach (var task in _tasks) if (IsLive(task)) return task;
                 return null;
             }
         }
 
         public void Load()
         {
-            _cutscenes.Chose += OnChose;
+            _eventBus.Register(this);
+            _loadedAt = Time.unscaledTime;
             if (!_campaign.Enabled || _campaign.Level == null) return;
             _levelId = _campaign.Level.Id;
             var path = LevelTaskFile.PathFor(_levelId);
@@ -227,12 +298,21 @@ namespace Wardens
                 Debug.LogWarning($"[Wardens] tasks {_levelId}: {path}: {ex.Message}");
                 _tasks.Clear();
             }
-            if (_singletonLoader.TryGetSingleton(Key, out var loader) && loader.Has(LevelKey) && loader.Get(LevelKey) == _levelId && loader.Has(DoneKey))
+            bool saved = _singletonLoader.TryGetSingleton(Key, out var loader) && loader.Has(LevelKey) && loader.Get(LevelKey) == _levelId;
+            if (saved && loader.Has(DoneKey))
                 foreach (var id in loader.Get(DoneKey)) _done.Add(id);
-            _complete = _tasks.Count > 0 && _done.Count >= _tasks.Count && Current == null;
+            // What was live when the game was saved has had its scene: a reload does not replay it.
+            if (saved)
+                foreach (var task in Live) _liveSeen.Add(task.Id);
+            _complete = _tasks.Count > 0 && _done.Count >= _tasks.Count;
             if (_complete) _campaign.CompleteByTasks(announce: false);
-            Debug.Log($"[Wardens] tasks: level {_levelId}, {_tasks.Count} task(s), {_done.Count} done{(_complete ? ", level complete" : "")}");
+            Debug.Log($"[Wardens] tasks: level {_levelId}, {_tasks.Count} task(s), {_done.Count} done" +
+                      $"{(_complete ? ", level complete" : "")}{(saved ? "" : ", no saved state (a new game)")}");
         }
+
+        // GameInitializer's last step, on a new game and a load alike (Timberborn.GameStartup).
+        [OnEvent]
+        public void OnShowPrimaryUI(ShowPrimaryUIEvent e) => _started = true;
 
         public void Save(ISingletonSaver singletonSaver)
         {
@@ -244,28 +324,49 @@ namespace Wardens
 
         public void UpdateSingleton()
         {
-            if (_nextAfterScene && !_cutscenes.Playing)
+            if (_tasks.Count == 0 || _complete) return;
+            if (!_started)
             {
-                _nextAfterScene = false;
-                StartNextLevel();
-                return;
+                if (Time.unscaledTime - _loadedAt < StartTimeoutSeconds) return;
+                _started = true;
+                Debug.LogWarning($"[Wardens] tasks: no ShowPrimaryUIEvent within {StartTimeoutSeconds:0} s; polling anyway");
             }
-            if (_tasks.Count == 0 || _complete || Time.unscaledTime < _nextPoll) return;
+            if (Time.unscaledTime < _nextPoll) return;
             _nextPoll = Time.unscaledTime + PollSeconds;
+            bool announce = _reconciled;
+            _reconciled = true;
             try
             {
-                // One task at a time, in order; a colony that already did the next ones ticks through.
-                for (var task = Current; task != null && Achieved(task); task = Current)
+                // Every live task is checked; one that is done can make others live, which are checked
+                // in the same poll, so a colony that already did the next ones ticks through.
+                int quiet = 0;
+                for (bool progress = true; progress;)
                 {
-                    _done.Add(task.Id);
-                    var next = Current;
-                    string line = _loc.T("Wardens.Tasks.Done", _loc.T(task.Title)) +
-                                  (next != null ? " " + _loc.T("Wardens.Tasks.Next", _loc.T(next.Title)) : "");
-                    Debug.Log($"[Wardens] tasks: {task.Id} done ({_done.Count}/{_tasks.Count})");
-                    Say(line, toast: true);
-                    TaskDone?.Invoke(task);
+                    progress = false;
+                    foreach (var task in Live)
+                    {
+                        if (!Achieved(task)) continue;
+                        _done.Add(task.Id);
+                        progress = true;
+                        Debug.Log($"[Wardens] tasks: {task.Id} done ({_done.Count}/{_tasks.Count}){(announce ? "" : ", reconciled")}");
+                        if (!announce) { quiet++; continue; }
+                        var next = Current;
+                        string line = _loc.T("Wardens.Tasks.Done", _loc.T(task.Title)) +
+                                      (next != null ? " " + _loc.T("Wardens.Tasks.Next", _loc.T(next.Title)) : "");
+                        Say(line, toast: true);
+                        Safe(() => TaskDone?.Invoke(task), "task done handlers");
+                        _cutscenes.TriggerStory(LevelTaskFile.TriggerTaskDonePrefix + _levelId + "." + task.Id);
+                    }
                 }
-                if (Current == null) Finish();
+                if (quiet > 0) Debug.Log($"[Wardens] tasks: reconciled {quiet} already met, silently");
+                foreach (var task in Live)
+                {
+                    if (!_liveSeen.Add(task.Id)) continue;
+                    Debug.Log($"[Wardens] tasks: {task.Id} live");
+                    Safe(() => TaskLive?.Invoke(task), "task live handlers");
+                    _cutscenes.TriggerStory(LevelTaskFile.TriggerTaskPrefix + _levelId + "." + task.Id);
+                }
+                if (_done.Count >= _tasks.Count) Finish();
             }
             catch (Exception ex)
             {
@@ -273,13 +374,24 @@ namespace Wardens
             }
         }
 
+        // The level is won in this session: by play, or at load by a colony that met the last task
+        // while no save recorded it. campaign.json knowing the win already makes it old news (no toast,
+        // no end scene), whichever way the tasks got here.
         private void Finish()
         {
             _complete = true;
             _announced = true;
+            bool oldNews = _campaign.RecordedComplete(_levelId);
             _campaign.CompleteByTasks(announce: true);
-            Debug.Log($"[Wardens] tasks: level {_levelId} complete");
-            LevelComplete?.Invoke();
+            Debug.Log($"[Wardens] tasks: level {_levelId} complete{(oldNews ? " (already in campaign.json)" : "")}");
+            Safe(() => LevelComplete?.Invoke(), "level complete handlers");
+            if (!oldNews) _cutscenes.TriggerStory(LevelTaskFile.TriggerLevelCompletePrefix + _levelId);
+        }
+
+        private static void Safe(Action action, string what)
+        {
+            try { action(); }
+            catch (Exception ex) { Debug.LogWarning($"[Wardens] tasks {what}: {ex.Message}"); }
         }
 
         /// Ends this colony (exit-saved) and starts the next level. Main thread only (a UI click, a
@@ -293,13 +405,6 @@ namespace Wardens
             var result = _transition.Start(next, new CampaignMode());
             if (!result.Started) Say(result.Message, toast: true);
             return result;
-        }
-
-        // The LevelEnd scene's own card (it plays when the tutorial line reaches the Green chapter):
-        // its Continue starts the next level too, once the scene has let go of the game.
-        private void OnChose(string key, string id)
-        {
-            if (key == "LevelEnd.end" && id == "continue" && _campaign.Completed) _nextAfterScene = true;
         }
 
         // ---- checks -----------------------------------------------------------------------------
@@ -396,6 +501,16 @@ namespace Wardens
             return n;
         }
 
+        /// "Close the creek: Floodgate in the creek 1/2": the task's title and its first unmet check,
+        /// for the frame's `attention`.
+        public string NextStep(LevelTask task)
+        {
+            string title = _loc.T(task.Title);
+            foreach (var check in task.Checks)
+                if (Have(check) < check.Count) return title + ": " + Describe(check);
+            return title + ": met, ticks on the next poll";
+        }
+
         /// "Charging Post powered: 1/2", in the player's language.
         public string Describe(LevelTaskCheck check)
         {
@@ -445,13 +560,17 @@ namespace Wardens
         }
 
         /// The frame's `task`: where the level stands, without the per-check detail State() carries.
+        /// `current` is the first live task; `live` all of them (at most two by the data's rule).
         public JObject Summary()
         {
             var current = Current;
+            var live = new JArray();
+            foreach (var task in Live) live.Add(new JObject { ["id"] = task.Id, ["title"] = _loc.T(task.Title) });
             return new JObject
             {
                 ["current"] = current?.Id,
                 ["title"] = current == null ? null : _loc.T(current.Title),
+                ["live"] = live,
                 ["done"] = _done.Count,
                 ["total"] = _tasks.Count,
                 ["complete"] = _complete,
@@ -479,8 +598,12 @@ namespace Wardens
                     ["id"] = task.Id,
                     ["title"] = _loc.T(task.Title),
                     ["text"] = _loc.T(task.Text),
+                    ["after"] = new JArray(task.After.ToArray()),
                     ["done"] = _done.Contains(task.Id),
+                    ["live"] = IsLive(task),
                     ["current"] = current == task,
+                    ["scenes"] = new JArray(_cutscenes.ScenesFor(LevelTaskFile.TriggerTaskPrefix + _levelId + "." + task.Id).ToArray()),
+                    ["done_scenes"] = new JArray(_cutscenes.ScenesFor(LevelTaskFile.TriggerTaskDonePrefix + _levelId + "." + task.Id).ToArray()),
                     ["checks"] = checks,
                 });
             }
@@ -491,6 +614,7 @@ namespace Wardens
                 ["done"] = _done.Count,
                 ["total"] = _tasks.Count,
                 ["current"] = current?.Id,
+                ["live"] = new JArray(Live.ConvertAll(t => t.Id).ToArray()),
                 ["complete"] = _complete,
                 ["tasks"] = tasks,
             };

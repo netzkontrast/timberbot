@@ -158,6 +158,15 @@ Wardens, the directive.
 - Modify: `wardens/tools/check_level_tasks.py` (+tests), `check_cutscenes.py` (+tests), `validate.py` (the chapter rules go)
 - Modify: the five documents; `design/wardens-cutscenes.md` (trigger table), `wardens/README.md`, `CHANGELOG.md`
 
+> **As built (2026-09-11, 0.4.26):** one deviation from the sketch below. A task file carries only
+> `after`; there are no `scene` / `done_scene` fields, because the scene's own `on` (`task:01.Sump`) already
+> binds it and two places naming the same link is one too many (`campaign action=tasks` lists each task's
+> `scenes` from the triggers). `unlocks` is left to WP2, which is the package that has a use for it. And
+> the first poll waits for `ShowPrimaryUIEvent`: `GameInitializer` posts `NewGameInitializedEvent` a few
+> frames into play (read in the 1.1.2.4 decompile), so a task scene could otherwise queue ahead of the
+> opening. `LevelEnd.json`'s choice card is retired; `L01.End` is the end scene and the panel's Continue
+> the only one.
+
 **The task file, extended** (unknown fields were already ignored, so old files stay valid):
 
 ```json

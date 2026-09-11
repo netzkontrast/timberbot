@@ -24,11 +24,12 @@ The mod is one DLL plus data, and it does four jobs:
 3. **An in-game MCP server** (`src/Wardens*.cs`): Model Context Protocol over HTTP on
    127.0.0.1:8090 so Claude Code connects straight into the running game (`.mcp.json` in
    the repo root). Tools: chat with the player, point at tiles, camera flights and cutscenes, tutorial
-   and chapter state, a tick-driven `frame` heartbeat that says where to look, the playbook
+   state and the level's tasks, a tick-driven `frame` heartbeat that says where to look, the playbook
    (`WARDEN.md`, via `manual`), and a passthrough to the whole Timberbot API. How the Warden
    plays: [`../design/wardens-play.md`](../design/wardens-play.md).
-4. **The story and the land**: chapters that mark the tutorial line's beats while the whole building
-   bar is open from the first frame (`WardensChapters.cs`, "How the chapters work" below), cutscenes played from scene files
+4. **The story and the land**: each level's tasks, a graph whose every step carries its own short
+   scene, while the whole building bar is open from the first frame ("How the tasks and their scenes
+   work" below), cutscenes played from scene files
    (`WardensCutscenes.cs`, `Cutscenes/*.json`, "How cutscenes work" below) and the shipped wasteland
    map (`Maps/Wardens 01 First Light.timber`, "The map" below).
 
@@ -46,8 +47,10 @@ src/
   WardensPoweredStep.cs              PoweredBuildingStepSpec: "Power: X" with our own shaft buttons
   WardensPopulationStep.cs           BeaversStepSpec: "Beavers: (n/m)" for the first pod-born beaver
   WardensTriggers.cs                 MissingDam / PlatformBuilt / IdleWardens triggers (optional tutorials)
-  WardensChapters.cs                 story chapters: toast, Uplink line and scene as the tutorial line advances (nothing locked)
-  WardensCutscenes.cs                cutscene runner + triggers (new game, chapter opened, tutorial finished)
+  WardensLevelTasks.cs               the level's tasks (Levels/<id>.tasks.json), a graph; fires each task's scene
+  WardensTaskPanel.cs                the tasks on screen, and the level-end card
+  WardensBar.cs                      the bar's safety net: anything still science-priced is unlocked at load, and named
+  WardensCutscenes.cs                cutscene runner + triggers (new game, level opening, task live / done, level complete, tutorial finished)
   WardensCutsceneScript.cs           the scene format (Cutscenes/*.json) and its parser
   WardensCutsceneOverlay.cs          letterbox, caption, step dots, Skip / Continue
   Cutscenes/ColdBoot.json            the Cold Boot: three shots around the Core, one archived badtide each (design/wardens-ui/ColdBoot.dc.html)
@@ -98,49 +101,49 @@ in. `tools/bump_version.py --minor` marks a milestone; [`CHANGELOG.md`](CHANGELO
 - `tools/validate.py` resolves every name the game looks up at load (collection blueprints, tutorial
   templates/goods/plantables, loc keys, planter groups) against the deployed mod + vanilla; run it
   after every generator change.
-- Finishing a tutorial lands its id in `TutorialService`'s finished set (saved with the game); the chapter
-  service below polls that set.
+- Finishing a tutorial lands its id in `TutorialService`'s finished set (saved with the game); level 01's
+  campaign row ends on `Wardens.MoreBeavers` too, beside its tasks.
 
-## How the chapters work
+## How the tasks and their scenes work
 
 Every building the faction ships is buildable from the first frame of every level: the blueprints
 carry `ScienceCost: 0` (`tools/gen_buildings.py`), the bar shows no padlock and no science price, and
-`tools/validate.py` fails on any other value in the faction's collections. `WardensChapters.cs` keeps
-the chapters as story beats over the tutorial line: when a chapter's tutorial is finished the service
-posts a toast plus a line in the chat panel (`Wardens.Chapter.<Id>.Title` / `.Unlocked` in
-`Localizations/enUS.csv`; the second row keeps the name it had when the chapters were a gate) and
-raises `ChapterOpened`, which plays the chapter's cutscene.
+`tools/validate.py` fails on any other value in the faction's collections. A safety net
+(`WardensBar.cs`) unlocks anything still science-priced at load and names it in the log and in
+`wardens_status.bar.unlocked_at_load`, empty when the data is right.
 
-| Chapter | Opens when | What it is about |
-|---|---|---|
-| 1 First Light | new game | Path, Scavenger Flag, Power Shaft, Charging Post, Scrap Pile |
-| 2 Badwater | `Wardens.Scrap` finished | Sludge Pump, Reed Bed, Sludge Tank, Crate Rack |
-| 3 Signal | `Wardens.WorkingHours` finished | The Cruncher |
-| 4 Pods | `Wardens.Storage` finished | Breeding Pod |
-| 5 Power | `Wardens.Housing` finished | Badwater Cell, Sludge Burner |
-| 6 Green | `Wardens.MoreBeavers` finished | Advanced Breeding Pod |
+A level's story is its tasks (`Levels/<id>.tasks.json`, `WardensLevelTasks.cs`): what the player is
+asked to do, checked against the game twice a second with the tutorial on or off. They are a graph: a
+task goes live when every task in its `after` is done (without `after`, the one before it in the
+file), so two can run side by side (level 01: Store and Reeds once the Sump pumps; at most two, which
+`check_level_tasks.py` enforces). Each task that has land to show carries a scene of one or two shots,
+bound by its trigger rather than listed in the task file:
 
-Each chapter opens right before the tutorial that asks for its buildings starts (the tutorial line's
-`RequiredTutorialIds` chain guarantees the order); the buildings were on the bar all along, so a player
-who knows the game can build ahead of the story. Planter Rig, Stairs and Platform are free too (they
-used to carry vanilla's science price): the Reforestation tutorial goes straight to building the rig,
-and Vertical architecture follows Maintenance instead of waiting for a stairs unlock.
+| Trigger | Fires when | Level 01 scenes | Level 02 scenes |
+|---|---|---|---|
+| `level:<Id>` | a new game on the level | `FirstLight` (5 shots, 41 s) | `TheSump` (4 shots, 34 s) |
+| `task:<level>.<Id>` | the task goes live | `T01.Charge`, `T01.Scavenge`, `T01.Sump`, `T01.Reeds`, `T01.Power`, `T01.FirstLight` | `T02.Salvage`, `T02.Creek`, `T02.Drain`, `T02.Gorge` |
+| `task_done:<level>.<Id>` | the task is done | `T01.Born` (the first beaver; marks `birthday`) | — |
+| `level_complete:<Id>` | the last task is done | `L01.End` (the bearing east) | `L02.End` (*We held the water.*) |
 
-- No save state: finished tutorials are persisted by vanilla, so a loaded game reconciles on its first
-  poll, silently. Tutorial off in the new-game panel: the story cannot advance, so every chapter counts
-  as opened. Other factions are untouched. (`chapterGating` in `settings.json` is gone; a leftover key
-  is ignored with a log line.)
-- A safety net: on the first poll that sees the toolbar, a building whose spec still carries a science
-  cost (a stale deployed blueprint, a collection wired in without the rule) is unlocked through
-  `BuildingUnlockingService.UnlockIgnoringCost` and its button refreshed, with a warning naming the
-  template; `chapter status` lists them under `unlocked_at_load`, empty when the data is right.
-- MCP: `wardens_status` carries `chapter` (`complete`: the chapters the story has reached, `next`,
-  `next_waits_for`); the `chapter` tool lists every chapter with its tutorial, `opened`, and the
-  buildings it is about; `action=unlock` announces a chapter now (dev/testing: replays the toast and
-  the scene).
-- `tools/validate.py` cross-checks the C# table against the blueprints (every chapter building exists,
-  the opening tutorial exists, loc rows present) and enforces the free bar; `tools/test_validate.py`
-  runs the same rules against the source tree without the game's files.
+- The opening shows the land once and hands over; everything a task needs to see is its own beat,
+  played the moment it becomes the thing to do, with the camera put back afterwards.
+- A loaded save plays nothing it played before: the first poll waits for the game's own start
+  (`ShowPrimaryUIEvent`, after a new game's opening has been queued), then ticks through tasks the
+  colony already meets silently; a task that was live when the game was saved does not replay its
+  scene. Only tasks that go live from then on do.
+- The chapter table that used to sit on the tutorial line (`WardensChapters.cs`, five story beats:
+  Badwater, Signal, Pods, Power, Green) is retired: with the tutorial off it never fired, and on level 02
+  it hung on level 01's tutorials. Its scenes became task scenes; the MCP `chapter` tool answers
+  "retired" for one version.
+- MCP: `campaign action=tasks` lists every task with its `after`, `done`, `live`, its checks and its
+  `scenes`; frames carry `task` (`current`, `live`, `done`/`total`), the events `task.live:<id>`,
+  `task.done:<id>`, `level.complete`, and one `attention` entry per live task with the first check it
+  misses.
+- `tools/check_level_tasks.py` (unknown `after` ids, cycles, more than two live at once) and
+  `tools/check_cutscenes.py` (every `task:` trigger names a task of its level) run without the game's
+  files; `tools/test_check_cutscenes.py` also holds the shipped scenes to the rule: openings at most five
+  shots and 45 s, task scenes at most two shots and 14 s, camera restored.
 
 Act I only. Out of scope for now: remediation, the Ark, custom art.
 
@@ -168,11 +171,12 @@ Skip; the agent sees `cutscene.start` / `cutscene.end` in its frames and stays o
 }
 ```
 
-- **Triggers** (`on`): `new_game` (a new game; loaded saves never fire it), `chapter:<Id>` (the chapter
-  service announces the chapter, forced ones included), `tutorial:<TutorialId>` (the tutorial finishes).
-  Policy for all of them, the one the Cold Boot always had: faction Wardens, tutorial on, and
-  `"cutscenes": true` in `settings.json`. No save state: a scene plays once per event and a reload
-  re-fires nothing.
+- **Triggers** (`on`): `new_game` (a new game; loaded saves never fire it), `tutorial:<TutorialId>` (the
+  tutorial finishes), under the policy the Cold Boot always had: faction Wardens, tutorial on, and
+  `"cutscenes": true` in `settings.json`. The level's own triggers need the faction and the setting only,
+  because they are the level and not a tutorial: `level:<Id>`, `task:<level>.<Id>`,
+  `task_done:<level>.<Id>`, `level_complete:<Id>` (table above). No save state: a scene plays once per
+  event and a reload re-fires nothing.
 - **Shots**: `caption` is a loc row (`Wardens.Cutscene.<Scene>.<Shot>` in `Localizations/enUS.csv`;
   `text` is a literal for prototyping); `args` fill its `{0}`.. from the game when the shot starts (`day`,
   `cycle`, `cycle_day`, `bots`, `beavers`, `archive`, `science`, `good:<Id>`, `choice:<key>`, `mark:<name>`);
@@ -192,18 +196,13 @@ Skip; the agent sees `cutscene.start` / `cutscene.end` in its frames and stays o
   the MCP `cutscene` tool: `reload`, `play id=ColdBoot`, `skip`, `continue`, `status`. `play` ignores the
   trigger policy and replaces a running scene. Copy the file back to `src/Cutscenes/` when it is right.
 - **Checks**: `python wardens/tools/check_cutscenes.py wardens/src` resolves every name a scene uses
-  (captions, chapter and tutorial ids, anchors, field types, unknown fields) without the game's files;
+  (captions, level, task and tutorial ids, anchors, field types, unknown fields) without the game's files;
   `validate.py` includes it. `uv run --project python --extra dev pytest wardens/tools/test_check_cutscenes.py`
   tests the checker and the shipped scenes.
-- **The scenes** (`Cutscenes/`, captions in `design/wardens-campaign-story.md` §3): `ColdBoot` on a new
-  game (three shots, 22 s: a high orbit, a push in on the Core with its light coming on, a settle back
-  to the gameplay angle; the game stays paused afterwards for the Clock card); `Badwater`, `Signal`,
-  `Pods`, `Power`, `Green` when their chapter opens (two shots each, the first with the day's numbers,
-  the second waiting for Continue, the camera restored afterwards; Green anchors on the first beaver
-  and marks `birthday`); `LevelEnd` right after Green (the level's end card: *Continue to Level 02* or
-  *Stay*, recorded under `LevelEnd.end`, one of two closing shots); `Archive` on request only
-  (`cutscene play id=Archive`: five cards reading the Ledger back with today's numbers). Not yet
-  verified in-game; the zoom scale and the angles are the first thing to tune.
+- **The scenes** (`Cutscenes/`): `ColdBoot` on a new game on any map that is not a campaign level (three
+  shots, 22 s); each level's opening, its task beats and its end (the table under "How the tasks and
+  their scenes work"); `Archive` on request only (`cutscene play id=Archive`: five cards reading the
+  Ledger back with today's numbers).
 
 ## The map
 
@@ -224,7 +223,7 @@ flood). The generator runs both after every write.
 
 ## The campaign
 
-A level is a map plus the chapter line that runs on it. Timberborn has no objective system, so nothing
+A level is a map plus the tasks that run on it. Timberborn has no objective system, so nothing
 about that is built in:
 
 - **Getting the map to the player.** The game lists custom maps from `Documents/Timberborn/Maps` and
@@ -288,7 +287,7 @@ Re-run it after the sprites change.
 `Buildings/`, `NaturalResources/`, `Goods/Good.Biomass` and the two Wardens template collections.
 Models stay vanilla references. Everything costs Scrap Metal (the Scavenger Flag is the only source);
 the science cost is 0 for every building: the whole bar is open from the first frame (see "How the
-chapters work" above), and `validate.py` refuses any other value.
+tasks and their scenes work" above), and `validate.py` refuses any other value.
 
 `tools/gen_port.py` ports Leaf Coats buildings the same way, from a live `dump_assets` dump instead
 of a zip (`design/leafcoats-port-plan.md` has the full plan and status). The current batch — 44

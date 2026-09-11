@@ -15,98 +15,99 @@
       "caption": "Wardens.Cutscene.TheSump.Arrival",
       "seconds": 8,
       "camera": [
-        { "t": 0, "anchor": "grid", "x": 48, "y": 46, "z": 8, "v": 68, "zoom": 3.0, "dh": -20 },
-        { "t": 8, "anchor": "grid", "x": 46, "y": 44, "z": 8, "v": 64, "zoom": 2.8, "dh": 15 }
+        {
+          "t": 0,
+          "anchor": "grid",
+          "x": 48,
+          "y": 46,
+          "z": 8,
+          "v": 68,
+          "zoom": 3.0,
+          "dh": -20
+        },
+        {
+          "t": 8,
+          "anchor": "grid",
+          "x": 46,
+          "y": 44,
+          "z": 8,
+          "v": 64,
+          "zoom": 2.8,
+          "dh": 15
+        }
       ]
     },
     {
-      "id": "head",
-      "caption": "Wardens.Cutscene.TheSump.Head",
-      "seconds": 8,
+      "id": "water",
+      "seconds": 12,
+      "caption": "Wardens.Cutscene.TheSump.Water",
       "camera": [
-        { "t": 3, "anchor": "grid", "x": 8, "y": 45, "z": 5, "v": 50, "zoom": 1.3, "dh": 30 },
-        { "t": 8, "anchor": "grid", "x": 10, "y": 45, "z": 5, "v": 48, "zoom": 1.2, "dh": 15 }
+        {
+          "t": 3,
+          "anchor": "grid",
+          "x": 8,
+          "y": 45,
+          "z": 5,
+          "v": 50,
+          "zoom": 1.3,
+          "dh": 30
+        },
+        {
+          "t": 8,
+          "anchor": "grid",
+          "x": 40,
+          "y": 44,
+          "z": 5,
+          "v": 52,
+          "zoom": 1.4,
+          "dh": 10
+        },
+        {
+          "t": 12,
+          "anchor": "grid",
+          "x": 62,
+          "y": 48,
+          "z": 6,
+          "v": 50,
+          "zoom": 1.2,
+          "dh": 40
+        }
       ],
-      "highlight": { "anchor": "grid", "x": 5, "y": 45, "z": 5, "seconds": 8 }
-    },
-    {
-      "id": "river",
-      "caption": "Wardens.Cutscene.TheSump.River",
-      "seconds": 9,
-      "camera": [
-        { "t": 3, "anchor": "grid", "x": 14, "y": 46, "z": 5, "v": 55, "zoom": 1.6, "dh": 0 },
-        { "t": 6, "anchor": "grid", "x": 26, "y": 44, "z": 5, "v": 55, "zoom": 1.6, "dh": -10 },
-        { "t": 9, "anchor": "grid", "x": 36, "y": 45, "z": 5, "v": 55, "zoom": 1.5, "dh": -20 }
-      ]
-    },
-    {
-      "id": "spring",
-      "caption": "Wardens.Cutscene.TheSump.Spring",
-      "seconds": 9,
-      "camera": [
-        { "t": 3.5, "anchor": "grid", "x": 24, "y": 8, "z": 12, "v": 45, "zoom": 1.5, "dh": 20 },
-        { "t": 9, "anchor": "grid", "x": 24, "y": 8, "z": 12, "v": 42, "zoom": 1.4, "dh": 70 }
-      ],
-      "highlight": { "anchor": "grid", "x": 24, "y": 3, "z": 6, "seconds": 9 }
-    },
-    {
-      "id": "creek",
-      "caption": "Wardens.Cutscene.TheSump.Creek",
-      "seconds": 8,
-      "camera": [
-        { "t": 3, "anchor": "grid", "x": 28, "y": 18, "z": 6, "v": 55, "zoom": 1.4, "dh": 60 },
-        { "t": 8, "anchor": "grid", "x": 36, "y": 36, "z": 6, "v": 55, "zoom": 1.3, "dh": 40 }
-      ]
-    },
-    {
-      "id": "confluence",
-      "caption": "Wardens.Cutscene.TheSump.Confluence",
-      "seconds": 8,
-      "camera": [
-        { "t": 3, "anchor": "grid", "x": 40, "y": 44, "z": 5, "v": 52, "zoom": 1.1, "dh": 20 },
-        { "t": 8, "anchor": "grid", "x": 40, "y": 44, "z": 5, "v": 48, "zoom": 1.0, "dh": -10 }
-      ],
-      "highlight": { "anchor": "grid", "x": 40, "y": 45, "z": 5, "seconds": 8 }
-    },
-    {
-      "id": "gorge",
-      "caption": "Wardens.Cutscene.TheSump.Gorge",
-      "seconds": 9,
-      "camera": [
-        { "t": 3.5, "anchor": "grid", "x": 58, "y": 48, "z": 6, "v": 55, "zoom": 1.4, "dh": 10 },
-        { "t": 9, "anchor": "grid", "x": 62, "y": 48, "z": 6, "v": 50, "zoom": 1.2, "dh": 45 }
-      ],
-      "highlight": { "anchor": "grid", "x": 62, "y": 48, "z": 5, "seconds": 9 }
-    },
-    {
-      "id": "wrecks",
-      "caption": "Wardens.Cutscene.TheSump.Wrecks",
-      "seconds": 8,
-      "camera": [
-        { "t": 3, "anchor": "grid", "x": 50, "y": 38, "z": 11, "v": 50, "zoom": 1.1, "dh": 20 },
-        { "t": 8, "anchor": "grid", "x": 52, "y": 38, "z": 11, "v": 48, "zoom": 1.0, "dh": -10 }
-      ],
-      "highlight": { "anchor": "grid", "x": 52, "y": 39, "z": 11, "seconds": 8 }
-    },
-    {
-      "id": "downstream",
-      "caption": "Wardens.Cutscene.TheSump.Downstream",
-      "seconds": 7,
-      "camera": [
-        { "t": 3, "anchor": "grid", "x": 76, "y": 60, "z": 11, "v": 60, "zoom": 2.0, "dh": 30 },
-        { "t": 7, "anchor": "grid", "x": 78, "y": 62, "z": 11, "v": 58, "zoom": 1.9, "dh": 10 }
-      ]
+      "highlight": {
+        "anchor": "grid",
+        "x": 5,
+        "y": 45,
+        "z": 5,
+        "seconds": 5
+      }
     },
     {
       "id": "core",
       "caption": "Wardens.Cutscene.TheSump.Core",
-      "args": [ "bots" ],
+      "args": [
+        "bots"
+      ],
       "seconds": 8,
       "camera": [
-        { "t": 3, "anchor": "core", "v": 38, "zoom": 0.7, "dh": 0 },
-        { "t": 8, "anchor": "core", "v": 35, "zoom": 0.5, "dh": 90 }
+        {
+          "t": 3,
+          "anchor": "core",
+          "v": 38,
+          "zoom": 0.7,
+          "dh": 0
+        },
+        {
+          "t": 8,
+          "anchor": "core",
+          "v": 35,
+          "zoom": 0.5,
+          "dh": 90
+        }
       ],
-      "highlight": { "anchor": "core", "seconds": 8 }
+      "highlight": {
+        "anchor": "core",
+        "seconds": 8
+      }
     },
     {
       "id": "directive",
@@ -114,7 +115,13 @@
       "seconds": 6,
       "wait": "continue",
       "camera": [
-        { "t": 6, "anchor": "start", "dh": 360, "dv": 0, "dzoom": 0 }
+        {
+          "t": 6,
+          "anchor": "start",
+          "dh": 360,
+          "dv": 0,
+          "dzoom": 0
+        }
       ]
     }
   ]

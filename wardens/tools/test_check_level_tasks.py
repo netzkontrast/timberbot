@@ -125,3 +125,71 @@ def test_the_shipped_level_01_tasks_are_well_formed():
     data = json.loads((SRC / "Levels" / "01.tasks.json").read_text(encoding="utf-8"))
     last = data["tasks"][-1]
     assert any(c["type"] == "beavers" for c in last["checks"]), "level 01 ends on its first beaver"
+
+
+# --- the task graph: `after` ------------------------------------------------------------------------
+
+def _graph(*edges: tuple[str, list[str] | None]) -> dict:
+    """A file whose tasks are `edges` (id, after); every task has one trivial check."""
+    tasks = []
+    for tid, after in edges:
+        t = {"id": tid, "title": "T.A", "text": "T.A.Text", "checks": [{"type": "beavers"}]}
+        if after is not None:
+            t["after"] = after
+        tasks.append(t)
+    return {"level": "01", "tasks": tasks}
+
+
+def test_without_after_each_task_waits_for_the_one_before_it():
+    from check_level_tasks import dependencies
+    assert dependencies(_graph(("A", None), ("B", None), ("C", None))["tasks"]) == {"A": [], "B": ["A"], "C": ["B"]}
+    assert dependencies(_graph(("A", None), ("B", []), ("C", ["A", "B"]))["tasks"]) == {"A": [], "B": [], "C": ["A", "B"]}
+
+
+def test_two_tasks_live_at_once_pass(tmp_path):
+    data = _graph(("A", None), ("B", ["A"]), ("C", ["A"]), ("D", ["B", "C"]))
+    assert _problems(tmp_path, data) == []
+
+
+@pytest.mark.parametrize("edges, expect", [
+    ((("A", None), ("B", ["Z"])), "after names 'Z'"),
+    ((("A", None), ("B", ["B"])), "waits for itself"),
+    ((("A", ["C"]), ("B", ["A"]), ("C", ["B"])), "round a cycle"),
+    ((("A", None), ("B", ["A"]), ("C", ["A"]), ("D", ["A"])), "3 tasks can be live at once"),
+    ((("A", []), ("B", []), ("C", [])), "3 tasks can be live at once"),
+])
+def test_graph_mistakes_are_named(tmp_path, edges, expect):
+    problems = _problems(tmp_path, _graph(*edges))
+    assert any(expect in p for p in problems), problems
+
+
+def test_after_must_be_a_list_and_unknown_fields_are_named(tmp_path):
+    data = _graph(("A", None), ("B", None))
+    data["tasks"][1]["after"] = "A"
+    data["tasks"][1]["afer"] = ["A"]
+    data["extra"] = 1
+    problems = _problems(tmp_path, data)
+    assert any("after must be a list" in p for p in problems), problems
+    assert any("afer: unknown field" in p for p in problems), problems
+    assert any("extra: unknown field" in p for p in problems), problems
+
+
+def test_the_shipped_levels_close_the_creek_before_the_gorge_through_the_graph():
+    """Level 02's Gorge must wait, directly or not, for the Creek: damming first floods the creek."""
+    from check_level_tasks import dependencies
+    data = json.loads((SRC / "Levels" / "02.tasks.json").read_text(encoding="utf-8"))
+    deps = dependencies(data["tasks"])
+    seen, todo = set(), list(deps["Gorge"])
+    while todo:
+        d = todo.pop()
+        if d not in seen:
+            seen.add(d)
+            todo.extend(deps[d])
+    assert "Creek" in seen
+
+
+def test_read_tasks_lists_the_shipped_levels():
+    from check_level_tasks import read_tasks
+    tasks = read_tasks(SRC)
+    assert tasks["01"][0] == "Charge" and tasks["01"][-1] == "FirstLight"
+    assert "Gorge" in tasks["02"]

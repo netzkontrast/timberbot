@@ -2,10 +2,10 @@
 //
 // design/wardens-play.md §6. The agent plays through the MCP `frame` tool: it long-polls here, and
 // every `every_ticks` game ticks (ITickableSingleton.Tick, so a paused game produces no frames on its
-// own) or whenever something happens (a day starts, a building finishes, a chapter opens, a beaver is
-// born, a cutscene starts or ends, the human types) the main thread assembles a compact frame: time,
-// population and charge, the archive (Data Cores) and science, chapter, cutscene and open tutorial
-// steps, what the human has selected,
+// own) or whenever something happens (a day starts, a building finishes, a task goes live or is done,
+// a beaver is born, a cutscene starts or ends, the human types) the main thread assembles a compact
+// frame: time, population and charge, the archive (Data Cores) and science, the level's tasks,
+// cutscene and open tutorial steps, what the human has selected,
 // the camera pose and how long the human has left it alone, the events since the last frame, and an
 // `attention` list: where to look first, in priority order. Each `at` is a world position (`camera`,
 // world: true) with the grid tile under it in `at.grid` (`point`, every Timberbot endpoint). The agent never polls the read API to find out whether anything changed.
@@ -63,7 +63,6 @@ namespace Wardens
         private readonly EntitySelectionService _selection;
         private readonly WardensCameraDirector _director;
         private readonly WardensChat _chat;
-        private readonly WardensChapterService _chapters;
         private readonly WardensCutscenes _cutscenes;
 
         private readonly object _lock = new object();
@@ -80,7 +79,6 @@ namespace Wardens
         private int _lastDay = -1;
         private int _lastBots = -1;
         private int _lastBeavers = -1;
-        private int _lastChaptersComplete = -1;
         private WardensCameraDirector.Keyframe _lastPose;
         private float _poseChangedAt;
         private string _lastSelection;
@@ -91,7 +89,7 @@ namespace Wardens
             WeatherService weather, SpeedManager speedManager, PopulationService populationService,
             CharacterPopulation population, DistrictCenterRegistry districts, ScienceService science,
             TutorialService tutorialService, EntitySelectionService selection, WardensCameraDirector director,
-            WardensChat chat, WardensChapterService chapters, WardensCutscenes cutscenes, WardensLevelTasks tasks)
+            WardensChat chat, WardensCutscenes cutscenes, WardensLevelTasks tasks)
         {
             _tasks = tasks;
             _eventBus = eventBus;
@@ -107,7 +105,6 @@ namespace Wardens
             _selection = selection;
             _director = director;
             _chat = chat;
-            _chapters = chapters;
             _cutscenes = cutscenes;
         }
 
@@ -117,6 +114,7 @@ namespace Wardens
         public void Load()
         {
             _eventBus.Register(this);
+            _tasks.TaskLive += task => Note("task.live:" + task.Id);
             _tasks.TaskDone += task => Note("task.done:" + task.Id);
             _tasks.LevelComplete += () => Note("level.complete");
             _lastPose = _director.Current();
@@ -181,9 +179,6 @@ namespace Wardens
             try
             {
                 WatchHuman();
-                var complete = ChaptersComplete();
-                if (_lastChaptersComplete >= 0 && complete > _lastChaptersComplete) Note("chapter.open");
-                _lastChaptersComplete = complete;
                 var cutscene = _cutscenes.Playing ? _cutscenes.CurrentId : null;
                 if (cutscene != _lastCutscene)
                 {
@@ -229,14 +224,6 @@ namespace Wardens
                 _poseChangedAt = Time.unscaledTime;
                 if (sel != null) Note("selection:" + sel);
             }
-        }
-
-        private int ChaptersComplete()
-        {
-            int n = 0;
-            foreach (var chapter in WardensChapterService.Chapters)
-                if (_chapters.Opened(chapter)) n++;
-            return n;
         }
 
         private JObject Build()
@@ -302,7 +289,6 @@ namespace Wardens
             frame["science"] = _science.SciencePoints;
 
             // story
-            frame["chapter"] = _chapters.Summary();
             if (_tasks.Active) frame["task"] = _tasks.Summary();
             frame["cutscene"] = _cutscenes.Summary();
             var open = new JArray();
@@ -362,16 +348,16 @@ namespace Wardens
             if (_chat.UndeliveredCount() > 0)
                 attention.Add(new JObject { ["what"] = "chat", ["why"] = "the human spoke; answer first" });
             foreach (var b in low)
-                attention.Add(new JObject { ["what"] = "bot.low_energy", ["why"] = $"energy {(float)b["energy"]:0.00}; a stopped Warden does not get up", ["at"] = b["at"] });
+                attention.Add(new JObject { ["what"] = "bot.low_energy", ["why"] = $"energy {(float)b["energy"]:0.00}; a Warden out of charge cannot work", ["at"] = b["at"] });
             foreach (var spot in _spots)
                 attention.Add(new JObject { ["what"] = spot["what"], ["why"] = "just happened", ["at"] = spot["at"] });
             if (selection != null)
                 attention.Add(new JObject { ["what"] = "selection", ["why"] = "the human is pointing at this", ["at"] = selection["at"] });
             if (open.Count > 0)
                 attention.Add(new JObject { ["what"] = "tutorial.step", ["why"] = (string)open[0]["step"] });
-            var next = (string)frame["chapter"]["next"];
-            if (next != null)
-                attention.Add(new JObject { ["what"] = "chapter.next", ["why"] = $"{next} waits for {(string)frame["chapter"]["next_waits_for"]}" });
+            if (_tasks.Active && !_tasks.Complete)
+                foreach (var task in _tasks.Live)
+                    attention.Add(new JObject { ["what"] = "task:" + task.Id, ["why"] = _tasks.NextStep(task) });
             frame["attention"] = attention;
             return frame;
         }

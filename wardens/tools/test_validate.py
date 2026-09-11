@@ -1,4 +1,4 @@
-"""Tests for validate.py's offline rules: the chapter table and the free bar. The rest of validate.py
+"""Tests for validate.py's offline rules: the free bar. The rest of validate.py
 resolves names against the game's Blueprints.zip and runs on the game machine only; these rules
 need nothing but the source tree, so they also guard the rule in CI.
 
@@ -10,26 +10,8 @@ import json
 from pathlib import Path
 
 import validate as v
-from check_cutscenes import read_chapters, read_loc_keys, read_tutorial_ids
 
 SRC = Path(__file__).resolve().parents[1] / "src"
-LOC_OK = {"Wardens.Chapter.Badwater.Title", "Wardens.Chapter.Badwater.Unlocked"}
-
-
-def test_chapter_problems_clean_table() -> None:
-    chapters = [("Badwater", "Wardens.Scrap", ["SludgePump.Wardens"])]
-    assert v.chapter_problems(chapters, {"SludgePump.Wardens"}, {"Wardens.Scrap"}, LOC_OK) == []
-
-
-def test_chapter_problems_every_rule_has_a_failing_case() -> None:
-    chapters = [("A", "Wardens.Nope", ["X.Wardens", "Y.Wardens"]), ("Badwater", "Wardens.Scrap", ["X.Wardens"])]
-    out = v.chapter_problems(chapters, {"X.Wardens"}, {"Wardens.Scrap"}, LOC_OK)
-    assert "chapter A: opening tutorial unknown: Wardens.Nope" in out
-    assert "chapter A: loc key missing: Wardens.Chapter.A.Title" in out
-    assert "chapter A: loc key missing: Wardens.Chapter.A.Unlocked" in out
-    assert "chapter A: template unknown: Y.Wardens" in out
-    assert "chapter Badwater: X.Wardens already listed by chapter A" in out
-    assert len(out) == 5
 
 
 def test_free_bar_flags_a_science_price_in_the_factions_own_collections() -> None:
@@ -68,7 +50,9 @@ def test_shipped_bar_is_free_from_the_start() -> None:
     assert v.free_bar_problems(bar, {n: "Buildings.Wardens" for n in bar}, {"Buildings.Wardens"}) == []
 
 
-def test_shipped_chapter_table_resolves_against_the_source_tree() -> None:
-    chapters = read_chapters()
-    assert chapters, "no chapters parsed from WardensChapters.cs"
-    assert v.chapter_problems(chapters, set(_bar()), read_tutorial_ids(SRC) | v.TRIGGER_IDS, read_loc_keys(SRC)) == []
+def test_the_chapter_table_is_gone() -> None:
+    """The chapters were a second progression beside the tasks, dead with the tutorial off; they are
+    retired (iteration 05, WP1). Their loc rows go with them, and no scene hangs on one."""
+    assert not (SRC / "WardensChapters.cs").exists()
+    loc = (SRC / "Localizations" / "enUS.csv").read_text(encoding="utf-8")
+    assert "Wardens.Chapter." not in loc

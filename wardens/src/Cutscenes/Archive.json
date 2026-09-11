@@ -69,8 +69,7 @@
       "id": "born",
       "caption": "Wardens.Cutscene.Archive.Born",
       "args": [
-        "mark:birthday",
-        "choice:LevelEnd.end"
+        "mark:birthday"
       ],
       "seconds": 2,
       "wait": "continue"

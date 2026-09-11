@@ -16,107 +16,118 @@
       "caption": "Wardens.Cutscene.FirstLight.Restart",
       "seconds": 8,
       "camera": [
-        { "t": 0, "anchor": "grid", "x": 48, "y": 48, "z": 8, "v": 70, "zoom": 3.0, "dh": -30 },
-        { "t": 8, "anchor": "grid", "x": 48, "y": 48, "z": 8, "v": 68, "zoom": 2.9, "dh": 10 }
+        {
+          "t": 0,
+          "anchor": "grid",
+          "x": 48,
+          "y": 48,
+          "z": 8,
+          "v": 70,
+          "zoom": 3.0,
+          "dh": -30
+        },
+        {
+          "t": 8,
+          "anchor": "grid",
+          "x": 48,
+          "y": 48,
+          "z": 8,
+          "v": 68,
+          "zoom": 2.9,
+          "dh": 10
+        }
       ]
     },
     {
       "id": "archive",
       "badtide": 2,
       "caption": "Wardens.Cutscene.FirstLight.Archive",
-      "seconds": 8,
+      "seconds": 7,
       "camera": [
-        { "t": 8, "anchor": "grid", "x": 48, "y": 48, "z": 8, "v": 64, "zoom": 2.8, "dh": 50 }
+        {
+          "t": 7,
+          "anchor": "grid",
+          "x": 48,
+          "y": 48,
+          "z": 8,
+          "v": 64,
+          "zoom": 2.8,
+          "dh": 50
+        }
       ]
     },
     {
-      "id": "head",
+      "id": "land",
       "badtide": 3,
-      "caption": "Wardens.Cutscene.FirstLight.Head",
-      "seconds": 8,
+      "caption": "Wardens.Cutscene.FirstLight.Land",
+      "seconds": 12,
       "camera": [
-        { "t": 3, "anchor": "grid", "x": 35, "y": 5, "z": 4, "v": 50, "zoom": 1.4, "dh": 30 },
-        { "t": 8, "anchor": "grid", "x": 36, "y": 9, "z": 4, "v": 48, "zoom": 1.3, "dh": 15 }
+        {
+          "t": 3,
+          "anchor": "grid",
+          "x": 35,
+          "y": 5,
+          "z": 4,
+          "v": 50,
+          "zoom": 1.4,
+          "dh": 30
+        },
+        {
+          "t": 7,
+          "anchor": "grid",
+          "x": 51,
+          "y": 31,
+          "z": 4,
+          "v": 55,
+          "zoom": 1.6,
+          "dh": -10
+        },
+        {
+          "t": 12,
+          "anchor": "grid",
+          "x": 39,
+          "y": 48,
+          "z": 3,
+          "v": 52,
+          "zoom": 1.1,
+          "dh": -20
+        }
       ],
-      "highlight": { "anchor": "grid", "x": 34, "y": 1, "z": 4, "seconds": 8 }
-    },
-    {
-      "id": "river",
-      "caption": "Wardens.Cutscene.FirstLight.River",
-      "seconds": 9,
-      "camera": [
-        { "t": 3, "anchor": "grid", "x": 46, "y": 22, "z": 4, "v": 55, "zoom": 1.6, "dh": 0 },
-        { "t": 6, "anchor": "grid", "x": 51, "y": 31, "z": 4, "v": 55, "zoom": 1.6, "dh": -10 },
-        { "t": 9, "anchor": "grid", "x": 47, "y": 42, "z": 4, "v": 55, "zoom": 1.5, "dh": -20 }
-      ]
-    },
-    {
-      "id": "sump",
-      "caption": "Wardens.Cutscene.FirstLight.Sump",
-      "seconds": 9,
-      "camera": [
-        { "t": 3, "anchor": "grid", "x": 39, "y": 48, "z": 3, "v": 55, "zoom": 1.1, "dh": -10 },
-        { "t": 9, "anchor": "grid", "x": 39, "y": 48, "z": 3, "v": 50, "zoom": 1.0, "dh": 30 }
-      ],
-      "highlight": { "anchor": "grid", "x": 41, "y": 49, "z": 3, "seconds": 9 }
-    },
-    {
-      "id": "shore",
-      "caption": "Wardens.Cutscene.FirstLight.Shore",
-      "seconds": 9,
-      "camera": [
-        { "t": 2.5, "anchor": "grid", "x": 31, "y": 40, "z": 6, "v": 40, "zoom": 0.9, "dh": 60 },
-        { "t": 9, "anchor": "grid", "x": 31, "y": 56, "z": 6, "v": 40, "zoom": 0.9, "dh": 75 }
-      ]
-    },
-    {
-      "id": "ruins",
-      "caption": "Wardens.Cutscene.FirstLight.Ruins",
-      "seconds": 8,
-      "camera": [
-        { "t": 3, "anchor": "grid", "x": 16, "y": 47, "z": 8, "v": 50, "zoom": 1.2, "dh": 20 },
-        { "t": 8, "anchor": "grid", "x": 16, "y": 47, "z": 8, "v": 48, "zoom": 1.1, "dh": -10 }
-      ],
-      "highlight": { "anchor": "grid", "x": 16, "y": 46, "z": 8, "seconds": 8 }
-    },
-    {
-      "id": "spring",
-      "caption": "Wardens.Cutscene.FirstLight.Spring",
-      "seconds": 9,
-      "camera": [
-        { "t": 3.5, "anchor": "grid", "x": 82, "y": 15, "z": 12, "v": 45, "zoom": 1.4, "dh": 20 },
-        { "t": 9, "anchor": "grid", "x": 82, "y": 15, "z": 12, "v": 42, "zoom": 1.3, "dh": 80 }
-      ],
-      "highlight": { "anchor": "grid", "x": 82, "y": 14, "z": 12, "seconds": 9 }
-    },
-    {
-      "id": "crossing",
-      "caption": "Wardens.Cutscene.FirstLight.Crossing",
-      "seconds": 8,
-      "camera": [
-        { "t": 3, "anchor": "grid", "x": 58, "y": 30, "z": 6, "v": 65, "zoom": 2.5, "dh": 60 },
-        { "t": 8, "anchor": "grid", "x": 52, "y": 34, "z": 6, "v": 62, "zoom": 2.4, "dh": 20 }
-      ]
+      "highlight": {
+        "anchor": "grid",
+        "x": 34,
+        "y": 1,
+        "z": 4,
+        "seconds": 5
+      }
     },
     {
       "id": "core",
       "caption": "Wardens.Cutscene.FirstLight.Core",
-      "args": [ "bots" ],
-      "seconds": 9,
-      "camera": [
-        { "t": 3, "anchor": "core", "v": 38, "zoom": 0.7, "dh": 0 },
-        { "t": 9, "anchor": "core", "v": 35, "zoom": 0.6, "dh": 90 }
+      "args": [
+        "bots"
       ],
-      "highlight": { "anchor": "core", "seconds": 9 }
-    },
-    {
-      "id": "warden",
-      "caption": "Wardens.Cutscene.FirstLight.Warden",
       "seconds": 8,
       "camera": [
-        { "t": 2.5, "anchor": "grid", "x": 23, "y": 46, "z": 8, "h": -10, "v": 28, "zoom": -3.5 },
-        { "t": 8, "anchor": "grid", "x": 23, "y": 47, "z": 8, "h": 15, "v": 25, "zoom": -4.0 }
-      ]
+        {
+          "t": 3,
+          "anchor": "core",
+          "v": 38,
+          "zoom": 0.7,
+          "dh": 0
+        },
+        {
+          "t": 8,
+          "anchor": "core",
+          "v": 35,
+          "zoom": 0.6,
+          "dh": 90
+        }
+      ],
+      "highlight": {
+        "anchor": "core",
+        "seconds": 8
+      }
     },
     {
       "id": "directive",
@@ -124,7 +135,13 @@
       "seconds": 6,
       "wait": "continue",
       "camera": [
-        { "t": 6, "anchor": "start", "dh": 360, "dv": 0, "dzoom": 0 }
+        {
+          "t": 6,
+          "anchor": "start",
+          "dh": 360,
+          "dv": 0,
+          "dzoom": 0
+        }
       ]
     }
   ]

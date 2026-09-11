@@ -2,8 +2,9 @@
 //
 // A small UI Toolkit panel (top-left, under the goods bar), built like WARDENS UPLINK (WardensChat.cs):
 // VisualElementInitializer applies the game's styles, UILayout.AddAbsoluteItem places it. It lists
-// every task of the level (WardensLevelTasks): done ones ticked, the current one with its instruction
-// and a progress line per check, the rest dimmed. When the last task is done it becomes the level-end
+// every task of the level (WardensLevelTasks): done ones ticked, the live ones (at most two; a task
+// goes live when the tasks it waits for are done) with their instruction and a progress line per
+// check, the rest dimmed. When the last task is done it becomes the level-end
 // card: Continue saves this colony and starts the next level; Stay collapses it, and the header keeps
 // the card one click away. Refreshed every half second, rebuilt only when what it shows changed.
 
@@ -107,12 +108,16 @@ namespace Wardens
         {
             var level = _tasks.Level;
             if (level == null) return;
-            var current = _tasks.Current;
+            var live = _tasks.Live;
 
             // What the panel would show, as one string: rebuild only when it differs.
             var sig = new StringBuilder();
             sig.Append(_collapsed).Append('|').Append(_tasks.Complete).Append('|').Append(_tasks.DoneCount);
-            if (current != null) foreach (var c in current.Checks) sig.Append('|').Append(_tasks.Describe(c));
+            foreach (var task in live)
+            {
+                sig.Append('|').Append(task.Id);
+                foreach (var c in task.Checks) sig.Append('|').Append(_tasks.Describe(c));
+            }
             if (sig.ToString() == _shown) return;
             _shown = sig.ToString();
 
@@ -133,7 +138,7 @@ namespace Wardens
             foreach (var task in _tasks.Tasks)
             {
                 bool done = _tasks.IsDone(task);
-                bool now = task == current;
+                bool now = live.Contains(task);
                 var row = Text((done ? "[x] " : now ? "> " : "[ ] ") + _loc.T(task.Title));
                 if (done) row.AddToClassList("text--green");
                 else if (now) row.AddToClassList("text--yellow");

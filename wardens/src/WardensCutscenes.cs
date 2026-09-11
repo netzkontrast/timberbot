@@ -10,13 +10,14 @@
 // that throws must not leave the game locked at speed 0,
 // the rule the old WardensColdBoot followed).
 //
-// Triggers: NewGameInitializedEvent (new_game), the chapter service's ChapterOpened event
-// (chapter:<Id>) and the finished tutorial set polled twice a second (tutorial:<Id>, first poll
-// silent), all under the policy the Cold Boot had: Wardens faction, tutorial on, and
-// "cutscenes": true in settings.json. The one exception is level:<Id>, a new game on campaign level
-// <Id>: a level's opening is the level, not a tutorial, so it plays with the tutorial off too
-// (DisableTutorial is the player's global setting), and when one fires the new_game scenes do not
-// (the level's opening replaces the Cold Boot there). Triggered scenes are queued and started on the next
+// Triggers: NewGameInitializedEvent (new_game) and the finished tutorial set polled twice a second
+// (tutorial:<Id>, first poll silent), under the policy the Cold Boot had: Wardens faction, tutorial
+// on, and "cutscenes": true in settings.json. The level's story is the exception, because it is the
+// level and not a tutorial (DisableTutorial is the player's global setting, and the author plays with
+// it off): level:<Id> on a new game on campaign level <Id>, replacing the new_game scenes there, and
+// the task triggers WardensLevelTasks fires through TriggerStory: task:<level>.<Id> when a task goes
+// live, task_done:<level>.<Id> when it is done, level_complete:<Id> when the last one is. Those need
+// the Wardens and the setting only. Triggered scenes are queued and started on the next
 // UpdateSingleton, one at a time, in file-name order when one trigger fires several. The MCP
 // `cutscene` tool bypasses the policy: play, skip, continue, choose, reload are the tuning loop.
 // No save state of its own: every trigger is an event a loaded save does not re-post; the story
@@ -73,7 +74,6 @@ namespace Wardens
         private readonly WardensPointer _pointer;
         private readonly WardensChat _chat;
         private readonly WardensCutsceneOverlay _overlay;
-        private readonly WardensChapterService _chapters;
         private readonly WardensStoryState _story;
         private readonly WardensArchivedBadtides _badtides;
         private readonly WardensCampaignService _campaign;
@@ -108,8 +108,7 @@ namespace Wardens
             EntitySelectionService selection, CharacterPopulation population, IDayNightCycle dayNightCycle,
             GameCycleService cycles, ScienceService science, ILoc loc, QuickNotificationService quickNotifications,
             WardensCameraDirector director, WardensPointer pointer, WardensChat chat, WardensCutsceneOverlay overlay,
-            WardensChapterService chapters, WardensStoryState story, WardensArchivedBadtides badtides,
-            WardensCampaignService campaign)
+            WardensStoryState story, WardensArchivedBadtides badtides, WardensCampaignService campaign)
         {
             _eventBus = eventBus;
             _factionService = factionService;
@@ -128,7 +127,6 @@ namespace Wardens
             _pointer = pointer;
             _chat = chat;
             _overlay = overlay;
-            _chapters = chapters;
             _story = story;
             _badtides = badtides;
             _campaign = campaign;
@@ -136,8 +134,7 @@ namespace Wardens
 
         public bool Playing => _scene != null;
 
-        /// A choice card was answered: (choice key, choice id). WardensLevelTasks starts the next level
-        /// on the LevelEnd card's continue.
+        /// A choice card was answered: (choice key, choice id), after it is in the story record.
         public event Action<string, string> Chose;
         public string CurrentId => _scene?.Id;
         public bool TriggersEnabled => _triggersEnabled;
@@ -165,7 +162,6 @@ namespace Wardens
             _overlay.SkipClicked += () => Guard(() => Skip(), "skip");
             _overlay.ContinueClicked += () => Guard(() => Continue(), "continue");
             _overlay.ChoiceClicked += id => Guard(() => Choose(id), "choose");
-            _chapters.ChapterOpened += OnChapterOpened;
             bool wardens = _factionService.Current?.Id == WardensStartingPopulation.FactionId;
             bool setting = WardensSettings.Load().Cutscenes;
             _triggersEnabled = wardens && setting && !_tutorialSettings.DisableTutorial;
@@ -196,7 +192,18 @@ namespace Wardens
             Trigger(WardensCutsceneScript.TriggerNewGame);
         }
 
-        private void OnChapterOpened(WardensChapter chapter) => Trigger(WardensCutsceneScript.TriggerChapterPrefix + chapter.Id);
+        /// The level's story beats (WardensLevelTasks): task:<level>.<Id>, task_done:<level>.<Id>,
+        /// level_complete:<Id>. The level policy (Wardens, "cutscenes": true), not the tutorial's.
+        /// Returns how many scenes were queued.
+        public int TriggerStory(string trigger) => _levelTriggersEnabled ? Trigger(trigger, force: true) : 0;
+
+        /// The scenes bound to a trigger, for the `campaign tasks` listing.
+        public List<string> ScenesFor(string trigger)
+        {
+            var ids = new List<string>();
+            foreach (var scene in _scenes) if (scene.HasTrigger(trigger)) ids.Add(scene.Id);
+            return ids;
+        }
 
         private void PollTutorials()
         {
@@ -209,7 +216,7 @@ namespace Wardens
         }
 
         // Queues every scene bound to `trigger`; returns how many. `force` skips the tutorial half of
-        // the policy (the caller has checked the rest), which only level:<Id> does.
+        // the policy (the caller has checked the rest), which the level's own triggers do.
         private int Trigger(string trigger, bool force = false)
         {
             if (!_triggersEnabled && !force) return 0;

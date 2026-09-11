@@ -1,0 +1,47 @@
+{
+  "id": "T02.Drain",
+  "on": [
+    "task:02.Drain"
+  ],
+  "pause": true,
+  "leave_paused": false,
+  "restore_camera": true,
+  "letterbox": true,
+  "skippable": true,
+  "shots": [
+    {
+      "id": "river",
+      "seconds": 9,
+      "caption": "Wardens.Cutscene.T02.Drain.River",
+      "camera": [
+        {
+          "t": 3,
+          "anchor": "grid",
+          "x": 26,
+          "y": 44,
+          "z": 5,
+          "v": 55,
+          "zoom": 1.6,
+          "dh": -10
+        },
+        {
+          "t": 9,
+          "anchor": "grid",
+          "x": 44,
+          "y": 44,
+          "z": 5,
+          "v": 52,
+          "zoom": 1.3,
+          "dh": -20
+        }
+      ],
+      "highlight": {
+        "anchor": "grid",
+        "x": 43,
+        "y": 43,
+        "z": 7,
+        "seconds": 9
+      }
+    }
+  ]
+}

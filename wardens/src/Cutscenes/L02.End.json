@@ -1,0 +1,31 @@
+{
+  "id": "L02.End",
+  "on": [
+    "level_complete:02"
+  ],
+  "pause": true,
+  "leave_paused": false,
+  "restore_camera": true,
+  "letterbox": true,
+  "skippable": true,
+  "shots": [
+    {
+      "id": "held",
+      "seconds": 6,
+      "wait": "continue",
+      "caption": "Wardens.Cutscene.L02.End.Held",
+      "camera": [
+        {
+          "t": 6,
+          "anchor": "grid",
+          "x": 50,
+          "y": 44,
+          "z": 6,
+          "v": 60,
+          "zoom": 2.2,
+          "dh": 60
+        }
+      ]
+    }
+  ]
+}

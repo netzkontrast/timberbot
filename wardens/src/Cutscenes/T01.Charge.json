@@ -1,0 +1,38 @@
+{
+  "id": "T01.Charge",
+  "on": [
+    "task:01.Charge"
+  ],
+  "pause": true,
+  "leave_paused": false,
+  "restore_camera": true,
+  "letterbox": true,
+  "skippable": true,
+  "shots": [
+    {
+      "id": "post",
+      "seconds": 9,
+      "caption": "Wardens.Cutscene.T01.Charge.Post",
+      "camera": [
+        {
+          "t": 3,
+          "anchor": "core",
+          "v": 40,
+          "zoom": 0.5,
+          "dh": 20
+        },
+        {
+          "t": 9,
+          "anchor": "core",
+          "v": 36,
+          "zoom": 0.3,
+          "dh": 60
+        }
+      ],
+      "highlight": {
+        "anchor": "core",
+        "seconds": 9
+      }
+    }
+  ]
+}

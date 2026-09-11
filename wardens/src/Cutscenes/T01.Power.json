@@ -1,0 +1,40 @@
+{
+  "id": "T01.Power",
+  "on": [
+    "task:01.Power"
+  ],
+  "pause": true,
+  "leave_paused": false,
+  "restore_camera": true,
+  "letterbox": true,
+  "skippable": true,
+  "shots": [
+    {
+      "id": "debt",
+      "seconds": 10,
+      "caption": "Wardens.Cutscene.T01.Power.Debt",
+      "camera": [
+        {
+          "t": 3,
+          "anchor": "grid",
+          "x": 39,
+          "y": 48,
+          "z": 3,
+          "v": 50,
+          "zoom": 1.3,
+          "dh": 30
+        },
+        {
+          "t": 10,
+          "anchor": "grid",
+          "x": 39,
+          "y": 48,
+          "z": 3,
+          "v": 45,
+          "zoom": 1.2,
+          "dh": 60
+        }
+      ]
+    }
+  ]
+}

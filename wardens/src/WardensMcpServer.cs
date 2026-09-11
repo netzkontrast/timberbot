@@ -57,7 +57,7 @@ namespace Wardens
                     s.HttpPort = json.Value<int?>("httpPort") ?? s.HttpPort;
                     s.AuthToken = (json.Value<string>("authToken") ?? "").Trim();
                     if (json["chapterGating"] != null)
-                        Debug.LogWarning("[Wardens] settings.json: chapterGating is ignored; every building is on the bar from the start and the chapters are story beats (WardensChapters.cs)");
+                        Debug.LogWarning("[Wardens] settings.json: chapterGating is ignored; every building is on the bar from the start (WardensBar.cs)");
                     s.Cutscenes = json.Value<bool?>("cutscenes") ?? s.Cutscenes;
                     s.InstallMaps = json.Value<bool?>("installMaps") ?? s.InstallMaps;
                 }
@@ -72,7 +72,7 @@ namespace Wardens
 
     public class WardensMcpServer : ILoadableSingleton, IUpdatableSingleton, IUnloadableSingleton
     {
-        public const string Version = "0.4.25";
+        public const string Version = "0.4.26";
         private static readonly string[] SupportedProtocolVersions = { "2024-11-05", "2025-03-26", "2025-06-18" };
 
         private class PendingCall

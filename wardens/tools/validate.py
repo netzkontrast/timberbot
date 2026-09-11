@@ -8,10 +8,9 @@ a loc key, a stage id, a planter group with two buildings. This script resolves 
 against the faction's template collections (ours + the vanilla Blueprints.zip) and the loc tables,
 and prints what would throw. Exit code 1 when there are problems.
 
-Also cross-checks the chapter table in src/WardensChapters.cs against the blueprints: every
-building a chapter is about must exist, the opening tutorial must exist, each chapter needs its
-Title/Unlocked loc rows, and no building in the faction's own collections may carry a science cost:
-the whole bar is open from the first frame of every level (the chapters are story beats, not gates).
+Also checks that no building in the faction's own collections carries a science cost: the whole bar
+is open from the first frame of every level. (The chapter table that used to sit on the tutorial
+line is retired; a level's story beats hang on its tasks, Levels/<id>.tasks.json.)
 
 And the campaign table in src/WardensCampaign.cs against the shipped maps: every level marked shipped
 has its .timber in Maps/, every .timber is claimed by a level, `next` points at a level that exists,
@@ -31,13 +30,12 @@ import zipfile
 from pathlib import Path
 
 import bot_workforce
-from check_cutscenes import check as check_cutscenes, read_chapters, read_levels
+from check_cutscenes import check as check_cutscenes, read_levels
 from check_level_tasks import check_level_tasks, levels_with_tasks
 
 GAME = Path("F:/Steam/steamapps/common/Timberborn/Timberborn_Data/StreamingAssets/Modding")
 DEFAULT_MOD = Path.home() / "Documents/Timberborn/Mods/Wardens"
 FACTION = "Wardens"
-CHAPTERS_CS = Path(__file__).resolve().parents[1] / "src" / "WardensChapters.cs"
 CAMPAIGN_CS = Path(__file__).resolve().parents[1] / "src" / "WardensCampaign.cs"
 # Trigger ids that vanilla or WardensTriggers.cs finish through ITutorialTriggers.AddTrigger.
 TRIGGER_IDS = {"StairsUnlockedTrigger", "SurvivedFirstDroughtTrigger", "SurvivedFirstBadtideTrigger",
@@ -60,31 +58,9 @@ STEP_FIELDS = {
 }
 
 
-def chapter_problems(chapters: list[tuple[str, str, list[str]]], templates: set[str], tutorials: set[str],
-                     loc: set[str]) -> list[str]:
-    """The chapter table (src/WardensChapters.cs) against the names it uses: the opening tutorial (or
-    trigger) exists, the Title/Unlocked loc rows exist, every building a chapter is about exists, and
-    no building is listed by two chapters."""
-    out: list[str] = []
-    listed: dict[str, str] = {}
-    for cid, tutorial, names in chapters:
-        if tutorial not in tutorials:
-            out.append(f"chapter {cid}: opening tutorial unknown: {tutorial}")
-        for key in (f"Wardens.Chapter.{cid}.Title", f"Wardens.Chapter.{cid}.Unlocked"):
-            if key not in loc:
-                out.append(f"chapter {cid}: loc key missing: {key}")
-        for n in names:
-            if n in listed:
-                out.append(f"chapter {cid}: {n} already listed by chapter {listed[n]}")
-            listed[n] = cid
-            if n not in templates:
-                out.append(f"chapter {cid}: template unknown: {n}")
-    return out
-
-
 def free_bar_problems(templates: dict[str, dict], origin: dict[str, str], collections: set[str]) -> list[str]:
     """Every building in the faction's own collections ships with ScienceCost 0: the bar is open from
-    the first frame of every level (src/WardensChapters.cs). A padlock or a science price here is a
+    the first frame of every level. A padlock or a science price here is a
     generator that forgot (tools/gen_buildings.py) or a collection wired in without the rule."""
     out: list[str] = []
     for name in sorted(templates):
@@ -276,18 +252,13 @@ def main() -> int:
                 if lk:
                     check_loc(spec.get(lk, ""), where)
 
-    # chapters (src/WardensChapters.cs): story beats over the tutorial line, and a bar with nothing
-    # locked on it (every building the faction lists at ScienceCost 0)
-    chapters = read_chapters(CHAPTERS_CS) if CHAPTERS_CS.exists() else []
-    if not chapters:
-        problems.append(f"no chapters parsed from {CHAPTERS_CS}")
-    problems += chapter_problems(chapters, set(templates), set(tutorials) | TRIGGER_IDS, loc)
+    # the bar: nothing locked on it (every building the faction lists at ScienceCost 0)
     priced = free_bar_problems(templates, origin, wanted)
     problems += priced
     bar = sum(1 for n, d in templates.items() if origin.get(n) in wanted and isinstance(d.get("BuildingSpec"), dict))
 
     # the campaign (src/WardensCampaign.cs) vs. the shipped maps and the tutorial line.
-    # A level is a map plus the chapter line on it, and the table is keyed by map name, so a
+    # A level is a map plus the tasks on it, and the table is keyed by map name, so a
     # rename in gen_map.py that misses the table strands the level silently: the game loads the
     # map, WardensCampaignService finds no row and goes quiet. Same for a level whose ending
     # tutorial does not exist — it can never complete.
@@ -333,8 +304,7 @@ def main() -> int:
 
     # cutscenes (Cutscenes/*.json): captions, triggers, anchors; see check_cutscenes.py
     cutscene_files = sorted((mod / "Cutscenes").glob("*.json")) if (mod / "Cutscenes").is_dir() else []
-    problems += check_cutscenes(mod, loc=loc, tutorials=set(tutorials), chapters={cid for cid, _, _ in chapters},
-                                chapters_cs=CHAPTERS_CS)
+    problems += check_cutscenes(mod, loc=loc, tutorials=set(tutorials))
 
     # the workforce rule (bot_workforce.py): bots by default, no bot science, bot-default districts.
     # Every Wardens blueprint on disk, wired or not: a ported building must be right the day it is wired in.
@@ -344,7 +314,7 @@ def main() -> int:
 
     print(f"mod: {mod}")
     print(f"collections: {', '.join(active)}")
-    print(f"chapters: {len(chapters)}, buildings on the bar: {bar}, science-priced: {len(priced)} (must be 0)")
+    print(f"buildings on the bar: {bar}, science-priced: {len(priced)} (must be 0)")
     print(f"campaign levels: {len(levels)} ({sum(1 for l in levels if l[5])} with a map), maps: {len(maps)}")
     print(f"templates: {len(templates)} (+{len(aliases)} aliases), goods: {len(goods)}, planters: "
           + ", ".join(f"{g}: {len(planters.get(g, []))}" for g in sorted(groups)))

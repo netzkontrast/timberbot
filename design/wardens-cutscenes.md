@@ -1,5 +1,17 @@
 # The Wardens cutscenes: design
 
+> **Update 2026-09-11 (iteration 05, WP1; 0.4.26):** the chapter table is retired, and with it the
+> `chapter:<Id>` trigger and the five chapter scenes and `LevelEnd.json`. A level's story beats hang
+> on its tasks instead (`wardens/src/Levels/<id>.tasks.json`, a graph): `task:<level>.<Id>` fires when
+> a task goes live, `task_done:<level>.<Id>` when it is done, `level_complete:<Id>` when the last one
+> is, all under the level policy of §3.4 (Wardens and the setting, not the tutorial). The openings are
+> cut to at most five shots (level 01: 5 shots, 41 s; level 02: 4, 34 s) and what each task needs to see
+> is its own scene of one or two shots, played the moment it becomes the thing to do, with the camera
+> put back. The walk-throughs in §7 still describe the chapter flow and are history; the trigger table
+> in §3.4 and the checker rows in §10 are current. Why: both humans who saw the long openings cut them
+> short, and with the tutorial off (how the author plays) no chapter scene ever fired.
+> [`docs/plan/iteration-05-consistent-story.md`](../docs/plan/iteration-05-consistent-story.md) WP1.
+
 > **Status:** design and implementation (2026-09-06, extended the same day). The system lives in
 > `wardens/src/WardensCutsceneScript.cs` (the scene format), `WardensCutscenes.cs` (the runner and its
 > triggers), `WardensCutsceneOverlay.cs` (letterbox, caption, buttons, keys) and `WardensStoryState.cs`
@@ -160,7 +172,10 @@ the director sets `ZoomLevel` directly and nothing clamps it (§12, settled).
 |---|---|---|
 | `new_game` | `NewGameInitializedEvent` (a new game; loaded saves never post it) | by construction |
 | `level:<Id>` | the same event, on a map the campaign table (`WardensCampaign.cs`) knows as level `<Id>`; the checker resolves the id against that table | by construction |
-| `chapter:<Id>` | `WardensChapterService` announces the chapter (its `ChapterOpened` event: a real opening or a forced one through `chapter unlock`, never the silent reconcile after a load) | once per chapter per game |
+| `task:<level>.<Id>` | `WardensLevelTasks`: the task goes live (every task in its `after` is done), after the first poll, which waits for `ShowPrimaryUIEvent` and reconciles a loaded colony silently; a task live when the game was saved does not fire again | once per task per game |
+| `task_done:<level>.<Id>` | `WardensLevelTasks`: the task is done (not on the silent reconcile) | once per task per game |
+| `level_complete:<Id>` | the last task of level `<Id>` is done, and `campaign.json` did not already list the level | once per level |
+| ~~`chapter:<Id>`~~ | retired 2026-09-11 with the chapter table; the checker names it as an error | — |
 | `tutorial:<TutorialId>` | the id appears in `TutorialService`'s finished set, polled twice a second; the first poll after a load is silent | once per tutorial per save |
 
 Policy for every trigger, the same one the Cold Boot had: the active faction is the Wardens, the
@@ -293,9 +308,10 @@ The frame carries `cutscene` (`playing`, `id`, `shot`, `shots`, `waiting`), note
 ### 4.7 `tools/check_cutscenes.py` and `validate.py`
 
 The checker reads a mod folder (or `wardens/src`) with no game files: every `Cutscenes/*.json`
-parses, `id` equals the file stem and is unique, every `on` entry is `new_game`, `chapter:<Id>` with
-an id from `WardensChapters.cs` (the table `validate.py` already parses) or `tutorial:<Id>` with a
-tutorial the mod ships, every `caption` is a row of `Localizations/enUS*.csv` and its `{n}` placeholders
+parses, `id` equals the file stem and is unique, every `on` entry is `new_game`, `level:<Id>` or
+`level_complete:<Id>` with an id from the level table in `WardensCampaign.cs`, `task:<level>.<Id>` or
+`task_done:<level>.<Id>` with a task of that level's `Levels/<level>.tasks.json`, or `tutorial:<Id>` with a
+tutorial the mod ships (`chapter:<Id>` is an error since the table was retired, 2026-09-11), every `caption` is a row of `Localizations/enUS*.csv` and its `{n}` placeholders
 match the shot's `args` in number, every arg is in the vocabulary of §3.2, every anchor is one of
 §3.3, pointer and highlight anchors are the ones with grid coordinates, `wait` is `time` or
 `continue`, choice ids are unique and every choice has a text, every `when` names a choice key some

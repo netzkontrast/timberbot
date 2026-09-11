@@ -4,6 +4,36 @@ The patch number moves with every local build (`tools/bump_version.py`, run by t
 version marks a milestone (`bump_version.py --minor`) and gets an entry here. Nothing below has been
 verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first run must answer.
 
+## Unreleased (0.4.26+): tasks as steps, a scene per task (iteration 05, WP1)
+
+- **A level's tasks are a graph.** A task goes live when every task in its `after` is done (without
+  `after`, the one before it, so a plain list still runs in order); two can run side by side. Level 01:
+  Store and Reeds once the Sump pumps, Haul after both. Level 02: after Salvage the creek and the river are
+  worked together, the gorge waits for both, Power needs the river pumped. `check_level_tasks.py` names an
+  unknown `after`, a cycle, and more than two tasks live at once.
+- **Each task carries its own scene, and the openings are cut.** `task:<level>.<Id>` plays when a task
+  goes live, `task_done:<level>.<Id>` when it is done, `level_complete:<Id>` when the last one is; all of
+  them play with the tutorial off. `FirstLight` goes from 12 shots and 99 s to 5 and 41 s, `TheSump` from 11
+  and 88 s to 4 and 34 s; the shots they dropped became `T01.Charge`, `T01.Scavenge`, `T01.Sump`,
+  `T01.Reeds`, `T01.Power`, `T01.FirstLight`, `T01.Born` (the first beaver, the `birthday` mark) and
+  `T02.Salvage`, `T02.Creek` (raise the Floodgates), `T02.Drain`, `T02.Gorge`, each one or two shots and at
+  most 14 s with the camera put back. `L01.End` carries the bearing east; `L02.End` says *We held the water.*
+- **The chapter table is retired.** With the tutorial off it never fired, and on level 02 it hung on level
+  01's tutorials. Gone: `WardensChapters.cs`, the `chapter:` trigger, `Badwater`, `Signal`, `Pods`, `Power`,
+  `Green`, `LevelEnd` and their loc rows, the chapter toasts, the second Continue button on the old end
+  card. The bar's safety net moved to `WardensBar.cs`. The MCP `chapter` tool answers `retired` for one version.
+- **The tasks wait for the game's own start** (`ShowPrimaryUIEvent`) before their first poll, because a new
+  game posts the event that queues the opening a few frames into play; and the first poll reconciles a
+  loaded colony silently, so a reload replays no scene.
+- **The agent contract follows** (`WARDEN.md`, the `warden-play` skill, `BuildInstructions`,
+  `design/wardens-play.md`): frames carry `task.live` and the events `task.live:<id>`; `attention` has one
+  entry per live task with the first check it misses instead of `chapter.next`; the Warden no longer flies
+  the camera at a transition, the task scenes do the showing. Two claims the playtest contradicted are
+  corrected: a Warden out of charge "cannot work" (it was said to stop where it stands; they walk on).
+
+State: `checked` and `built` (0.4.26 compiled, 0 warnings, 0 errors; pytest 198 passed; both checkers and
+`validate.py` clean). Not yet seen in the game.
+
 ## 0.4.25: level 02 starts with water, and its first task is reachable
 
 - **Level 02 is pre-filled** (`[water] fill` in its spec). The river starts at surface 6.3 and the creek at

@@ -1,0 +1,47 @@
+{
+  "id": "T02.Salvage",
+  "on": [
+    "task:02.Salvage"
+  ],
+  "pause": true,
+  "leave_paused": false,
+  "restore_camera": true,
+  "letterbox": true,
+  "skippable": true,
+  "shots": [
+    {
+      "id": "wrecks",
+      "seconds": 9,
+      "caption": "Wardens.Cutscene.T02.Salvage.Wrecks",
+      "camera": [
+        {
+          "t": 3,
+          "anchor": "grid",
+          "x": 50,
+          "y": 38,
+          "z": 11,
+          "v": 50,
+          "zoom": 1.1,
+          "dh": 20
+        },
+        {
+          "t": 9,
+          "anchor": "grid",
+          "x": 52,
+          "y": 38,
+          "z": 11,
+          "v": 48,
+          "zoom": 1.0,
+          "dh": -10
+        }
+      ],
+      "highlight": {
+        "anchor": "grid",
+        "x": 52,
+        "y": 39,
+        "z": 11,
+        "seconds": 9
+      }
+    }
+  ]
+}

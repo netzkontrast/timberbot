@@ -83,7 +83,7 @@ namespace Wardens
         private readonly QuickNotificationService _quickNotifications;
         private readonly TimberbotService _timberbot;
         private readonly WardensAssetDump _assetDump;
-        private readonly WardensChapterService _chapters;
+        private readonly WardensBar _bar;
         private readonly WardensFrames _frames;
         private readonly WardensCampaignService _campaign;
         private readonly WardensLevelTransitionService _transition;
@@ -109,7 +109,7 @@ namespace Wardens
             CharacterPopulation population, TutorialService tutorialService, TutorialSettings tutorialSettings,
             WardensPointer pointer, WardensChat chat, WardensCameraDirector director, WardensCutscenes cutscenes,
             EntitySelectionService selection, QuickNotificationService quickNotifications, TimberbotService timberbot,
-            WardensAssetDump assetDump, WardensChapterService chapters, WardensFrames frames,
+            WardensAssetDump assetDump, WardensBar bar, WardensFrames frames,
             WardensCampaignService campaign, WardensLevelTransitionService transition, WardensLevelTasks tasks)
         {
             _tasks = tasks;
@@ -126,7 +126,7 @@ namespace Wardens
             _quickNotifications = quickNotifications;
             _timberbot = timberbot;
             _assetDump = assetDump;
-            _chapters = chapters;
+            _bar = bar;
             _frames = frames;
             _campaign = campaign;
             _transition = transition;
@@ -195,14 +195,14 @@ namespace Wardens
             sb.Append("START HERE, IN THIS ORDER\n")
               .Append("1. `manual` - the playbook (docs/WARDEN.md). Read it once per session, before acting.\n")
               .Append("2. `campaign action=status` - which level this map is, and what earlier levels left you.\n")
-              .Append("3. `wardens_status` - faction, speed, population, tutorial and chapter state.\n")
+              .Append("3. `wardens_status` - faction, speed, population, tutorial state and the level's tasks.\n")
               .Append("4. `timberbot_ready` - once; the read/write API refuses everything until you call it.\n")
               .Append("5. `chat_history` - what was said before you arrived. Answer anything unanswered first.\n")
               .Append("6. `frame` with after=0, and stay in that loop.\n\n");
 
             sb.Append("THE LOOP\n")
               .Append("`frame` is the heartbeat and the only thing you wait on. It returns every N game ticks, or the moment something ")
-              .Append("happens (the human typed, a day or night started, a building finished, a chapter opened, a beaver was born, an ")
+              .Append("happens (the human typed, a day or night started, a building finished, a task went live or was done, a beaver was born, an ")
               .Append("alert appeared, the human selected something), and it carries `attention`: where to look, in order. Each `at` is ")
               .Append("a world position (`camera` with world:true); `at.grid` is the tile (`point`, Timberbot: y north, z height). ")
               .Append("Pass `after` = the last seq you saw. Never poll the read API to find out whether ")
@@ -212,14 +212,14 @@ namespace Wardens
             sb.Append("THE TOOLS ARE THE BODY\n")
               .Append("`say` is the voice, `point` the finger (highlight, arrow and optional toast on one tile), `camera` the eye, ")
               .Append("`timberbot` the hands: it forwards to the Timberbot HTTP API compiled into this same mod (GET reads, POST acts), ")
-              .Append("and `timberbot_routes` lists what it will take. `campaign`, `chapter` and `tutorial` are the memory of the plan; ")
+              .Append("and `timberbot_routes` lists what it will take. `campaign` (its tasks: the live ones, their checks, their scenes) is the plan; ")
               .Append("`campaign action=record` is the only memory that outlives this map. `selection` is the human pointing at something.\n\n");
 
             sb.Append("RULES THAT DO NOT BEND\n")
               .Append("- Mutations are sequential. Never overlap POST calls through `timberbot`.\n")
-              .Append("- The camera is the human's. Never move it unprompted except once at a chapter transition; `camera action=get` first, restore after.\n")
+              .Append("- The camera is the human's. Never move it unprompted; a task's own scene shows its land when the task goes live. `camera action=get` first, restore after, when the human asks.\n")
               .Append("- A playing cutscene owns the camera and the conversation (`cutscene.playing`; events cutscene.start / cutscene.end): touch nothing and say nothing until it ends.\n")
-              .Append("- Never demolish, never pause the colony, never force a chapter open (`chapter action=unlock`), never answer a choice card (`cutscene action=choose`) and never reset a record, unless the human asked for that exact thing.\n")
+              .Append("- Never demolish, never pause the colony, never answer a choice card (`cutscene action=choose`) and never reset a record, unless the human asked for that exact thing.\n")
               .Append("- Say what you poisoned on the day you poisoned it.\n")
               .Append("- Unprompted speech is at most three lines. Terse. Measurements, not adjectives. No exclamation marks, no emoji, no filler.\n");
             return sb.ToString();
@@ -233,7 +233,7 @@ namespace Wardens
             string faction = _factionService.Current?.Id ?? "unknown";
             sb.Append("faction=").Append(faction);
             if (faction != WardensStartingPopulation.FactionId)
-                sb.Append(" (NOT the Wardens: the story, the chapters and the campaign are all inert on this save)");
+                sb.Append(" (NOT the Wardens: the story, the tasks and the campaign are all inert on this save)");
 
             var level = _campaign.Level;
             sb.Append("; campaign=");
@@ -295,8 +295,8 @@ namespace Wardens
                     break;
                 case "warden_level":
                     description = "This level, and what the campaign remembers across maps.";
-                    text = "The campaign this run belongs to. Timberborn has no objective system: a level is a map plus the chapter "
-                         + "line that runs on it, and only campaign.json survives a map change.\n\n"
+                    text = "The campaign this run belongs to. Timberborn has no objective system: a level is a map plus the tasks "
+                         + "that run on it, and only campaign.json survives a map change.\n\n"
                          + _campaignSnapshot.ToString(Formatting.Indented)
                          + "\n\nThe Ledger so far (the last entries written on any level):\n"
                          + _ledgerSnapshot.ToString(Formatting.Indented);
@@ -390,7 +390,7 @@ namespace Wardens
         private void Build()
         {
             Add("wardens_status",
-                "Overview of the run: faction, speed, bot/beaver counts and average bot Energy, tutorial and chapter state, pointers, camera, Timberbot readiness.",
+                "Overview of the run: faction, speed, bot/beaver counts and average bot Energy, tutorial state, the campaign and its tasks, the bar check, pointers, camera, Timberbot readiness.",
                 Schema(new JObject()),
                 a => Status());
 
@@ -414,7 +414,7 @@ namespace Wardens
                 });
 
             Add("frame",
-                "The Warden's heartbeat. Waits (long-poll, up to wait_seconds) for the next sensor frame: published every every_ticks game ticks, or at once when something happens (chat, day/night, cycle day, building finished, chapter opened, beaver born, alert, speed change, selection). Carries time, bots and charge, beavers, archive (Data Cores), science, chapter, open tutorial steps, selection, camera pose, human idle time, events since the last frame, and `attention` (where to look, in order). Pass `after` = the last seq you saw; a `stale` frame means nothing new was published before the wait ended (usually because the human typed).",
+                "The Warden's heartbeat. Waits (long-poll, up to wait_seconds) for the next sensor frame: published every every_ticks game ticks, or at once when something happens (chat, day/night, cycle day, building finished, task live or done, level complete, beaver born, alert, speed change, selection). Carries time, bots and charge, beavers, archive (Data Cores), science, the level's tasks (`task`: current, live, done/total), open tutorial steps, selection, camera pose, human idle time, events since the last frame, and `attention` (where to look, in order). Pass `after` = the last seq you saw; a `stale` frame means nothing new was published before the wait ended (usually because the human typed).",
                 Schema(new JObject
                 {
                     ["wait_seconds"] = Prop("integer", "long-poll timeout, 0-120", 30),
@@ -433,7 +433,7 @@ namespace Wardens
                 }, offThread: true);
 
             Add("manual",
-                "The Warden's playbook (docs/WARDEN.md in the mod folder): who you are, the Ledger, the frame loop, where to look, the camera rules, the chapter playbook, the voice. Read it once per session before acting.",
+                "The Warden's playbook (docs/WARDEN.md in the mod folder): who you are, the Ledger, the frame loop, where to look, the camera rules, the level playbook, the voice. Read it once per session before acting.",
                 Schema(new JObject()),
                 a =>
                 {
@@ -443,28 +443,23 @@ namespace Wardens
                     return new JObject { ["path"] = path, ["text"] = System.IO.File.ReadAllText(path) };
                 }, offThread: true);
 
+            // Kept one version so an agent on an old playbook gets an answer instead of "unknown tool".
             Add("chapter",
-                "Story chapters (WardensChapters.cs): the beats of the tutorial line. Nothing is locked: every building is on the bar from the first frame of every level. A chapter opens when its tutorial finishes (toast, Uplink line, its cutscene). action=status lists every chapter with its tutorial, whether the story has reached it (opened) and the buildings it is about; unlocked_at_load names buildings the load check had to unlock (empty when the data is right). action=unlock announces chapter_id now (dev/testing; replays its beat).",
-                Schema(new JObject
+                "RETIRED (iteration 05). The chapter table is gone: a level's story beats hang on its tasks, and a task's scene plays when the task goes live. Use `campaign action=tasks`. This tool answers with that pointer and the bar check (buildings the load had to unlock; empty when the data is right).",
+                Schema(new JObject { ["action"] = Prop("string", "status", "status") }),
+                a => new JObject
                 {
-                    ["action"] = Prop("string", "status | unlock", "status"),
-                    ["chapter_id"] = Prop("string", "e.g. Badwater, Signal, Pods, Power, Green (for unlock)"),
-                }),
-                a =>
-                {
-                    if (Str(a, "action", "status") == "unlock")
-                    {
-                        var id = Str(a, "chapter_id") ?? throw new ArgumentException("chapter_id required");
-                        if (!_chapters.Force(id)) throw new ArgumentException("unknown chapter " + id);
-                    }
-                    return _chapters.State();
+                    ["retired"] = true,
+                    ["see"] = "campaign action=tasks",
+                    ["bar"] = _bar.State(),
                 });
 
             Add("campaign",
-                "The campaign across maps. Timberborn has no objective system, so a level is a map plus the chapter line that runs on it, " +
+                "The campaign across maps. Timberborn has no objective system, so a level is a map plus the tasks that run on it, " +
                 "and what survives a map change lives in campaign.json beside the mod. action=status returns the level table, which level this " +
-                "map is, whether it is complete and which map comes next, and the level's tasks; action=tasks returns only the tasks (Levels/<id>.tasks.json: " +
-                "done ones, the current one with a progress line per check; the last one done completes the level and the panel offers the next level); " +
+                "map is, whether it is complete and which map comes next, and the level's tasks; action=tasks returns only the tasks (Levels/<id>.tasks.json, a graph: " +
+                "each task with its `after`, whether it is done or live, a progress line per check, and `scenes`, the cutscenes that play when it goes live; " +
+                "the last one done completes the level and the panel offers the next level); " +
                 "action=ledger returns the last `limit` Ledger entries written on any " +
                 "level; action=record appends one Ledger entry (`entry`, any JSON object: the daily poisoned/healed/green/archive/born line from " +
                 "WARDEN.md is what belongs here) and is the only memory you have that outlives this map; action=next loads the next level's map " +
@@ -596,7 +591,7 @@ namespace Wardens
                 });
 
             Add("cutscene",
-                "Cutscenes: scenes from Cutscenes/*.json in the mod folder (design/wardens-cutscenes.md): the Cold Boot, one per chapter, the level's end card, the Archive reading. action=status lists the loaded scenes with their triggers, the running one (shot, caption, waiting: flight | time | continue | choice, the open choices) and the story record (choices, marks); play starts `id` now, replacing a running scene and ignoring the trigger policy (`Archive` reads the Ledger back when the human asks); skip ends the running scene; continue releases a shot that waits for the Continue button; choose answers an open choice card with `choice` (only when the human said which, in chat: a choice is purpose); reload re-reads the files (edit in the mod folder, reload, play: the tuning loop); reset clears the story record (dev). A playing scene owns the camera: leave it and say nothing until the frame reports cutscene.end.",
+                "Cutscenes: scenes from Cutscenes/*.json in the mod folder (design/wardens-cutscenes.md): the Cold Boot, each level's opening (level:<Id>), a beat per task (task:<level>.<Id> when it goes live, task_done:<level>.<Id>), the level's end (level_complete:<Id>), the Archive reading. action=status lists the loaded scenes with their triggers, the running one (shot, caption, waiting: flight | time | continue | choice, the open choices) and the story record (choices, marks); play starts `id` now, replacing a running scene and ignoring the trigger policy (`Archive` reads the Ledger back when the human asks); skip ends the running scene; continue releases a shot that waits for the Continue button; choose answers an open choice card with `choice` (only when the human said which, in chat: a choice is purpose); reload re-reads the files (edit in the mod folder, reload, play: the tuning loop); reset clears the story record (dev). A playing scene owns the camera: leave it and say nothing until the frame reports cutscene.end.",
                 Schema(new JObject
                 {
                     ["action"] = Prop("string", "status | list | play | skip | continue | choose | reload | reset", "status"),
@@ -724,7 +719,8 @@ namespace Wardens
                     ["bots_energy_avg"] = withEnergy > 0 ? (float?)(energy / withEnergy) : null,
                 },
                 ["tutorial"] = TutorialState(),
-                ["chapter"] = _chapters.Summary(),
+                ["tasks"] = _tasks.Active ? _tasks.Summary() : null,
+                ["bar"] = _bar.State(),
                 ["campaign"] = _campaign.State(),
                 ["pointers"] = _pointer.Count,
                 ["camera"] = _director.State(),

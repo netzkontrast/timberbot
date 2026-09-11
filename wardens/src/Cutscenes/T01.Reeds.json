@@ -1,0 +1,40 @@
+{
+  "id": "T01.Reeds",
+  "on": [
+    "task:01.Reeds"
+  ],
+  "pause": true,
+  "leave_paused": false,
+  "restore_camera": true,
+  "letterbox": true,
+  "skippable": true,
+  "shots": [
+    {
+      "id": "river",
+      "seconds": 9,
+      "caption": "Wardens.Cutscene.T01.Reeds.River",
+      "camera": [
+        {
+          "t": 3,
+          "anchor": "grid",
+          "x": 46,
+          "y": 22,
+          "z": 4,
+          "v": 55,
+          "zoom": 1.6,
+          "dh": 0
+        },
+        {
+          "t": 9,
+          "anchor": "grid",
+          "x": 51,
+          "y": 31,
+          "z": 4,
+          "v": 55,
+          "zoom": 1.5,
+          "dh": -15
+        }
+      ]
+    }
+  ]
+}

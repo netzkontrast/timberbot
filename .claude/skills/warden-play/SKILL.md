@@ -1,6 +1,6 @@
 ---
 name: warden-play
-description: The precompiled plan for playing a Wardens campaign level through the in-game MCP server (port 8090) — connect, boot, the frame loop, and the chapter-by-chapter act list for level 01 First Light, and the task list for level 02 The Sump. Use when asked to play, run, drive or test a Timberborn game as the Warden, or when the `wardens` MCP tools (frame, say, point, timberbot, campaign) are in scope.
+description: The precompiled plan for playing a Wardens campaign level through the in-game MCP server (port 8090) — connect, boot, the frame loop, and the task-by-task act lists for level 01 First Light and level 02 The Sump. Use when asked to play, run, drive or test a Timberborn game as the Warden, or when the `wardens` MCP tools (frame, say, point, timberbot, campaign) are in scope.
 ---
 
 # Playing a level as the Warden
@@ -22,7 +22,7 @@ yourself unless the human asked.
 |---|---|---|---|
 | 1 | `manual` | the playbook | `not deployed` → read `wardens/WARDEN.md` from the repo |
 | 2 | `campaign action=status` | `level`, `title`, `ends_with_tutorial`, `completed` | `enabled: false` → this map is not a campaign level; say so and play it as a plain game |
-| 3 | `wardens_status` | `faction` must be `Wardens`; note speed, bots, chapter | another faction → the story, chapters and campaign are inert; say so |
+| 3 | `wardens_status` | `faction` must be `Wardens`; note speed, bots, `tasks.live` | another faction → the story, the tasks and the campaign are inert; say so |
 | 4 | `timberbot_ready` | the read/write API opens | anything else refuses with `GAME_NOT_READY` |
 | 5 | `chat_history limit=50` | what was said before you arrived | answer anything unanswered **first** |
 | 6 | `frame after=0` | the first sensor frame | — |
@@ -32,7 +32,8 @@ Write the first Ledger line, say **one** line (where things stand, what you will
 enter the loop.
 
 If `cutscene.playing` is true at boot: say nothing, touch nothing, wait for `cutscene.end`. After
-the Cold Boot the game stays paused with the cards up — stay silent until the human unpauses.
+a level's opening the game stays paused — stay silent until the human unpauses. The first task's
+scene usually follows the opening straight away.
 
 ## 1. The standing loop
 
@@ -49,11 +50,14 @@ the rest is routine.
 4. `selection` — the human is pointing at something. Read it as a question about that thing.
 5. `tutorial.step` — make sure the open step *can* be done (unlocked, in stock, a site exists).
    Do not do the human's card for them unless they ask.
-6. `chapter.next` — mention only when asked what is next.
+6. `task:<Id>` — a live task and the first check it misses. Mention it when asked what is next,
+   or when it cannot be done as things stand.
 
-The frame's `task` is the level's checklist (`campaign action=tasks` for the per-check detail). When
-the current task stalls, find why and say it in one line with numbers; `task.done:<id>` and
-`level.complete` arrive as events. The panel's Continue is the human's click.
+The frame's `task` is the level's checklist: `current`, `live` (at most two), `done`/`total`
+(`campaign action=tasks` for the per-check detail, each task's `after` and its `scenes`). A task goes
+live when the ones it waits for are done, and its scene plays then: the story's pointing, not yours.
+When a live task stalls, find why and say it in one line with numbers; `task.live:<id>`,
+`task.done:<id>` and `level.complete` arrive as events. The panel's Continue is the human's click.
 
 Cadence via `frame every_ticks`: **60** while building, **200** while waiting for growth, **20**
 while a mutation batch is in flight.
@@ -63,49 +67,55 @@ On any frame with `since.day_changed`: run the daily routine (§3).
 ## 2. Level 01 — First Light: the act list
 
 Map `Wardens 01 First Light`, 96×96. Ends when its eight tasks are done (`Levels/01.tasks.json`, any
-tutorial setting): Charge (2 Posts powered) · Scavenge (2 flags, 30 Scrap) · Down to the Sump (a pump,
-20 Badwater) · Store (2 Sludge Tanks, a Scrap Pile) · Reeds (a Reed Bed, 20 Biomass) · Haul (2 Wardens on
-a Hauling Post) · Second power (a Badwater Cell making power) · First Light (a Breeding Pod, the first
-beaver). With the tutorial on, `Wardens.MoreBeavers` finishing ends it too. Scrap is the only building
-material; there is exactly one clean spring. The chapter table below is the order to *help* in.
+tutorial setting). A task goes live when the tasks in brackets are done; its scene (`T01.<Id>`) plays
+then and shows the land it is about. Scrap is the only building material; there is exactly one clean
+spring.
 
-Each phase: **enter** when the condition holds, do the acts in order, **leave** when the exit holds.
+| Task (after) | Checks | Your acts, in order | Watch |
+|---|---|---|---|
+| **the opening** | — | none: `FirstLight` (5 shots, 41 s) speaks and leaves the game paused | `cutscene.end`, the human unpausing |
+| **Charge** (start) | 2 Charging Posts powered | 1. A Charging Post beside the Core **with a power shaft to it**, before anything else. 2. A second one | every bot's Energy |
+| **Scavenge** (Charge) | 2 Scavenger Flags, 30 Scrap | 1. Two flags by the three ruins on the pad's west edge (`timberbot GET /api/tiles` finds them; `on_foot_scatter` guarantees they stand on the Core's level). 2. Paths to the Core. Wardens walk on one level only: every ruin, pump site or field below the pad needs a Stairs (3 scrap) per level, and a flag whose ruins are a level down says "Nothing to do in range" | construction spends the scrap the stock check counts |
+| **Sump** (Scavenge) | a Sludge Pump, 20 Badwater | 1. Two Stairs down the shore terraces (8 → 7 → 6; `POST /api/path/place` places them). 2. The Sludge Pump on the Sump's west shelf at height 6 | the Sump's level: 1.2 deep at start, kept full by the seep and the river |
+| **Store** (Sump) | 2 Sludge Tanks, a Scrap Pile | tanks beside the pump; the pile by the Core | runs beside Reeds |
+| **Reeds** (Sump) | a Reed Bed, 20 Biomass | a Reed Bed on flat poisoned ground; mark 40 reed | Biomass arriving |
+| **Haul** (Store, Reeds) | 2 Wardens on a Hauling Post | the Hauler Dock; set its workers to 2 | `bots.unemployed` |
+| **Power** (Haul) | a Badwater Cell making power | 1. Badwater Cell by the Sump, fed from the tanks. 2. Sludge Burner **only** once Biomass is steady — and say what it will poison before you light it | `poisoned` jumping in the Ledger; Core 150 and each Post 50 against what the Cell adds |
+| **First Light** (Power) | a Breeding Pod, 1 beaver | 1. Ask the human **where** the first beavers should wake — purpose, not logistics. 2. Pods there, powered. 3. A Crate Rack set to Biomass | Biomass stock; five days |
+| **she is born** | — | record the day (her scene `T01.Born` marks `birthday`); the Planter Rig near the spring, the only irrigated ground. From here you take care instead of building | `green` in the Ledger; `L01.End` plays, then the end card, which is the human's |
 
-| Chapter | Enter | Your acts, in order | Exit | Watch |
-|---|---|---|---|---|
-| **Cold Boot** | session start | none — the scene and the cards speak | `cutscene.end`, human unpauses | — |
-| **First Light** | after Cold Boot | 1. Charging Post beside the Core **with a power shaft to it**, before anything else. 2. Two Scavenger Flags by the three ruins on the pad's west edge (`timberbot GET /api/tiles` finds them; `on_foot_scatter` guarantees they stand on the Core's level). 3. Paths from the flags to the Core. Wardens walk on one level only: every ruin, pump site or field below the pad needs a Stairs (3 scrap) per level, and a flag whose ruins are a level down says "Nothing to do in range". | scrap stock ≥ 10 | every bot's Energy; a bot under charge stops where it stands |
-| **Badwater** | chapter `Badwater` opens (`Wardens.Scrap` done) | 1. Two Stairs down the shore terraces (8 → 7 → 6; `POST /api/path/place` places them), then the Sludge Pump on the Sump's west shelf at height 6 — the basin beside the pad, ≥ 40 cells at bed height. 2. Sludge Tanks next to it. 3. Reed Bed on flat poisoned ground; mark 40 reed. | Biomass arriving | the Sump's level: the map ships it filled (1.2 deep, since 0.4.13), the seep and the river keep it there |
-| **Signal** | chapter `Signal` opens | 1. Cruncher, powered from the Core. 2. Choose the recipe and **say why**: Science Points to unlock, or Data Cores to feed Firmware and the Archive. | the recipe is running | the power budget: Core 150, Post 50, Cruncher 120. It does not add up. That is the chapter — say so rather than quietly browning out |
-| **Pods** | chapter `Pods` opens | 1. Ask the human **where** the first beavers should wake — this is purpose, not logistics. 2. Two Breeding Pods there. 3. Crate Rack set to Biomass. | pods powered and stocked | Biomass stock; the pods' draw against the same budget |
-| **Power** | chapter `Power` opens | 1. Badwater Cell on the Sump. 2. Sludge Burner **only** once Biomass is steady — and say what it will poison before you light it. | power holds through a night | `poisoned` jumping in the Ledger. Name it the day it happens |
-| **Green** | chapter `Green` opens | 1. The first beaver is born: record the day. 2. Planter Rig where the data says trees live — near the spring, the only irrigated ground. 3. From here you take care instead of building. | `Wardens.MoreBeavers` finishes → **level complete** | `green` in the Ledger; the end card is the human's |
+The Cruncher is on the bar but no level 01 task asks for it: if the human builds one, choose the
+recipe with them and say why.
 
-On level completion the mod toasts, and the task panel becomes the level-end card: **Continue to level
-02** saves this colony and starts The Sump; **Stay** folds it away. The human clicks it, or says so in
-chat and you call `campaign action=next` (see *Ending a level*), or they start it from the New Game screen.
-Before either, write the closing Ledger entry with `campaign action=record` — it is the only thing
-that survives the map change.
+On level completion the mod toasts, `L01.End` plays, and the task panel becomes the level-end card:
+**Continue to level 02** saves this colony and starts The Sump; **Stay** folds it away. The human
+clicks it, or says so in chat and you call `campaign action=next` (see *Ending a level*), or they start
+it from the New Game screen. Before either, write the closing Ledger entry with `campaign
+action=record` — it is the only thing that survives the map change.
 
 ## 2b. Level 02 — The Sump: the task list
 
 Map `Wardens 02 The Sump`, 96×96. A badwater river from a source at the west edge (5,45) out east;
 a clean creek from the spring (24,3) joining it at (39,44); one gorge with high banks at x 57–68,
 around (62,48). The Core stands on a pad at height 11 (46,28); the river and creek beds are at 5 and 6,
-so every site below needs Stairs. Ends when its six tasks are done (`Levels/02.tasks.json`). The acts
-below are the ones that finished it on 0.4.24 (`playtest/PLAYTEST.md`, level 02 played through).
+so every site below needs Stairs. Ends when its six tasks are done (`Levels/02.tasks.json`). After
+Salvage the creek and the river are worked side by side; the gorge waits for both (damming it before the
+creek is closed floods the creek with badwater). The opening `TheSump` is 4 shots, 34 s; each task marked
+with a scene plays `T02.<Id>` when it goes live. The acts below are the ones that finished it on 0.4.24
+(`playtest/PLAYTEST.md`, level 02 played through).
 
 | Task | Checks | Your acts, in order | Watch |
 |---|---|---|---|
-| **Salvage** | 2 Scavenger Flags, 20 Scrap in stock | 1. Two Charging Posts beside the Core. 2. Flags by the three first wrecks on the Core's level (40,36), (52,39), (58,36). 3. Paths to the Core. | construction spends the scrap the stock check counts |
-| **Close the creek** | 2 Floodgates, Dams or Levees in box x 28–40, y 20–42 | 1. Stairs down to the creek (11 → 6). 2. Two Floodgates across it above the confluence, e.g. (38,42), (39,42). 3. **Raise them to 1.0** (`POST /api/building/floodgate {id, height}`): they are built lower than the creek's surface. | the path router puts Paths on the creek bed; keep the gate sites free |
-| **Keep it clean** | 40 clean water tiles in box x 24–40, y 8–42 | nothing: the creek already meets it | a badwater tile in the box |
-| **Drain the river** | 2 Sludge Pumps, 100 Badwater in stock | 1. Pumps on the river's north bank at z 7, e.g. (43,43), (46,44); `placement/find` offers none, place them by hand. 2. Four Sludge Tanks beside them, e.g. (49–52,44). | tanks full means the stock stops rising |
-| **Hold the gorge** | 3 Dams, Levees or Floodgates in box x 56–68, y 43–52 | Levees across the river, one tile at a time from the bank (each is reachable once the one beside it stands). Give them the same priority as the human's own work, or they wait behind it. | the river backs up behind them: the creek must be closed first |
-| **Second power** | a Badwater Cell making power | a Badwater Cell on the grid, fed from the tanks | supply against the Posts' 200 |
+| **Salvage** (start; scene) | 2 Scavenger Flags, 20 Scrap in stock | 1. Two Charging Posts beside the Core. 2. Flags by the three first wrecks on the Core's level (40,36), (52,39), (58,36). 3. Paths to the Core. | construction spends the scrap the stock check counts |
+| **Close the creek** (Salvage; scene) | 2 Floodgates, Dams or Levees in box x 28–40, y 20–42 | 1. Stairs down to the creek (11 → 6). 2. Two Floodgates across it above the confluence, e.g. (38,42), (39,42). 3. **Raise them to 1.0** (`POST /api/building/floodgate {id, height}`): they are built lower than the creek's surface. | the path router puts Paths on the creek bed; keep the gate sites free |
+| **Keep it clean** (Close the creek) | 40 clean water tiles in box x 24–40, y 8–42 | nothing: the creek already meets it | a badwater tile in the box |
+| **Drain the river** (Salvage; scene) | 2 Sludge Pumps, 100 Badwater in stock | 1. Pumps on the river's north bank at z 7, e.g. (43,43), (46,44); `placement/find` offers none, place them by hand. 2. Four Sludge Tanks beside them, e.g. (49–52,44). | tanks full means the stock stops rising |
+| **Hold the gorge** (Keep it clean, Drain; scene) | 3 Dams, Levees or Floodgates in box x 56–68, y 43–52 | Levees across the river, one tile at a time from the bank (each is reachable once the one beside it stands). Give them the same priority as the human's own work, or they wait behind it. | the river backs up behind them: the creek must be closed first |
+| **Second power** (Drain) | a Badwater Cell making power | a Badwater Cell on the grid, fed from the tanks | supply against the Posts' 200 |
 
-Until level 03 ships, the level-end card shows `Wardens.Tasks.LastText` with no Continue button
-(`WardensTaskPanel.BuildCard`), and the colony plays on.
+When the last task is done `L02.End` plays (*We held the water.*). Until level 03 ships, the level-end
+card shows `Wardens.Tasks.LastText` with no Continue button (`WardensTaskPanel.BuildCard`), and the
+colony plays on.
 
 ## 3. The daily routine
 
@@ -137,7 +147,7 @@ Act I drives `poisoned` up. Say so on the day it happens; never bury it in a sum
 | a POST fails | read the error, fix the argument, retry **once**; then tell the human and stop. Never retry a mutation blind |
 | `frame` returns `stale` | nothing was published before the wait ended — usually the human typed. Answer the chat, wait again |
 | `campaign` says `enabled: false` | the map is not a campaign level. Say so once; play on |
-| a chapter will not open | check `chapter action=status` for its gating tutorial. **Never** `chapter action=unlock` to move things along |
+| a task never goes live | `campaign action=tasks`: its `after` names what it waits for; that one's checks say what is missing. There is nothing to force |
 | the human goes quiet | `human.idle_seconds` over 120 at a day change permits one slow 10 s camera pass and the Archive entry. Otherwise: keep working, say nothing |
 
 ## 5. The lines that do not bend
@@ -145,9 +155,9 @@ Act I drives `poisoned` up. Say so on the day it happens; never bury it in a sum
 Short form; the full list is `WARDEN.md`.
 
 - Mutations are sequential. Never overlap POSTs.
-- The camera is the human's. One flight per chapter transition, `camera action=get` first, restore after.
-- Never demolish, never pause the colony, never force a chapter, never answer a choice card, never
-  reset a record — unless the human asked for that exact thing.
+- The camera is the human's; the task scenes do the showing. When asked: `camera action=get` first, restore after.
+- Never demolish, never pause the colony, never answer a choice card, never reset a record —
+  unless the human asked for that exact thing.
 - Purpose is theirs, logistics is yours. When unsure, it is purpose: ask.
 - Unprompted speech: three lines maximum. Measurements, not adjectives. No emoji.
 

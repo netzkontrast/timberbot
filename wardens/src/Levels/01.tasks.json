@@ -1,6 +1,6 @@
 {
   "level": "01",
-  "about": "Level 01, First Light: eight tasks in play order, ending on the first pod-born beaver. WardensLevelTasks.cs checks them; the loc rows are Wardens.Task.01.* in Localizations/enUS.csv.",
+  "about": "Level 01, First Light: eight tasks ending on the first pod-born beaver. A task goes live when the tasks in its `after` are done (without `after`, the one before it); Store and Reeds run side by side once the Sump pumps. A task's scene is the Cutscenes/*.json whose `on` names task:01.<Id>. WardensLevelTasks.cs checks them; the loc rows are Wardens.Task.01.* in Localizations/enUS.csv.",
   "tasks": [
     {
       "id": "Charge",
@@ -28,6 +28,7 @@
     },
     {
       "id": "Store",
+      "after": ["Sump"],
       "title": "Wardens.Task.01.Store",
       "text": "Wardens.Task.01.Store.Text",
       "checks": [
@@ -37,6 +38,7 @@
     },
     {
       "id": "Reeds",
+      "after": ["Sump"],
       "title": "Wardens.Task.01.Reeds",
       "text": "Wardens.Task.01.Reeds.Text",
       "checks": [
@@ -46,6 +48,7 @@
     },
     {
       "id": "Haul",
+      "after": ["Store", "Reeds"],
       "title": "Wardens.Task.01.Haul",
       "text": "Wardens.Task.01.Haul.Text",
       "checks": [ { "type": "workers", "template": "HaulingPost.Wardens", "count": 2 } ]

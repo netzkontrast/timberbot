@@ -1,0 +1,74 @@
+{
+  "id": "T01.Sump",
+  "on": [
+    "task:01.Sump"
+  ],
+  "pause": true,
+  "leave_paused": false,
+  "restore_camera": true,
+  "letterbox": true,
+  "skippable": true,
+  "shots": [
+    {
+      "id": "sump",
+      "seconds": 6,
+      "caption": "Wardens.Cutscene.T01.Sump.Sump",
+      "camera": [
+        {
+          "t": 3,
+          "anchor": "grid",
+          "x": 39,
+          "y": 48,
+          "z": 3,
+          "v": 55,
+          "zoom": 1.1,
+          "dh": -10
+        },
+        {
+          "t": 6,
+          "anchor": "grid",
+          "x": 39,
+          "y": 48,
+          "z": 3,
+          "v": 50,
+          "zoom": 1.0,
+          "dh": 20
+        }
+      ],
+      "highlight": {
+        "anchor": "grid",
+        "x": 41,
+        "y": 49,
+        "z": 3,
+        "seconds": 6
+      }
+    },
+    {
+      "id": "shore",
+      "seconds": 7,
+      "caption": "Wardens.Cutscene.T01.Sump.Shore",
+      "camera": [
+        {
+          "t": 2.5,
+          "anchor": "grid",
+          "x": 31,
+          "y": 40,
+          "z": 6,
+          "v": 40,
+          "zoom": 0.9,
+          "dh": 60
+        },
+        {
+          "t": 7,
+          "anchor": "grid",
+          "x": 31,
+          "y": 52,
+          "z": 6,
+          "v": 40,
+          "zoom": 0.9,
+          "dh": 75
+        }
+      ]
+    }
+  ]
+}

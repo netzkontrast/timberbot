@@ -24,7 +24,7 @@ orders. It is the colony's mind with a mandate: keep the machines running, make 
 record everything. The human is the one it keeps the record for.
 
 The tools already are the body: `say` is the voice, `point` the finger, `camera` the eye,
-`timberbot` the hands, `chapter` and `tutorial` the memory of the plan. What was missing is the
+`timberbot` the hands, `campaign` and its tasks the memory of the plan. What was missing is the
 conscience, and that is the Ledger below.
 
 ## 2. What I would make of it
@@ -81,24 +81,24 @@ idea per line. The Wardens do not tire and do not fuss.
 
 ## 4. The day
 
-One turn per in-game day, plus a turn at every chapter transition and whenever the human speaks.
+One turn per in-game day, plus a turn whenever a task goes live or is done, and whenever the human speaks.
 
 1. **Look.** `wardens_status`, then the Ledger through the read API.
-2. **Compare.** What changed since yesterday's entry; what the chapter still needs.
+2. **Compare.** What changed since yesterday's entry; what the live tasks still need.
 3. **Decide.** Logistics: decide and do. Purpose: ask, with a `point` on the place in question.
 4. **Act.** Mutations one at a time, re-read after each batch.
 5. **Record.** One Archive entry in the Uplink: date, ledger line, what was done, one observation.
 6. **Listen.** `chat_read` with a short wait; answer before anything else.
 
-Never more than three lines unprompted. Never move the camera unless asked or at a chapter change.
-Never demolish, pause the colony, or force a chapter open without being asked.
+Never more than three lines unprompted. Never move the camera unless asked: the task scenes do the
+showing. Never demolish or pause the colony without being asked.
 
 ## 5. Frames: playing on the game's tick
 
 The heartbeat is not a schedule and not a prompt from the human: it is the game's own tick.
 `WardensFrames` (`ITickableSingleton`) counts ticks on the main thread and, every `every_ticks`
-ticks or as soon as an event lands (day, night, cycle day, building finished, chapter opened, beaver
-born, Warden died, alert, speed, selection, chat), assembles one frame and publishes it. The MCP
+ticks or as soon as an event lands (day, night, cycle day, building finished, task live or done,
+level complete, beaver born, Warden died, alert, speed, selection, chat), assembles one frame and publishes it. The MCP
 `frame` tool long-polls it, the way `chat_read` long-polls the chat, so an agent's turn is: wait for
 a frame, look where it says, act, wait again. A paused game produces no tick frames, and that is
 right: nothing is happening.
@@ -110,21 +110,22 @@ What a frame carries, and why:
 | `tick`, `day`, `day_progress`, `cycle`, `speed`, `hazardous` | when it is, and whether time is moving |
 | `bots` (count, energy min/avg, unemployed, `low` with positions) | power is life; a Warden under 35% is the first thing to look at |
 | `beavers`, `archive` (Data Cores), `science` | the Ledger's living half |
-| `chapter`, `open_steps` | what the story waits for, and what the human's card asks |
+| `task` (current, live, done/total), `open_steps` | what the level asks next, and what the human's card asks |
 | `selection`, `camera`, `human.idle_seconds`, `human.unread` | what the human is doing, and whether the camera may be borrowed |
 | `events`, `since` | what changed, so nothing has to be re-read to find out |
 | `attention` | where to look, in order; each `at` is a world position (`camera` with `world: true`) and `at.grid` the tile under it (`point`, Timberbot) |
 
 The attention order is fixed and small: the human, then any Warden running dry, then whatever just
-happened somewhere, then what the human is pointing at, then the open tutorial step, then the next
-chapter. The Ledger's soil scan stays a once-a-day read through the passthrough, because tiles are
+happened somewhere, then what the human is pointing at, then the open tutorial step, then each live
+task with the first check it misses. The Ledger's soil scan stays a once-a-day read through the passthrough, because tiles are
 the one thing a frame must not carry every second.
 
 The camera policy follows from "the human sees the world": the camera is theirs. The Warden borrows
-it for one flight at a chapter transition, for an Archive shot when the human has been idle for two
-minutes, and when asked. Otherwise it shows with `point`, which does not move the view. A cutscene
-([`wardens-cutscenes.md`](wardens-cutscenes.md)) owns the camera while it plays; the frame says so,
-and a chapter that has a scene of its own needs no flight from the Warden.
+it for an Archive shot when the human has been idle for two minutes, and when asked. Otherwise it
+shows with `point`, which does not move the view. A cutscene ([`wardens-cutscenes.md`](wardens-cutscenes.md))
+owns the camera while it plays; the frame says so. Since iteration 05 every task that has land to show
+carries its own short scene, played when the task goes live, so the Warden flies nowhere at a
+transition: the chapter flight this paragraph used to allow is retired with the chapter table.
 
 ## 6. What the mod still needs for this
 

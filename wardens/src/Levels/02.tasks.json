@@ -1,6 +1,6 @@
 {
   "level": "02",
-  "about": "Level 02, The Sump: keep the clean water clean. Six tasks in play order; the boxes are grid tiles of the 2026-09-11 map (the creek above the confluence at 39,44; the gorge's narrows at 62,48). WardensLevelTasks.cs checks them; the loc rows are Wardens.Task.02.* in Localizations/enUS.csv.",
+  "about": "Level 02, The Sump: keep the clean water clean. Six tasks: the creek and the river are worked side by side after Salvage, the gorge waits for both (damming it before the creek is closed floods the creek with badwater), and Power needs the river pumped. The boxes are grid tiles of the 2026-09-11 map (the creek above the confluence at 39,44; the gorge's narrows at 62,48). WardensLevelTasks.cs checks them; the loc rows are Wardens.Task.02.* in Localizations/enUS.csv.",
   "tasks": [
     {
       "id": "Salvage",
@@ -30,6 +30,7 @@
     },
     {
       "id": "Drain",
+      "after": ["Salvage"],
       "title": "Wardens.Task.02.Drain",
       "text": "Wardens.Task.02.Drain.Text",
       "checks": [
@@ -39,6 +40,7 @@
     },
     {
       "id": "Gorge",
+      "after": ["Clean", "Drain"],
       "title": "Wardens.Task.02.Gorge",
       "text": "Wardens.Task.02.Gorge.Text",
       "checks": [
@@ -48,6 +50,7 @@
     },
     {
       "id": "Power",
+      "after": ["Drain"],
       "title": "Wardens.Task.02.Power",
       "text": "Wardens.Task.02.Power.Text",
       "checks": [ { "type": "generating", "template": "BadwaterCell.Wardens", "count": 1 } ]

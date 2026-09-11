@@ -5,8 +5,10 @@
 
 The rules are WardensCutsceneScript.Parse's (design/wardens-cutscenes.md §3) plus the names only the
 mod knows: caption loc keys against Localizations/enUS*.csv (and their {0}.. placeholders against the
-shot's `args`), chapter triggers against the table in src/WardensChapters.cs, level triggers against
-the level table in src/WardensCampaign.cs, tutorial triggers against Tutorials/*.blueprint.json, `when` conditions against the choice keys some shot defines, and
+shot's `args`), level triggers (level:<Id>, level_complete:<Id>) against the level table in
+src/WardensCampaign.cs, task triggers (task:<level>.<Id> when a task goes live, task_done:<level>.<Id>
+when it is done) against Levels/<level>.tasks.json, tutorial triggers against
+Tutorials/*.blueprint.json, `when` conditions against the choice keys some shot defines, and
 unknown fields (the parser ignores them; a typo such as "captoin" would otherwise play as a shot
 without text). Needs no game files, so it runs in any checkout; validate.py calls check() and merges
 the problems. Exit code 1 when there are problems.
@@ -20,7 +22,6 @@ import sys
 from pathlib import Path
 
 DEFAULT_MOD = Path.home() / "Documents/Timberborn/Mods/Wardens"
-CHAPTERS_CS = Path(__file__).resolve().parents[1] / "src" / "WardensChapters.cs"
 FOLDER = "Cutscenes"
 
 ANCHORS = {"start", "core", "selection", "bot", "beaver", "grid", "world"}
@@ -37,19 +38,14 @@ POINTER_FIELDS = {"anchor", "x", "y", "z", "offset", "message", "seconds", "colo
 CHOICE_FIELDS = {"id", "caption", "text"}
 WHEN_FIELDS = {"choice", "is", "is_not"}
 TRIGGER_NEW_GAME = "new_game"
-TRIGGER_CHAPTER = "chapter:"
 TRIGGER_TUTORIAL = "tutorial:"
 TRIGGER_LEVEL = "level:"
-CAMPAIGN_CS = CHAPTERS_CS.parent / "WardensCampaign.cs"
+TRIGGER_LEVEL_COMPLETE = "level_complete:"
+TRIGGER_TASK = "task:"
+TRIGGER_TASK_DONE = "task_done:"
+TRIGGERS_HELP = "new_game | level:<Id> | level_complete:<Id> | task:<level>.<Id> | task_done:<level>.<Id> | tutorial:<Id>"
+CAMPAIGN_CS = Path(__file__).resolve().parents[1] / "src" / "WardensCampaign.cs"
 PLACEHOLDER = re.compile(r"\{(\d+)\}")
-
-
-def read_chapters(path: Path = CHAPTERS_CS) -> list[tuple[str, str, list[str]]]:
-    """(id, gating tutorial id, template names) per `new WardensChapter(...)` entry in the C# table."""
-    text = path.read_text(encoding="utf-8")
-    text = re.sub(r"//[^\n]*", "", text)   # strip line comments; the table itself has none inside
-    entries = re.findall(r'new WardensChapter\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*new\[\]\s*\{([^}]*)\}\s*\)', text)
-    return [(cid, tutorial, re.findall(r'"([^"]+)"', names)) for cid, tutorial, names in entries]
 
 
 def read_levels(path: Path) -> list[tuple[str, str, str, str, str, bool]]:
@@ -265,12 +261,43 @@ def choice_keys_of(d, stem: str) -> set[str]:
     return keys
 
 
-def check_scene(d, stem: str, loc: set[str], chapters: set[str], tutorials: set[str],
+def _check_trigger(t: str, at: str, tutorials: set[str], levels: set[str] | None,
+                   tasks: dict[str, list[str]] | None, out: list[str]) -> None:
+    """One entry of a scene's `on`. `levels` None or `tasks` None skip those lookups."""
+    if t == TRIGGER_NEW_GAME:
+        return
+    for prefix in (TRIGGER_LEVEL_COMPLETE, TRIGGER_LEVEL):   # level_complete: first, it also starts with "level"
+        if t.startswith(prefix) and len(t) > len(prefix):
+            lid = t[len(prefix):]
+            if levels is not None and lid not in levels:
+                out.append(f"{at}: level unknown: {lid!r} (WardensCampaign.cs has {', '.join(sorted(levels)) or 'none'})")
+            return
+    for prefix in (TRIGGER_TASK_DONE, TRIGGER_TASK):
+        if t.startswith(prefix) and len(t) > len(prefix):
+            lid, _, tid = t[len(prefix):].partition(".")
+            if not lid or not tid:
+                out.append(f"{at}: {t!r}: {prefix}<level>.<task id>")
+            elif tasks is not None and lid not in tasks:
+                out.append(f"{at}: level {lid!r} has no task file (Levels/{lid}.tasks.json)")
+            elif tasks is not None and tid not in tasks[lid]:
+                out.append(f"{at}: task unknown: {tid!r} (level {lid} has {', '.join(tasks[lid]) or 'none'})")
+            return
+    if t.startswith(TRIGGER_TUTORIAL) and len(t) > len(TRIGGER_TUTORIAL):
+        if t[len(TRIGGER_TUTORIAL):] not in tutorials:
+            out.append(f"{at}: tutorial unknown: {t[len(TRIGGER_TUTORIAL):]!r}")
+        return
+    if t.startswith("chapter:"):
+        out.append(f"{at}: {t!r}: the chapter table is retired; a story beat hangs on a task (task:<level>.<Id>)")
+        return
+    out.append(f"{at}: {t!r} ({TRIGGERS_HELP})")
+
+
+def check_scene(d, stem: str, loc: set[str], tutorials: set[str],
                 texts: dict[str, str] | None = None, choice_keys: set[str] | None = None,
-                levels: set[str] | None = None) -> list[str]:
+                levels: set[str] | None = None, tasks: dict[str, list[str]] | None = None) -> list[str]:
     """Problems in one parsed scene file; `stem` is the file name without .json. `texts` (loc key ->
     text) enables the placeholder count check; `choice_keys` (from every scene) the `when` check;
-    `levels` (the campaign's level ids) the `level:<Id>` check."""
+    `levels` (the campaign's level ids) the level triggers; `tasks` (level -> task ids) the task triggers."""
     out: list[str] = []
     where = f"{stem}.json"
     texts = texts or {}
@@ -290,19 +317,8 @@ def check_scene(d, stem: str, loc: set[str], chapters: set[str], tutorials: set[
         for i, t in enumerate(on):
             if not isinstance(t, str):
                 out.append(f"{where}: on[{i}]: not a string")
-            elif t == TRIGGER_NEW_GAME:
-                pass
-            elif t.startswith(TRIGGER_CHAPTER) and len(t) > len(TRIGGER_CHAPTER):
-                if t[len(TRIGGER_CHAPTER):] not in chapters:
-                    out.append(f"{where}: on[{i}]: chapter unknown: {t[len(TRIGGER_CHAPTER):]!r} (WardensChapters.cs has {', '.join(sorted(chapters)) or 'none'})")
-            elif t.startswith(TRIGGER_TUTORIAL) and len(t) > len(TRIGGER_TUTORIAL):
-                if t[len(TRIGGER_TUTORIAL):] not in tutorials:
-                    out.append(f"{where}: on[{i}]: tutorial unknown: {t[len(TRIGGER_TUTORIAL):]!r}")
-            elif t.startswith(TRIGGER_LEVEL) and len(t) > len(TRIGGER_LEVEL):
-                if levels is not None and t[len(TRIGGER_LEVEL):] not in levels:
-                    out.append(f"{where}: on[{i}]: level unknown: {t[len(TRIGGER_LEVEL):]!r} (WardensCampaign.cs has {', '.join(sorted(levels)) or 'none'})")
             else:
-                out.append(f"{where}: on[{i}]: {t!r} (new_game | level:<Id> | chapter:<Id> | tutorial:<Id>)")
+                _check_trigger(t, f"{where}: on[{i}]", tutorials, levels, tasks, out)
     for f in SCENE_BOOLS:
         if f in d and not isinstance(d[f], bool):
             out.append(f"{where}: {f}: not a boolean")
@@ -318,17 +334,18 @@ def check_scene(d, stem: str, loc: set[str], chapters: set[str], tutorials: set[
 
 
 def check(mod: Path, loc: set[str] | None = None, tutorials: set[str] | None = None,
-          chapters: set[str] | None = None, chapters_cs: Path = CHAPTERS_CS,
-          levels: set[str] | None = None, campaign_cs: Path = CAMPAIGN_CS) -> list[str]:
+          levels: set[str] | None = None, campaign_cs: Path = CAMPAIGN_CS,
+          tasks: dict[str, list[str]] | None = None) -> list[str]:
     """Problems across every Cutscenes/*.json in `mod`. The name tables are read from the mod
-    (and the C# chapter and level tables) when the caller does not pass them."""
+    (the task files, and the C# level table) when the caller does not pass them."""
+    from check_level_tasks import read_tasks
     texts = read_loc_texts(mod)
     if loc is None:
         loc = set(texts)
     if tutorials is None:
         tutorials = read_tutorial_ids(mod)
-    if chapters is None:
-        chapters = {cid for cid, _, _ in read_chapters(chapters_cs)} if chapters_cs.exists() else set()
+    if tasks is None:
+        tasks = read_tasks(mod)
     if levels is None:
         levels = {lid for lid, *_ in read_levels(campaign_cs)} if campaign_cs.exists() else set()
     folder = mod / FOLDER
@@ -347,7 +364,7 @@ def check(mod: Path, loc: set[str] | None = None, tutorials: set[str] | None = N
         choice_keys |= choice_keys_of(d, stem)
     seen_ids: dict[str, str] = {}
     for p, stem, d in parsed:
-        problems += check_scene(d, stem, loc, chapters, tutorials, texts, choice_keys, levels)
+        problems += check_scene(d, stem, loc, tutorials, texts, choice_keys, levels, tasks)
         sid = d.get("id") if isinstance(d, dict) else None
         if isinstance(sid, str) and sid:
             if sid in seen_ids:

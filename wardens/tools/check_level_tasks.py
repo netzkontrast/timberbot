@@ -2,7 +2,14 @@
 
 A task file is how a campaign level ends when the vanilla tutorial is off, so a mistake in it is a
 level that never completes: an unknown template counts 0 forever, a stock check on a good that does
-not exist never fills. This catches those before the game does.
+not exist never fills, a task waiting `after` one that does not exist (or on itself, round a cycle)
+never goes live. This catches those before the game does.
+
+Tasks form a graph: `after` lists the tasks that must be done before one goes live; without it a
+task waits for the one before it in the file. A task's scenes are the Cutscenes/*.json whose `on`
+names `task:<level>.<Id>` (it went live) or `task_done:<level>.<Id>`; check_cutscenes.py checks those
+against read_tasks() here. At most MAX_LIVE tasks may be live at once: two scenes queue back to back
+and the panel shows every live task in full, so a third is a level that talks over itself.
 
     python wardens/tools/check_level_tasks.py [wardens/src]
 
@@ -15,6 +22,9 @@ import sys
 from pathlib import Path
 
 TYPES = {"built", "powered", "generating", "workers", "stock", "beavers", "built_in", "clean_water"}
+FILE_FIELDS = {"level", "about", "tasks"}
+TASK_FIELDS = {"id", "title", "text", "after", "checks"}
+MAX_LIVE = 2
 PANEL_KEYS = ["Wardens.Tasks.Header", "Wardens.Tasks.Complete", "Wardens.Tasks.CompleteText",
               "Wardens.Tasks.LastText", "Wardens.Tasks.Continue", "Wardens.Tasks.Stay",
               "Wardens.Tasks.Done", "Wardens.Tasks.Next", "Wardens.Tasks.Starting"]
@@ -38,6 +48,90 @@ def levels_with_tasks(mod: Path) -> set[str]:
     return out
 
 
+def read_tasks(mod: Path) -> dict[str, list[str]]:
+    """Level id -> task ids in file order, for every task file that parses (check_cutscenes.py uses it)."""
+    out: dict[str, list[str]] = {}
+    for p in task_files(mod):
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        tasks = data.get("tasks") if isinstance(data, dict) else None
+        if isinstance(tasks, list):
+            out[p.name[:-len(SUFFIX)]] = [t["id"] for t in tasks if isinstance(t, dict) and isinstance(t.get("id"), str)]
+    return out
+
+
+def dependencies(tasks: list[dict]) -> dict[str, list[str]]:
+    """Task id -> the ids it waits for: its `after`, or the task before it in the file (none for the
+    first). The runtime (LevelTaskFile.Parse) resolves the default the same way."""
+    deps: dict[str, list[str]] = {}
+    previous = None
+    for t in tasks:
+        tid = t.get("id")
+        if not isinstance(tid, str) or not tid:
+            continue
+        after = t.get("after")
+        deps[tid] = list(after) if isinstance(after, list) else ([previous] if previous else [])
+        previous = tid
+    return deps
+
+
+def cycle(deps: dict[str, list[str]]) -> list[str] | None:
+    """One cycle through `after`, as the ids in order, or None."""
+    state: dict[str, int] = {}
+    stack: list[str] = []
+
+    def visit(n: str) -> list[str] | None:
+        state[n] = 1
+        stack.append(n)
+        for d in deps.get(n, []):
+            if d not in deps:
+                continue
+            if state.get(d) == 1:
+                return stack[stack.index(d):] + [d]
+            if not state.get(d):
+                found = visit(d)
+                if found:
+                    return found
+        stack.pop()
+        state[n] = 2
+        return None
+
+    for n in deps:
+        if not state.get(n):
+            found = visit(n)
+            if found:
+                return found
+    return None
+
+
+def most_live(deps: dict[str, list[str]]) -> list[str]:
+    """The largest set of tasks that can be live at the same time. A set can be live together exactly
+    when no task in it waits (directly or through others) for another in it: finish everything they
+    wait for and they are all live. Brute force; a level has a dozen tasks at most."""
+    ids = list(deps)
+    ancestors: dict[str, set[str]] = {}
+    for n in ids:
+        seen: set[str] = set()
+        todo = list(deps[n])
+        while todo:
+            d = todo.pop()
+            if d in seen or d not in deps:
+                continue
+            seen.add(d)
+            todo.extend(deps[d])
+        ancestors[n] = seen
+    best: list[str] = []
+    for mask in range(1, 1 << len(ids)):
+        group = [ids[i] for i in range(len(ids)) if mask >> i & 1]
+        if len(group) <= len(best):
+            continue
+        if all(a not in ancestors[b] for a in group for b in group if a != b):
+            best = group
+    return best
+
+
 def check_level_tasks(mod: Path, templates: dict[str, dict] | None, goods: set[str] | None, loc: set[str],
                       level_ids: set[str]) -> list[str]:
     """`templates` and `goods` None skips those lookups (the stand-alone run has no vanilla data)."""
@@ -54,6 +148,11 @@ def check_level_tasks(mod: Path, templates: dict[str, dict] | None, goods: set[s
             continue
         if level_ids and level not in level_ids:
             problems.append(f"{where}: level {level!r} is not in WardensCampaign.cs")
+        if not isinstance(data, dict):
+            problems.append(f"{where}: not a JSON object")
+            continue
+        for f in sorted(set(data) - FILE_FIELDS):
+            problems.append(f"{where}: {f}: unknown field")
         if data.get("level") != level:
             problems.append(f"{where}: \"level\" is {data.get('level')!r}, the file name says {level!r}")
         tasks = data.get("tasks")
@@ -68,6 +167,11 @@ def check_level_tasks(mod: Path, templates: dict[str, dict] | None, goods: set[s
                 problems.append(f"{at}: id missing or repeated")
                 continue
             seen.add(tid)
+            for f in sorted(set(task) - TASK_FIELDS):
+                problems.append(f"{at}: {f}: unknown field")
+            after = task.get("after")
+            if after is not None and not (isinstance(after, list) and all(isinstance(a, str) for a in after)):
+                problems.append(f"{at}: after must be a list of task ids, got {after!r}")
             for field in ("title", "text"):
                 key = task.get(field)
                 if not key:
@@ -92,11 +196,11 @@ def check_level_tasks(mod: Path, templates: dict[str, dict] | None, goods: set[s
                     if not (isinstance(box, list) and len(box) == 4 and all(isinstance(v, int) for v in box)
                             and box[0] <= box[2] and box[1] <= box[3]):
                         problems.append(f"{at}: {kind} needs box [x1, y1, x2, y2] with x1 <= x2 and y1 <= y2, got {box!r}")
-                    where = c.get("where")
-                    if not where:
+                    box_name = c.get("where")
+                    if not box_name:
                         problems.append(f"{at}: {kind} needs `where`, the loc key naming its box on the panel")
-                    elif where not in loc:
-                        problems.append(f"{at}: where loc key missing: {where}")
+                    elif box_name not in loc:
+                        problems.append(f"{at}: where loc key missing: {box_name}")
                 if kind == "stock":
                     if goods is not None and c.get("good") not in goods:
                         problems.append(f"{at}: stock of an unknown good {c.get('good')!r}")
@@ -121,6 +225,21 @@ def check_level_tasks(mod: Path, templates: dict[str, dict] | None, goods: set[s
                     problems.append(f"{at}: generating on {template}, which makes no power")
                 if kind == "workers" and "WorkplaceSpec" not in spec:
                     problems.append(f"{at}: workers on {template}, which is not a workplace")
+        good_tasks = [t for t in tasks if isinstance(t, dict)]
+        deps = dependencies(good_tasks)
+        for tid, waits in deps.items():
+            for d in waits:
+                if d == tid:
+                    problems.append(f"{where} task {tid}: waits for itself, it can never go live")
+                elif d not in deps:
+                    problems.append(f"{where} task {tid}: after names {d!r}, which is not a task of this level")
+        loop = cycle({k: [d for d in v if d != k] for k, v in deps.items()})
+        if loop:
+            problems.append(f"{where}: tasks wait for each other round a cycle, none of them can go live: {' -> '.join(loop)}")
+        elif len(deps) <= 16:
+            live = most_live(deps)
+            if len(live) > MAX_LIVE:
+                problems.append(f"{where}: {len(live)} tasks can be live at once ({', '.join(live)}); at most {MAX_LIVE}")
     if files:
         extra = ["Wardens.Tasks.In"] if "built_in" in used_types else []
         for key in PANEL_KEYS + extra + [f"Wardens.Tasks.Check.{t}" for t in sorted(used_types)]:
