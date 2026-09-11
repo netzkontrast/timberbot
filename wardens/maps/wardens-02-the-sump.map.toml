@@ -258,6 +258,18 @@ margin = 2
 growth = [0.6, 1.0]
 away_from = { badwater = 11.0 }
 
+# --- water at tick 0 -------------------------------------------------------------------------------
+# Pre-filled, so the opening flies over a river and a creek instead of dry beds. The levels are the
+# game's own: day 2.8 of this map (2026-09-11, 0.4.24, no dams) had the river's surface at 6.5 by its
+# source falling to 6.1 at the east edge (1.1-1.5 deep; contamination 1.0 above the confluence, 0.8
+# below it) and the creek at 6.9 by the spring falling to 6.7 at the confluence (0.7-0.9 deep, clean).
+
+[water]
+fill = [
+  { tag = "badwater", level = 6.3, contamination = 1.0 },
+  { tag = "clean",    level = 6.8, contamination = 0.0 },
+]
+
 # --- soil ------------------------------------------------------------------------------------------
 
 [soil]

@@ -8,7 +8,7 @@
       "text": "Wardens.Task.02.Salvage.Text",
       "checks": [
         { "type": "built", "template": "ScavengerFlag.IronTeeth", "count": 2 },
-        { "type": "stock", "good": "ScrapMetal", "count": 40 }
+        { "type": "stock", "good": "ScrapMetal", "count": 20 }
       ]
     },
     {
