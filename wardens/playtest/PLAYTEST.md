@@ -123,6 +123,72 @@ wakes it every 60 game ticks or when something happens, and tells it where to lo
 - Power budget to verify: Core 150 hp; Charging Post 50; Cruncher 120; Badwater Cell +100 (needs a Sludge
   Pump on badwater and a bot working it); Sludge Burner +200 once Reed Beds deliver Biomass.
 
+## Level 02 played through, the reworked map (2026-09-11, 0.4.24, game machine)
+
+Level 02 started as a new game through `campaign.handoff.json` (Player.log 61–62: `handoff: starting level
+02`, `transition: … as a new Wardens game`; 131: `replaced 13 starting beavers with bots`). Claude and the
+author played it together. Claude worked over MCP. The author built by hand: a Levee and Dam stack across
+the creek, Levees at the east edge, and the Badwater Cell. All six tasks were done on day 7.
+
+| Check | Result |
+|---|---|
+| The river | runs through the confluence and out at the east edge. Surface: 6.5 by the source, 6.1 at the edge. Creek surface: 6.9 by the spring, 6.7 at the confluence. The rework holds |
+| The opening | `TheSump` played on the new game. The author pressed Skip at shot 4; afterwards the game was paused and the speed unlocked. Shots 5–11 have not been seen |
+| Tasks | Player.log: `Salvage done (1/6)`, `Creek done (2/6)`, `Clean done (3/6)` (lines 4456–4458), `Drain done (4/6)` (5577), `Gorge done (5/6)`, `Power done (6/6)` (6938–6939), `tasks: level 02 complete` (6945). No exception, no `Can't validate` |
+| Campaign | `completed: ["01","02"]`, `level_complete: true`; `next_level` is 03, `shipped: false` |
+| Grid at the end | supply 250 (Core 150, Badwater Cell 100) against 200 (four Charging Posts) |
+
+Findings:
+
+1. **Salvage's 40 scrap in stock would not fill while the colony was building** (warning). Symptom: the
+   stock stayed under 40 for several days while the Levees, Floodgates and Stairs used the scrap. Source:
+   reproduced; a `stock` check reads what is in storage, and construction keeps taking it out.
+   Consequence: the first task stalls exactly while the player follows the next one. Remedy: 20 (f3d39ef).
+2. **New Floodgates stood below the creek, so nothing pooled** (warning). Symptom: the two gates at
+   (38,42) and (39,42) were at heights 0.7 and 0.6 while the creek's surface stood at 6.7 on bed 6. Source:
+   read over MCP (`/api/buildings`). Consequence: Close the creek passes, but no water is held. Remedy:
+   Claude raised both to 1.0 (`POST /api/building/floodgate`). Open: should the task text tell the player
+   to raise the gates, or should the check ask for water held behind them?
+3. **Keep it clean passes without the gates** (warning). Symptom: 80 clean tiles in the box when the task
+   completed; the creek with no gates already had 83 (measured on day 3). Source: reproduced. Consequence:
+   the task only confirms that the creek exists. Remedy: open. The options are a threshold measured on a
+   pond behind raised gates, or a check on water depth instead of a tile count.
+4. **Hold the gorge counts buildings, not a crossing that holds water** (warning). Symptom: three Levees,
+   one block high, at x 56, y 46–48, passed the task. At x 56 the banks stand at 7, two above the bed;
+   the narrows proper (banks ≥ 3 above the bed) start at x 57. Source: read (`02.tasks.json` box
+   `[56,43,68,52]`, `/api/tiles`). Consequence: the level's one decision can be ticked off with the cheapest
+   wall one tile short of the gorge. Remedy: open (a proposal, not yet agreed). Move the box to x ≥ 57, and
+   add a check that the river's surface upstream stands above a set level.
+5. **The placement finder offered no site for a Sludge Pump** (suggestion). Symptom:
+   `placement/find` returned nothing. A manual place at z 7 on the bank at (43,43) and (46,44) worked.
+   Source: not read (`TimberbotPlacement`). Remedy: open.
+6. **The path router routed over the creek bed** (suggestion). Symptom: the route to the creek placed 7
+   Stairs, 2 Platforms and Paths on the bed, one of them on the Floodgate's site at (39,42), which Claude
+   demolished. Source: not read. Remedy: open.
+7. **The Wardens still drain by day** (warning, reproduced from the entry below). Symptom: on day 6, five of
+   13 bots were at 15–33 % energy, with 250 supply against 200 demand. Remedy: open, the balance pass.
+
+## Level 02 played by Claude over MCP, the first map (2026-09-11, 0.4.22, game machine)
+
+The Continue of level 01's card started level 02 as a new game; Claude opened it (two Charging Posts, two
+Scavenger Flags by the only four ruins on the Core's level, paths) and watched the water for three days.
+
+Findings:
+
+1. **The badwater river never reached the gorge** (critical). Symptom: by day 2.7 the river stood 0.7 deep
+   from x 0 to x 38 (surface 5.7) and the bed east of x 41 was dry the whole way through the gorge; the
+   west third was badwater and the rest of the lake clean creek water. Source (read, mapsmith): the creek
+   (bed 6) was carved after the river (bed 5) and `op_river` set its bed unconditionally, so the creek
+   raised the river's bed to 6 at the confluence (x 39–41): a one-level sill. And the river's first point
+   was x −3: its source spilled much of its water off the west edge. Consequence: the level's one decision
+   (the gorge dam) never comes up; the map is a lake. Remedy (0.4.24): a later watercourse only lowers an
+   earlier one's bed; the river starts at its source; `check_watercourses` fails a bed raised above the
+   height it was carved to and warns about a watercourse that starts off the map with a source on it.
+2. **The Wardens drain to 10 % by day 2.7 with four Posts** (reproduced from level 01). Posts demand 200
+   against the Core's 150. Remedy: open, the balance pass.
+3. **Only four ruins were on the Core's level, 8–25 tiles away.** Remedy (0.4.24): a "first scrap" rule
+   with `on_foot_from`, checked by `on_foot_scatter`.
+
 ## Checks for level tasks (0.4.20+)
 
 - A campaign level shows its tasks in a panel under the goods bar (`LEVEL 01: First Light  n/8`), with the

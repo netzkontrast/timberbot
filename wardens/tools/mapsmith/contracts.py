@@ -427,6 +427,53 @@ CONTRACTS: dict[str, Callable[[MapBuild, dict, Report], None]] = {
 }
 
 
+_EDGES = ((lambda x, y, s: y < 0, "north"), (lambda x, y, s: y >= s, "south"),
+          (lambda x, y, s: x < 0, "west"), (lambda x, y, s: x >= s, "east"))
+
+
+def check_watercourses(b: MapBuild, r: Report, off_map_ok: list | None = None) -> None:
+    """Every carved watercourse runs downhill, and its sources' water stays on the map.
+
+    Two ways a river looks right in the preview and does nothing in the game (level 02, seen
+    2026-09-11): a one-level sill across the bed, where the water pools and never gets past; and a
+    river that starts off the map, so the source at its head spills most of its water off that edge
+    and the valley downstream stays dry. The first is an error, the second a warning (level 01's
+    river enters from the north edge on purpose and has always run that way).
+    """
+    sources = [e for e in b.entities if e.template in ("WaterSource", "BadwaterSource")]
+    for name, path in b.paths.items():
+        tag = b.path_tag_of.get(name)
+        bed = b.masks.get(tag) if tag else None
+        heights: list[tuple[int, int, int]] = []
+        seen: set[tuple[int, int]] = set()
+        for px, py in path:
+            x, y = int(round(px)), int(round(py))
+            if (x, y) in seen or not b.height.inside(x, y) or (bed is not None and not bed.at(x, y)):
+                continue
+            seen.add((x, y))
+            heights.append((x, y, b.h(x, y)))
+        # A cell above the bed the watercourse was carved to is a sill (a later op raised it); a cell
+        # below it is a basin the river runs through and fills, like level 01's Sump. Only the first
+        # counts: a sill makes a lake behind it, and the rest of the river is dry.
+        carved = b.path_beds.get(name)
+        for x, y, h in heights:
+            if carved is not None and h > carved:
+                r.err(f"watercourse {name!r}: its bed stands at {h} at {x},{y}, above the {carved:g} it was "
+                      f"carved to (a later op raised it); the water pools behind that sill and the river "
+                      f"below it stays dry")
+                break
+        hx, hy = path[0]
+        if b.height.inside(int(round(hx)), int(round(hy))) or bed is None or name in (off_map_ok or []):
+            continue
+        fed = [s for s in sources if any(bed.at(s.x + dx, s.y + dy) for dx in (-1, 0, 1, 2) for dy in (-1, 0, 1, 2)
+                                         if b.height.inside(s.x + dx, s.y + dy))]
+        if fed:
+            edge = next((n for test, n in _EDGES if test(hx, hy, b.size)), "map")
+            r.warn(f"watercourse {name!r} starts off the map at the {edge} edge and has a source in its bed: "
+                   f"much of that source's water drains off the {edge} edge instead of running downstream. "
+                   f"Start the river inside the map, at the source")
+
+
 def check_contract(b: MapBuild, spec: dict, r: Report) -> None:
     """Run every entry of the spec's `[contract]` table."""
     for name, params in (spec.get("contract") or {}).items():

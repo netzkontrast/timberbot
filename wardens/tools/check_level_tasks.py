@@ -14,7 +14,7 @@ import json
 import sys
 from pathlib import Path
 
-TYPES = {"built", "powered", "generating", "workers", "stock", "beavers"}
+TYPES = {"built", "powered", "generating", "workers", "stock", "beavers", "built_in", "clean_water"}
 PANEL_KEYS = ["Wardens.Tasks.Header", "Wardens.Tasks.Complete", "Wardens.Tasks.CompleteText",
               "Wardens.Tasks.LastText", "Wardens.Tasks.Continue", "Wardens.Tasks.Stay",
               "Wardens.Tasks.Done", "Wardens.Tasks.Next", "Wardens.Tasks.Starting"]
@@ -87,22 +87,34 @@ def check_level_tasks(mod: Path, templates: dict[str, dict] | None, goods: set[s
                 count = c.get("count", 1)
                 if not isinstance(count, int) or count < 1:
                     problems.append(f"{at}: {kind} count must be a whole number >= 1, got {count!r}")
+                if kind in ("built_in", "clean_water"):
+                    box = c.get("box")
+                    if not (isinstance(box, list) and len(box) == 4 and all(isinstance(v, int) for v in box)
+                            and box[0] <= box[2] and box[1] <= box[3]):
+                        problems.append(f"{at}: {kind} needs box [x1, y1, x2, y2] with x1 <= x2 and y1 <= y2, got {box!r}")
+                    where = c.get("where")
+                    if not where:
+                        problems.append(f"{at}: {kind} needs `where`, the loc key naming its box on the panel")
+                    elif where not in loc:
+                        problems.append(f"{at}: where loc key missing: {where}")
                 if kind == "stock":
                     if goods is not None and c.get("good") not in goods:
                         problems.append(f"{at}: stock of an unknown good {c.get('good')!r}")
                     continue
-                if kind == "beavers":
+                if kind in ("beavers", "clean_water"):
                     continue
-                template = c.get("template")
-                if not template:
+                names = c.get("templates") or ([c["template"]] if c.get("template") else [])
+                if not names:
                     problems.append(f"{at}: {kind} needs a template")
                     continue
                 if templates is None:
                     continue
-                spec = templates.get(template)
-                if spec is None:
-                    problems.append(f"{at}: {kind} of an unknown template {template!r}")
+                unknown = [n for n in names if n not in templates]
+                if unknown:
+                    problems.append(f"{at}: {kind} of an unknown template {unknown[0]!r}")
                     continue
+                template = names[0]
+                spec = templates[template]
                 if kind in ("powered", "generating") and "MechanicalNodeSpec" not in spec:
                     problems.append(f"{at}: {kind} on {template}, which has no MechanicalNodeSpec")
                 if kind == "generating" and not spec.get("MechanicalNodeSpec", {}).get("PowerOutput"):
@@ -110,7 +122,8 @@ def check_level_tasks(mod: Path, templates: dict[str, dict] | None, goods: set[s
                 if kind == "workers" and "WorkplaceSpec" not in spec:
                     problems.append(f"{at}: workers on {template}, which is not a workplace")
     if files:
-        for key in PANEL_KEYS + [f"Wardens.Tasks.Check.{t}" for t in sorted(used_types)]:
+        extra = ["Wardens.Tasks.In"] if "built_in" in used_types else []
+        for key in PANEL_KEYS + extra + [f"Wardens.Tasks.Check.{t}" for t in sorted(used_types)]:
             if key not in loc:
                 problems.append(f"loc key missing for the task panel: {key}")
     return problems

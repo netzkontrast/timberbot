@@ -63,18 +63,19 @@ strength = 0.4
 
 # --- the water ---------------------------------------------------------------------------------
 
-[[terrain]]                        # the badwater river: enters west, leaves east
-op = "river"
-points = [[-3, 44], [14, 46], [30, 43], [44, 47], [56, 48], [62, 48], [70, 49], [82, 47], [99, 50]]
+[[terrain]]                        # the badwater river: rises at its source by the west edge, leaves east.
+op = "river"                       # It starts INSIDE the map: begun at x -3 it spilled its source off the
+                                   # west edge and never reached the gorge (PLAYTEST.md, 2026-09-11)
+points = [[5, 45], [14, 46], [30, 43], [44, 47], [56, 48], [62, 48], [70, 49], [82, 47], [99, 50]]
 bed = 5
 width = 1.6
 valley = [[12.0, 11], [8.0, 9], [5.0, 7]]
 tag = "badwater"
 name = "the river"
 
-[[terrain]]                        # the clean creek, down off the north wall, joining at x ~ 41
+[[terrain]]                        # the clean creek, from the spring high on the north wall, joining at x ~ 41
 op = "river"
-points = [[24, -3], [26, 10], [30, 22], [34, 32], [38, 41], [41, 46]]
+points = [[24, 3], [26, 10], [30, 22], [34, 32], [38, 41], [41, 46]]
 bed = 6
 width = 1.1
 valley = [[3.6, 10], [2.2, 8]]
@@ -149,7 +150,7 @@ orientation = "Cw0"
 [[place]]
 template = "WaterSource"
 along = "the creek"
-segment = [0.04, 0.10]             # the spring, high on the north wall
+segment = [0.0, 0.06]              # the spring, high on the north wall, at the creek's head
 count = 2
 strength = 1.5
 orientation = "Cw0"
@@ -164,6 +165,21 @@ orientation = "Cw0"
 # --- salvage -----------------------------------------------------------------------------------
 # Level 01 taught scavenging; here the scrap is the budget for a dam. The near field must be
 # walkable or the level cannot open, so it is named in the contract's reachable_scatter.
+
+[[scatter]]
+name = "first scrap"               # on the Core's own level, so the first flags work before a single
+templates = ["RuinColumnH1", "RuinColumnH2"]   # Stairs (on_foot_scatter): Wardens walk on one level
+weights = [2, 3]
+levels = [1, 2]
+around = "start"
+radius = [6, 12]
+count = 3
+spacing = 2
+away_from = { badwater = 4.0, clean = 3.0 }
+on_foot_from = "start"
+variants = ["A", "B", "C"]
+orientation = "Cw0"
+yield = { good = "ScrapMetal", amount_per_level = 15 }
 
 [[scatter]]
 name = "the bank wrecks"
@@ -242,6 +258,18 @@ margin = 2
 growth = [0.6, 1.0]
 away_from = { badwater = 11.0 }
 
+# --- water at tick 0 -------------------------------------------------------------------------------
+# Pre-filled, so the opening flies over a river and a creek instead of dry beds. The levels are the
+# game's own: day 2.8 of this map (2026-09-11, 0.4.24, no dams) had the river's surface at 6.5 by its
+# source falling to 6.1 at the east edge (1.1-1.5 deep; contamination 1.0 above the confluence, 0.8
+# below it) and the creek at 6.9 by the spring falling to 6.7 at the confluence (0.7-0.9 deep, clean).
+
+[water]
+fill = [
+  { tag = "badwater", level = 6.3, contamination = 1.0 },
+  { tag = "clean",    level = 6.8, contamination = 0.0 },
+]
+
 # --- soil ------------------------------------------------------------------------------------------
 
 [soil]
@@ -254,7 +282,8 @@ moisture = { from = "clean", offset = 0.0, reach = 6.0, peak = 0.8 }
 require = ["StartingLocation", "BadwaterSource", "WaterSource"]
 require_at_least = { RuinColumnH1 = 2 }
 min_reachable = 1200
-reachable_scatter = ["the bank wrecks", "the gorge wrecks"]
+reachable_scatter = ["first scrap", "the bank wrecks", "the gorge wrecks"]
+on_foot_scatter = ["first scrap"]
 
 # --- what must be true for this to still be *The Sump* -------------------------------------------------
 # design/wardens-campaign-map-set.md §2, level 02, verbatim: "exactly one gorge <= 6 tiles wide with

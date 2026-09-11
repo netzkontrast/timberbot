@@ -28,7 +28,7 @@ else:  # pragma: no cover - only on 3.10
 from . import placement, terrain
 from .build import MapBuild, SpecError
 from .checks import Report, check_world
-from .contracts import check_contract
+from .contracts import check_contract, check_watercourses
 from .world import metadata_json, world_json
 
 REQUIRED = ("name", "size")
@@ -170,6 +170,7 @@ def check(spec: dict, b: MapBuild) -> Report:
     report = check_world(world_json(b, spec), metadata_json(b, spec), set(MEMBERS),
                          spec.get("checks", {}), water=b.water_cells(), groups=groups_of(b))
     check_contract(b, spec, report)     # the level design, checked as geometry
+    check_watercourses(b, report, spec.get("checks", {}).get("off_map_ok"))   # downhill, water kept on the map
     return report
 
 

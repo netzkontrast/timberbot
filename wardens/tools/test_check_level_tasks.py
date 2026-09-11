@@ -19,8 +19,9 @@ TEMPLATES = {
     "SludgeTank.Wardens": {},
 }
 GOODS = {"ScrapMetal", "Badwater"}
-LOC = set(PANEL_KEYS) | {f"Wardens.Tasks.Check.{t}" for t in ("built", "powered", "generating", "workers", "stock", "beavers")} \
-    | {"T.A", "T.A.Text", "T.B", "T.B.Text"}
+LOC = set(PANEL_KEYS) | {f"Wardens.Tasks.Check.{t}" for t in ("built", "powered", "generating", "workers", "stock",
+                                                                "beavers", "built_in", "clean_water")} \
+    | {"T.A", "T.A.Text", "T.B", "T.B.Text", "Wardens.Tasks.In", "W.Creek"}
 
 
 def _write(tmp: Path, data: dict, name: str = "01") -> Path:
@@ -71,6 +72,33 @@ def test_each_mistake_is_named(tmp_path, change, expect):
     assert any(expect in p for p in problems), problems
 
 
+def _places() -> dict:
+    data = _good()
+    data["tasks"].append({"id": "C", "title": "T.A", "text": "T.A.Text", "checks": [
+        {"type": "built_in", "templates": ["ChargingPost.Wardens", "SludgeTank.Wardens"], "box": [1, 2, 9, 9],
+         "where": "W.Creek", "count": 2},
+        {"type": "clean_water", "box": [0, 0, 5, 5], "where": "W.Creek", "count": 30}]})
+    return data
+
+
+def test_place_checks_pass_when_well_formed(tmp_path):
+    assert _problems(tmp_path, _places()) == []
+
+
+@pytest.mark.parametrize("change, expect", [
+    (lambda c: c[0].pop("box"), "needs box"),
+    (lambda c: c[0].update(box=[9, 2, 1, 9]), "x1 <= x2"),
+    (lambda c: c[1].pop("where"), "needs `where`"),
+    (lambda c: c[1].update(where="W.Nowhere"), "where loc key missing"),
+    (lambda c: c[0].update(templates=["ChargingPost.Wardens", "Dam.Nope"]), "unknown template"),
+])
+def test_place_check_mistakes_are_named(tmp_path, change, expect):
+    data = _places()
+    change(data["tasks"][2]["checks"])
+    problems = _problems(tmp_path, data)
+    assert any(expect in p for p in problems), problems
+
+
 def test_a_level_not_in_the_campaign_table_is_named(tmp_path):
     _write(tmp_path, dict(_good(), level="07"), name="07")
     problems = check_level_tasks(tmp_path, TEMPLATES, GOODS, LOC, {"01"})
@@ -81,6 +109,13 @@ def test_the_panel_loc_keys_are_required(tmp_path):
     problems = _problems(tmp_path, _good(), loc=LOC - {"Wardens.Tasks.Continue", "Wardens.Tasks.Check.workers"})
     assert any("Wardens.Tasks.Continue" in p for p in problems)
     assert any("Wardens.Tasks.Check.workers" in p for p in problems)
+
+
+def test_the_shipped_level_02_tasks_close_the_creek_before_the_gorge():
+    data = json.loads((SRC / "Levels" / "02.tasks.json").read_text(encoding="utf-8"))
+    ids = [t["id"] for t in data["tasks"]]
+    assert len(ids) == 6
+    assert ids.index("Creek") < ids.index("Gorge"), "damming the gorge first floods the creek with badwater"
 
 
 def test_the_shipped_level_01_tasks_are_well_formed():

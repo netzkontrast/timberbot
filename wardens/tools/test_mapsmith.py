@@ -577,6 +577,49 @@ def test_walk_report_names_a_cluster_the_colony_cannot_reach(minimal):
     assert "unreachable, even with Stairs" in spec_mod.walk_report(build(spec))
 
 
+# --- watercourses run downhill and keep their water on the map ---
+
+def _two_streams(minimal, trunk_start=(2, 20), extra=None):
+    terrain = [{"op": "base", "height": 8},
+               {"op": "river", "points": [list(trunk_start), [16, 20], [34, 20]], "bed": 4, "width": 1.5,
+                "tag": "badwater", "name": "trunk"},
+               {"op": "river", "points": [[16, 2], [16, 12], [16, 20]], "bed": 6, "width": 1.2,
+                "tag": "clean", "name": "branch"}]
+    terrain += extra or []
+    terrain += [{"op": "pad", "at": [6, 6], "size": 8, "height": 8, "name": "start", "reserve": 0},
+                {"op": "clamp", "min": 1, "max": 19}]
+    return deep_merge(minimal, {"terrain": terrain,
+                                "place": minimal["place"] + [{"template": "WaterSource", "at": [16, 3], "strength": 1.0,
+                                                               "orientation": "Cw0"}]})
+
+
+def test_a_tributary_does_not_raise_its_trunk_at_the_confluence(minimal):
+    """Level 02's creek (bed 6) was carved after its river (bed 5) and raised the river's bed where
+    they met; the game pooled the river behind that sill and the gorge stayed dry."""
+    b = build(_two_streams(minimal))
+    assert b.h(16, 20) == 4, "the confluence keeps the trunk's bed"
+    report = spec_mod.check(_two_streams(minimal), b)
+    assert not any("sill" in str(p) for p in report.errors), report.summary()
+
+
+def test_a_sill_across_a_river_is_an_error(minimal):
+    spec = _two_streams(minimal, extra=[{"op": "pad", "at": [26, 20], "size": 3, "height": 6}])
+    report = spec_mod.check(spec, build(spec))
+    assert any("sill" in str(p) and "trunk" in str(p) for p in report.errors), report.summary()
+
+
+def test_a_river_that_starts_off_the_map_with_a_source_warns(minimal):
+    spec = _two_streams(minimal, trunk_start=(-3, 20))
+    spec = deep_merge(spec, {"place": spec["place"] + [{"template": "WaterSource", "at": [3, 20], "strength": 1.0,
+                                                          "orientation": "Cw0"}]})
+    report = spec_mod.check(spec, build(spec))
+    assert any("off the map at the west edge" in str(p) for p in report.warnings), report.summary()
+    inside = _two_streams(minimal)
+    inside = deep_merge(inside, {"place": inside["place"] + [{"template": "WaterSource", "at": [3, 20],
+                                                             "strength": 1.0, "orientation": "Cw0"}]})
+    assert not any("off the map" in str(p) for p in spec_mod.check(inside, build(inside)).warnings)
+
+
 # --- one level: Wardens walk only between tiles of the same height ---
 
 def _step(minimal, scatter=None, checks=None):
@@ -763,7 +806,7 @@ def test_single_gorge_fails_when_the_narrows_is_really_a_canyon(minimal):
 
 def test_confluence_must_be_upstream_of_the_gorge(minimal):
     """A tributary joining below the dam is not impounded by it, and the level's premise is gone."""
-    above = {"op": "river", "points": [[16, -3], [16, 12], [17, 23]], "bed": 5, "width": 1.0,
+    above = {"op": "river", "points": [[20, -3], [20, 12], [21, 23]], "bed": 5, "width": 1.0,
              "valley": [[3.0, 9]], "tag": "clean", "name": "the creek"}
     below = dict(above, points=[[44, -3], [44, 12], [45, 23]])
     contract = {"confluence_upstream": {"tributary": "the creek", "trunk": "the river",
@@ -779,7 +822,7 @@ def test_confluence_must_be_upstream_of_the_gorge(minimal):
 
 def test_never_touch_exempts_the_confluence_but_not_a_poisoned_source(minimal):
     """The clean water may meet the badwater where it joins it, and nowhere else."""
-    creek = {"op": "river", "points": [[16, -3], [16, 12], [17, 23]], "bed": 5, "width": 1.0,
+    creek = {"op": "river", "points": [[20, -3], [20, 12], [21, 23]], "bed": 5, "width": 1.0,
              "valley": [[3.0, 9]], "tag": "clean", "name": "the creek"}
     contract = {"never_touch": {"a": "clean", "b": "badwater", "gap": 1, "allow": 0,
                                 "confluence": ["the creek", "the river"], "merge": 5}}

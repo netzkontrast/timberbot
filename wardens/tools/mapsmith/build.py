@@ -75,6 +75,7 @@ class MapBuild:
         self.paths: dict[str, list[Point]] = {}
         self.path_tags: dict[str, list[str]] = {}   # tag -> names of the paths carrying it
         self.path_tag_of: dict[str, str] = {}       # path name -> its tag
+        self.path_beds: dict[str, float] = {}       # path name -> the bed height it was carved to
         self.entities: list[Entity] = []
         self.occupied = Mask(size)      # cells an entity already claims
         self.reserved = Mask(size)      # cells placement must keep clear (the starting pad, mainly)
