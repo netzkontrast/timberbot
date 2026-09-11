@@ -149,9 +149,10 @@ Skip.
 
 A pose field that is neither absolute nor relative keeps the value from the scene's start, so a
 keyframe with only `dh` orbits without changing the tilt or the zoom. The units are the director's:
-world space for the target, degrees, `ZoomLevel`; the zoom scale is the one number nobody has
-measured yet (§12), which is why the prototype uses small relative `dzoom` values that are harmless
-whatever the scale turns out to be.
+world space for the target, degrees, `ZoomLevel`. The zoom is exponential: the camera stands
+`1.3^ZoomLevel * 32` tiles from its target (`CameraService.blueprint.json`), so 3 shows most of a 96
+map, 0 is 32 tiles, -5 is 8.6 and fills the frame with one bot. The player's scroll range is -8 to 6;
+the director sets `ZoomLevel` directly and nothing clamps it (§12, settled).
 
 ### 3.4 Triggers
 
@@ -439,8 +440,9 @@ was deliberately avoided because `TextAnchor` lives in a Unity module no csproj 
 
 ## 12. Open questions (the smoke run answers them)
 
-- The zoom scale: what `ZoomLevel` range the game uses, and therefore what `dzoom` values a "high
-  shot" and a "push in" need. The prototype's ±0.15 is a placeholder that cannot hurt.
+- ~~The zoom scale.~~ Settled (§3, the keyframe fields): `1.3^ZoomLevel * 32` tiles, player range -8 to 6, unclamped for
+  the director. Each -1 brings the camera 23 % closer; the Cold Boot's `dzoom` ±0.15 moves
+  the camera 4 %, so it reads as a held shot.
 - Whether the letterbox and the tutorial panel collide on screen, and whether the Wake and Directive
   text should move into the scene (the Cold Boot tutorial would keep one empty stage so the Basics
   chain still starts from it).

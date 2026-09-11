@@ -14,10 +14,11 @@
 #
 #   the Sump        a basin a tile deeper (bed 3), fed by a seep of its own so it fills on day 1 and by
 #                   the river so it never runs dry; the river moved east so it no longer hugs the pad
-#   its shore       a terrace: pad 8 -> 7 -> a shelf at 6 along the water, walkable, room for pumps
-#                   (contract `shore`)
-#   first scrap     three small ruins just off the pad, so the first Charging Post goes up in hours
-#                   (`reachable_scatter`)
+#   its shore       a terrace: pad 8 -> 7 -> a shelf at 6 along the water, two Stairs down, room for
+#                   pumps (contract `shore`)
+#   first scrap     three small ruins on the pad's own level, so the first flags work them before a
+#                   single Stairs (`on_foot_scatter`). Wardens walk on one level; the first remake put
+#                   these one level down and the opening softlocked at 0 scrap (PLAYTEST.md, 0.4.14)
 #   the spring      still across the badwater river, and now one short bridge away: the Green
 #                   chapter's reward, neither impossible nor free (contract `crossing`)
 #
@@ -153,8 +154,8 @@ orientation = "Cw0"
 # --- ruins: scrap is the only building material ------------------------------------------------------
 
 [[scatter]]
-name = "first light"               # the first scrap: small columns just off the pad, west of the shore
-templates = ["RuinColumnH1", "RuinColumnH2"]
+name = "first light"               # the first scrap: small columns on the pad's own level, so the first
+templates = ["RuinColumnH1", "RuinColumnH2"]   # flags reach them without Stairs (on_foot_from)
 weights = [3, 2]
 levels = [1, 2]
 around = "start"
@@ -163,7 +164,7 @@ count = 3
 spacing = 2
 height_range = [7, 9]
 away_from = { sump = 10.0, badwater = 4.0 }
-reachable_from = "start"
+on_foot_from = "start"
 variants = ["A", "B", "C"]
 orientation = "Cw0"
 yield = { good = "ScrapMetal", amount_per_level = 15 }
@@ -300,9 +301,12 @@ contamination = { from = "badwater", offset = 2.5, reach = 6.0 }
 require = ["StartingLocation", "BadwaterSource", "WaterSource"]
 require_at_least = { RuinColumnH1 = 3, BadwaterSource = 4 }
 min_reachable = 1500
-# Chapter 1 has to be playable on foot; the fields across the river are meant to need a bridge,
+# Chapter 1 has to be playable with Stairs; the fields across the river are meant to need a bridge,
 # so they are deliberately absent from this list.
 reachable_scatter = ["first light", "near ruins", "south of the pad"]
+# The opening has to be playable before a single Stairs: the 10 starting scrap buy two Charging Posts,
+# and the first flags work these. Wardens walk only on one level (PLAYTEST.md, 2026-09-11, 0.4.14).
+on_foot_scatter = ["first light"]
 
 # --- the level design, as geometry ------------------------------------------------------------------
 

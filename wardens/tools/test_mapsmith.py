@@ -446,7 +446,7 @@ def test_checker_catches_a_boxed_in_start(minimal):
                     array[z * plane + y * 32 + x] = "1"
     world["Singletons"]["TerrainMap"]["Voxels"]["Array"] = " ".join(array)
     problems = [str(p) for p in check_world(world, meta, set(NAMES), {"min_reachable": 200}).errors]
-    assert any("walkable" in p for p in problems), problems
+    assert any("boxed in" in p for p in problems), problems
 
 
 def test_checker_catches_a_size_mismatch(minimal):
@@ -556,7 +556,7 @@ def test_walk_distances_measure_steps_not_straight_lines(minimal):
     assert dist[(start.x, start.y)] == 0
     assert dist[(start.x + 3, start.y + 4)] == 7        # 4-neighbour steps, not 5
     report = spec_mod.walk_report(b)
-    assert "reachable on foot" in report
+    assert "tiles on foot" in report
 
 
 def test_walk_report_names_a_cluster_the_colony_cannot_reach(minimal):
@@ -568,7 +568,67 @@ def test_walk_report_names_a_cluster_the_colony_cannot_reach(minimal):
         "scatter": [{"name": "far side", "template": "RuinColumnH1", "around": [27, 16],
                      "radius": 3, "count": 3, "height_range": [6, 6]}]})
     assert "far side" in spec_mod.walk_report(build(spec))
-    assert "unreachable on foot" in spec_mod.walk_report(build(spec))
+    assert "unreachable, even with Stairs" in spec_mod.walk_report(build(spec))
+
+
+# --- one level: Wardens walk only between tiles of the same height ---
+
+def _step(minimal, scatter=None, checks=None):
+    """A 32 map whose start pad (height 7) has ground at 6 to its east: one level down."""
+    spec = deep_merge(minimal, {
+        "terrain": [{"op": "base", "height": 6},
+                    {"op": "pad", "at": [8, 16], "size": 8, "height": 7, "name": "start", "reserve": 0},
+                    {"op": "clamp", "min": 3, "max": 19}],
+        "scatter": scatter or [],
+        "checks": {"require": ["StartingLocation"], **(checks or {})}})
+    return spec
+
+
+def test_on_foot_stays_on_one_level_and_stairs_cross_it(minimal):
+    """The game joins a tile only to neighbours of its own height (TerrainNavMeshUpdater); level 01
+    showed it: flags on the pad found no ruin one level down until a Stairs stood."""
+    from mapsmith.build import ON_FOOT
+    b = build(_step(minimal))
+    start = next(e for e in b.entities if e.template == "StartingLocation")
+    on_foot = b.walkable_from((start.x, start.y), ON_FOOT)
+    stairs = b.walkable_from((start.x, start.y))
+    assert on_foot.at(start.x, start.y) and not on_foot.at(28, 16), "height 6 is a level down"
+    assert stairs.at(28, 16), "one Stairs reaches it"
+    best = b.stairs_from((start.x, start.y))
+    assert best[(start.x, start.y)] == (0, 0)
+    assert best[(28, 16)][0] == 1
+
+
+def test_on_foot_scatter_catches_a_ruin_one_level_down(minimal):
+    down = {"name": "down", "template": "RuinColumnH1", "around": [26, 16], "radius": 3, "count": 2,
+            "height_range": [6, 6]}
+    spec = _step(minimal, [down], {"reachable_scatter": ["down"]})
+    assert spec_mod.check(spec, build(spec)).ok, "reachable with Stairs"
+    strict = _step(minimal, [down], {"on_foot_scatter": ["down"]})
+    report = spec_mod.check(strict, build(strict))
+    assert any("need Stairs" in str(p) for p in report.errors), report.summary()
+    assert "1 Stairs" in spec_mod.walk_report(build(strict))
+
+
+def test_on_foot_from_keeps_a_cluster_on_the_start_level(minimal):
+    rule = {"name": "first", "template": "RuinColumnH1", "around": [11, 19], "radius": [3, 12],
+            "count": 3, "spacing": 2, "on_foot_from": "start"}
+    spec = _step(minimal, [rule], {"on_foot_scatter": ["first"]})
+    b = build(spec)
+    assert all(b.h(e.x, e.y) == 7 for e in b.entities if e.rule == "first")
+    assert spec_mod.check(spec, b).ok
+    assert "on foot" in spec_mod.walk_report(b)
+
+
+def test_first_light_opens_with_scrap_on_the_pad():
+    """The 10 starting scrap buy two Charging Posts, so the first ruins must need no Stairs."""
+    spec = load(FIRST_LIGHT)
+    assert "first light" in spec["checks"]["on_foot_scatter"]
+    b = build(spec)
+    start = next(e for e in b.entities if e.template == "StartingLocation")
+    pad = b.h(start.x, start.y)
+    first = [e for e in b.entities if e.rule == "first light"]
+    assert first and all(b.h(e.x, e.y) == pad for e in first)
 
 
 @pytest.mark.parametrize("argv", [

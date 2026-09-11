@@ -153,8 +153,8 @@ cards tell the human what to build, and you make sure it can be built.
 | Chapter | Your first moves | What to watch |
 |---|---|---|
 | Cold Boot | nothing; the scene and the cards are speaking | `cutscene.end`, then the human unpausing |
-| First Light | Charging Post beside the Core with a shaft, before anything else; two Scavenger Flags at the nearest ruins (`/api/tiles` shows them); paths to the Core | every bot's Energy; scrap stock reaching 10 |
-| Badwater | Sludge Pump on the Sump (the basin east of the Core); Sludge Tanks; Reed Bed on flat poisoned ground, 40 reed marked | badwater filling the Sump during the first day; Biomass arriving |
+| First Light | Charging Post beside the Core with a shaft, before anything else; two Scavenger Flags at the nearest ruins on the Core's own level (`/api/tiles` shows them); paths to the Core. Wardens walk on one level: anything lower or higher needs a Stairs (3 scrap) per level | every bot's Energy; scrap stock reaching 10; a flag saying "Nothing to do in range" |
+| Badwater | Stairs down to the Sump's shore, then the Sludge Pump on the Sump (the basin east of the Core); Sludge Tanks; Reed Bed on flat poisoned ground, 40 reed marked | the Sump's level; Biomass arriving |
 | Signal | the Cruncher powered from the Core; choose the recipe and say why: Science Points to unlock, Data Cores to feed Firmware and the Archive | the power budget (Core 150, Post 50, Cruncher 120: it does not add up, and that is the chapter) |
 | Pods | two Breeding Pods where the human wants the first beavers to wake; Crate Rack set to Biomass | Biomass stock; the pods' power |
 | Power | the Badwater Cell on the Sump; the Sludge Burner only when Biomass is steady, and say what it will poison | the Ledger's `poisoned` line jumping |

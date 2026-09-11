@@ -29,6 +29,18 @@ verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first 
   contamination 1; the spring's crater to 12.25, clean. The opening now flies over water, not dry beds.
   mapsmith gained `[water] fill` and a checker for the column encoding, which is decoded from the 1.1.2.4
   decompile (`WaterColumnPackedListSerializer`) and a real save; 9 new tests.
+- 0.4.15: the Warden close-up flies in to 9 tiles (zoom -4.5 → -5; 0.25 was 34 tiles, as far as the
+  Core shot: the zoom is `1.3^ZoomLevel * 32`, not clamped). The `speed` tool maps 0..3 through the
+  speed buttons (x1, x3, x7) and answers `was`, `speed`, `applied`: it used to report the old speed,
+  because the game applies a change on the next frame, and a locked speed drops it.
+- 0.4.16–0.4.18, from Claude playing level 01 over MCP: **Wardens walk on one level.** The game joins a tile
+  only to neighbours of the same height, so a Stairs (3 scrap) is needed for every level; level 01's ruins
+  all sat one level below the pad and the opening (two Posts, then flags) softlocked at 0 scrap. mapsmith
+  now tells on foot from with Stairs (`on_foot_from`, `[checks] on_foot_scatter`, Stairs in the walk report),
+  and level 01's three first ruins stand on the pad (new map; saves on the old land keep it). The opening's
+  Ruins and Shore captions follow the land; the Warden shot looks at the Core's door (the Wardens are inside
+  it while the scene plays). `/api/tiles` reads the water's contamination (it read 0 everywhere; fixed
+  upstream in `timberbot/src` and re-copied). Frame positions carry `at.grid`, the tile `point` takes.
 
 State: the opening `verified` on the game machine (0.4.10: it played by itself on a handoff start with the
 tutorial off, all 12 shots, screenshots in PLAYTEST.md); the 0.4.11 fixes deployed as 0.4.12.

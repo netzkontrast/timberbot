@@ -74,10 +74,10 @@
       "caption": "Wardens.Cutscene.FirstLight.Ruins",
       "seconds": 8,
       "camera": [
-        { "t": 3, "anchor": "grid", "x": 17, "y": 43, "z": 7, "v": 50, "zoom": 1.2, "dh": 20 },
-        { "t": 8, "anchor": "grid", "x": 16, "y": 42, "z": 7, "v": 48, "zoom": 1.1, "dh": -10 }
+        { "t": 3, "anchor": "grid", "x": 16, "y": 47, "z": 8, "v": 50, "zoom": 1.2, "dh": 20 },
+        { "t": 8, "anchor": "grid", "x": 16, "y": 47, "z": 8, "v": 48, "zoom": 1.1, "dh": -10 }
       ],
-      "highlight": { "anchor": "grid", "x": 19, "y": 42, "z": 7, "seconds": 8 }
+      "highlight": { "anchor": "grid", "x": 16, "y": 46, "z": 8, "seconds": 8 }
     },
     {
       "id": "spring",
@@ -114,8 +114,8 @@
       "caption": "Wardens.Cutscene.FirstLight.Warden",
       "seconds": 8,
       "camera": [
-        { "t": 2.5, "anchor": "bot", "v": 32, "zoom": 0.3, "dh": 120 },
-        { "t": 8, "anchor": "bot", "v": 30, "zoom": 0.25, "dh": 150 }
+        { "t": 2.5, "anchor": "grid", "x": 23, "y": 46, "z": 8, "h": -10, "v": 28, "zoom": -3.5 },
+        { "t": 8, "anchor": "grid", "x": 23, "y": 47, "z": 8, "h": 15, "v": 25, "zoom": -4.0 }
       ]
     },
     {

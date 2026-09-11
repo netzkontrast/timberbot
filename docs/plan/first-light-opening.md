@@ -32,7 +32,7 @@ State words are the driving-iterations skill's: `written`, `checked`, `built`, `
 | 2 | **Checker.** `check_cutscenes.py` accepts `level:<Id>` with an id from the level table in `WardensCampaign.cs`, rejects an unknown id; tests for both. | `pytest wardens/tools` (programmatic) | checked: pytest 139 passed |
 | 3 | **The scene.** `Cutscenes/FirstLight.json`: 12 shots, about 100 s, over the land's features in the order the level plays them: the dark plateau with the archived badtides, the river's head, the river across the plateau, the Sump and its seep, the terraced shore, the first ruins, the spring, the crossing, the Core, a Warden, the directive (waits for Continue). Grid anchors from the built map, not guesses. | `check_cutscenes.py wardens/src` → `problems: none` (programmatic) | checked: `problems: none`; played in the game 2026-09-11 |
 | 4 | **Captions.** `Wardens.Cutscene.FirstLight.<Shot>` rows in `enUS.csv`, in the Wardens' voice (measurements, not adjectives), every number true of the built map (walk report, spec, blueprints). | checker (programmatic); a read against `mapsmith build --level 01` output (judge) | checked; numbers read against the walk report. Seen in the game: the Core caption printed `System.Object[]` (args bug, fixed in 0.4.11, seen fixed in 0.4.12) |
-| 5 | **Live tuning.** The agent plays the scene in the running game (`cutscene reload`, `cutscene play id=FirstLight`), screenshots each shot, fixes framing (zoom, tilt, anchors), copies the file back to `wardens/src/Cutscenes/`. | a screenshot per shot, each showing what its caption names (human/judge) | first pass done: every shot frames its subject (two runs, the second DPI-aware); the Warden close-up's zoom still open |
+| 5 | **Live tuning.** The agent plays the scene in the running game (`cutscene reload`, `cutscene play id=FirstLight`), screenshots each shot, fixes framing (zoom, tilt, anchors), copies the file back to `wardens/src/Cutscenes/`. | a screenshot per shot, each showing what its caption names (human/judge) | first pass done: every shot frames its subject (two runs, the second DPI-aware). Second pass: the Warden close-up's zoom was the same distance as the Core shot (exponential scale, no clamp); now -4.5 → -5 |
 | 6 | **Build and deploy** with the game closed (a DLL deployed under a running game mixes versions). Version bump. | `dotnet build -c Release` → 0 warnings, 0 errors (programmatic) | built: 0.4.10, 0 warnings, 0 errors |
 | 7 | **The real start.** Handoff `{"level":"01"}`, launch; the scene plays by itself with the tutorial off; Skip works; the game is paused afterwards. | `PLAYTEST.md` row (human/game) | verified: played by itself on a handoff start, tutorial off, all 12 shots; Skip not pressed in this run |
 | 8 | **Docs.** `design/wardens-cutscenes.md` (the trigger table, the policy, §8 no longer lists level triggers as future), `CHANGELOG`, `PLAYTEST.md` smoke list, HANDOVER entry. | doc read (judge) | written |
@@ -48,9 +48,10 @@ State words are the driving-iterations skill's: `written`, `checked`, `built`, `
 
 ## Open questions
 
-- The zoom scale is still unmeasured in the design (§12). Readings from this session: the camera
-  spawned at `ZoomLevel` 0.8; the author's wide view of the plateau was 2.99. The distance is
-  `ZoomBase^ZoomLevel * BaseDistance` (decompiled `CameraService`), so the scene uses absolute zooms in
-  that range and the live pass (package 5) corrects them.
-- The speed stayed at 0 after `speed value=3` with no scene playing (2026-09-11, the author placing
-  Stairs). Something else holds the speed lock; not caused by this work, recorded for the playtest.
+- ~~The zoom scale.~~ Settled from the blueprint: the distance is `1.3^ZoomLevel * 32` tiles
+  (`CameraService.blueprint.json`: `ZoomBase` 1.3, `BaseDistance` 32; player range -8 to 6), and the
+  director's `ZoomLevel` is not clamped. 0.8 (the spawn) is 39 tiles, 3 is 70, -5 is 8.6. The Warden
+  close-up at 0.25 was 34 tiles, as far as the Core shot; it now flies -4.5 to -5.
+- ~~The speed stayed at 0 after `speed value=3`.~~ The tool read `CurrentSpeed` before
+  `SpeedManager` applied the queued value (next `LateUpdate`), and a locked speed drops the change.
+  Fixed in 0.4.15 (`PLAYTEST.md`, finding 6).

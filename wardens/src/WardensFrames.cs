@@ -7,8 +7,8 @@
 // population and charge, the archive (Data Cores) and science, chapter, cutscene and open tutorial
 // steps, what the human has selected,
 // the camera pose and how long the human has left it alone, the events since the last frame, and an
-// `attention` list: where to look first, in priority order, with world positions the `camera` and
-// `point` tools accept. The agent never polls the read API to find out whether anything changed.
+// `attention` list: where to look first, in priority order. Each `at` is a world position (`camera`,
+// world: true) with the grid tile under it in `at.grid` (`point`, every Timberbot endpoint). The agent never polls the read API to find out whether anything changed.
 //
 // Threading follows WardensChat: the main thread publishes under a lock and pulses; the listener
 // thread waits on the lock in short slices so a chat message (kept in WardensChat's own store) can
@@ -134,7 +134,7 @@ namespace Wardens
         private void Note(string what, Vector3? at = null)
         {
             _events.Add(what);
-            if (at != null) _spots.Add(new JObject { ["what"] = what, ["at"] = WardensCameraDirector.Vec(at.Value) });
+            if (at != null) _spots.Add(new JObject { ["what"] = what, ["at"] = WardensCameraDirector.At(at.Value) });
             _pending = true;
         }
 
@@ -272,7 +272,7 @@ namespace Wardens
                     {
                         ["entityId"] = entity != null ? entity.EntityId.ToString() : null,
                         ["energy"] = energy.Value,
-                        ["at"] = WardensCameraDirector.Vec(c.Transform.position),
+                        ["at"] = WardensCameraDirector.At(c.Transform.position),
                     });
                 }
             }
@@ -323,7 +323,7 @@ namespace Wardens
                 selection = new JObject { ["template"] = so.GetComponent<TemplateSpec>()?.TemplateName };
                 var block = so.GetComponent<BlockObject>();
                 if (block != null) selection["coords"] = new JObject { ["x"] = block.Coordinates.x, ["y"] = block.Coordinates.y, ["z"] = block.Coordinates.z };
-                selection["at"] = WardensCameraDirector.Vec(so.Transform.position);
+                selection["at"] = WardensCameraDirector.At(so.Transform.position);
             }
             frame["selection"] = selection;
             frame["camera"] = _director.State();

@@ -119,6 +119,16 @@ namespace Wardens
 
         public static JObject Vec(Vector3 v) => new JObject { ["x"] = v.x, ["y"] = v.y, ["z"] = v.z };
 
+        // A world position and the grid tile it stands on: `camera` takes the first (world: true),
+        // `point` and every Timberbot endpoint the second (y there is north, z the height).
+        public static JObject At(Vector3 world)
+        {
+            var o = Vec(world);
+            var g = CoordinateSystem.WorldToGridInt(world);
+            o["grid"] = new JObject { ["x"] = g.x, ["y"] = g.y, ["z"] = g.z };
+            return o;
+        }
+
         // Reads {x,y,z} as WORLD coordinates when "world": true, otherwise as grid coordinates
         // (x, y, z=height) like every Timberbot endpoint. Missing fields keep the fallback.
         public static Keyframe FromJson(JObject o, Keyframe fallback)

@@ -287,14 +287,30 @@ def check_world(world: dict, meta: dict, names: set[str], opts: dict | None = No
         blocked |= {(e["Components"]["BlockObject"]["Coordinates"]["X"],
                      e["Components"]["BlockObject"]["Coordinates"]["Y"])
                     for e in entities if "Source" in e.get("Template", "")}
+        # `reach` is what the colony gets to by building Stairs (one level each); `on_foot` is what it
+        # gets to before it builds anything: the game joins a tile only to neighbours of its own height.
         reach = _reachable(heights, size_x, (c["X"], c["Y"]), blocked, int(opts.get("max_step", 1)))
+        on_foot = _reachable(heights, size_x, (c["X"], c["Y"]), blocked, 0)
         min_area = int(opts.get("min_reachable", 0))
         if min_area and len(reach) < min_area:
-            r.err(f"only {len(reach)} tiles are walkable from the starting location "
+            r.err(f"only {len(reach)} tiles are reachable from the starting location, even with Stairs "
                   f"(spec asks for {min_area}); the colony is boxed in")
         elif len(reach) < plane * 0.05:
-            r.warn(f"only {len(reach)} of {plane} tiles are walkable from the start "
+            r.warn(f"only {len(reach)} of {plane} tiles are reachable from the start, even with Stairs "
                    f"({100 * len(reach) / plane:.1f}%) — check the pad is not ringed by cliffs")
+        for group in opts.get("on_foot_scatter", []):
+            spots = (groups or {}).get(group)
+            if spots is None:
+                r.warn(f"[checks] on_foot_scatter names {group!r}, which is not a named "
+                       f"[[scatter]]/[[place]] rule in this spec"
+                       + ("" if groups is not None else " (checking a .timber cannot see rule names — "
+                                                        "run `check` on the spec instead)"))
+                continue
+            stranded = [s for s in spots if s not in on_foot]
+            if stranded:
+                r.err(f"{len(stranded)} of {len(spots)} entities from {group!r} need Stairs: their tile is "
+                      f"not on the start's level, joined by flat ground, e.g. {stranded[0]}. A Scavenger "
+                      f"Flag on the pad cannot reach them until one is built.")
         for group in opts.get("reachable_scatter", []):
             spots = (groups or {}).get(group)
             if spots is None:
@@ -306,9 +322,9 @@ def check_world(world: dict, meta: dict, names: set[str], opts: dict | None = No
             cut_off = [s for s in spots
                        if not any(abs(s[0] - rx) <= 1 and abs(s[1] - ry) <= 1 for rx, ry in reach)]
             if cut_off:
-                r.err(f"{len(cut_off)} of {len(spots)} entities from {group!r} cannot be reached on "
-                      f"foot from the starting location, e.g. {cut_off[0]}. If that is deliberate, "
-                      f"drop it from `[checks] reachable_scatter`.")
+                r.err(f"{len(cut_off)} of {len(spots)} entities from {group!r} cannot be reached from "
+                      f"the starting location, even with Stairs, e.g. {cut_off[0]}. If that is "
+                      f"deliberate, drop it from `[checks] reachable_scatter`.")
 
         for template in opts.get("reachable", []):
             spots = [(e["Components"]["BlockObject"]["Coordinates"]["X"],
@@ -316,10 +332,10 @@ def check_world(world: dict, meta: dict, names: set[str], opts: dict | None = No
                      for e in entities if e.get("Template", "").startswith(template)]
             near = [s for s in spots if any(abs(s[0] - rx) <= 1 and abs(s[1] - ry) <= 1 for rx, ry in reach)]
             if spots and not near:
-                r.err(f"no {template}* is reachable on foot from the starting location "
+                r.err(f"no {template}* is reachable from the starting location, even with Stairs "
                       f"({len(spots)} exist, all cut off)")
             elif spots and len(near) < len(spots) * float(opts.get("reachable_fraction", 0.2)):
-                r.warn(f"only {len(near)} of {len(spots)} {template}* are reachable on foot")
+                r.warn(f"only {len(near)} of {len(spots)} {template}* are reachable, even with Stairs")
 
     return r
 

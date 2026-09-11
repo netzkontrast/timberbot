@@ -164,6 +164,54 @@ Design and open questions: `design/wardens-cutscenes.md` (§9 is this list, §12
   the letterbox collides with the tutorial panel, and whether the caption is centered (the game's
   `text--centered` class) or needs a fixed width.
 
+## Level 01 played by Claude over MCP, the opening as scripted (2026-09-11, 0.4.14, game machine)
+
+A fresh handoff start of the remade land. Claude played through the `wardens` MCP tools from the end of
+the opening to day 4, following the playbook's opening (two Charging Posts for the 10 starting scrap,
+then two Scavenger Flags and paths); the author built alongside from day 3 and quit at day 8.
+
+| Check | Result |
+|---|---|
+| Opening, Sump caption (0.4.14) | `cutscene status` read "Below the Core, the Sump: badwater, 1.2 deep. The seep and the river keep it full." |
+| After the opening | the scene ended by Continue (`finished at shot 12/12`); `speed value=1` then ran the game, so it was paused and not locked |
+| Skip mid-scene | not pressed: the author pressed Continue at the directive before the MCP `skip` arrived |
+| Warden close-up at zoom -4.5 → -5 | framed the Core's wall: all 13 Wardens stand at 23,48, inside the Core, while the scene plays |
+| The flags | both "Nothing to do in range" from day 1, ruins 2–4 tiles away one level down; cleared within 100 ticks of the first Stairs finishing (18,42) |
+| Energy | 11 of 13 Wardens at 0 by day 2.8 with two Posts (capacity 1 each) |
+
+Findings:
+
+1. **Wardens cannot step one terrain level without Stairs, and every ruin on level 01 sat one level
+   below the pad** (critical, reproduced). Symptom: flags at 18,44 and 21,46 (height 8) said "Nothing to
+   do in range" with ruins at 19,42 and 14,48 (height 7); unemployed Wardens wandered for two days and
+   none left height 8; scrap stayed at 0 after the two Posts. A Stairs at 18,42 cleared both alerts and a
+   ruin paid 15 scrap within the day. The author's earlier colony on this land needed 6 Stairs.
+   Source (read): the terrain nav mesh joins a tile only to same-height neighbours
+   (`TerrainNavMeshUpdater.TilesAreOrthogonallyConnected`), and a flag's range is the terrain it walks to
+   (`BuildingTerrainRange`, `InRangeYielders`). mapsmith assumed one level of climb (`max_step = 1`), so
+   its walk report said "near ruins 10 min" and the level passed `reachable_scatter`. Consequence: the
+   scripted opening softlocks at 0 scrap; recovered here only by taking both Posts down (2 scrap each
+   back) for one Stairs. Remedy (the author chose it): mapsmith models on foot (one level) and with Stairs
+   (`on_foot_from`, `[checks] on_foot_scatter`, Stairs counts in the walk report), and level 01's three
+   first ruins stand on the pad (0.4.16 map); the playbook says Stairs before the Sump.
+2. **Idle Wardens drain to 0 by day 2.8** (reproduced, the 0.4.5 finding 2). Two Posts of capacity 1
+   for 13 Wardens. Remedy: open, the balance pass.
+3. **Wardens at 0 Energy keep walking** (seen). Wardens listed at `energy 0.00` changed position between
+   frames and walked down the new Stairs; unemployed ones refilled from 0 to 0.49–0.98 within a day
+   while no Post stood. The frame's `why` ("a stopped Warden does not get up") and the story ("stops where
+   it stands") say otherwise. Source: not read (the Energy need's effects and the bot behaviours).
+   Remedy: open; read the bot need specs before the balance pass decides what 0 should mean.
+4. **`/api/tiles` reported `badwater: 0` on every Sump tile** at contamination 1. Source (read):
+   `ColumnContamination(x, y, col.Ceiling)` returns 0 unless the water reaches that height. Remedy
+   (0.4.16): the column's own `Contamination`, upstream in `timberbot/src` and re-copied. Not yet seen.
+5. **The frame's `at` is a world position** (`y` is the height), and `point` takes a grid tile, so
+   passing one to the other points at the wrong place. Remedy (0.4.17): every `at` also carries
+   `at.grid`. Not yet seen.
+6. **The Warden close-up has no Warden to show:** at scene time the Wardens are inside the Core.
+   Remedy (0.4.16): the shot looks at the Core's door from the south, where they come out. Not yet seen.
+7. **`/api/placement/find` offered no Sludge Pump site on the Sump's west shelf**, only three in the
+   channel; the author's pump at 32,47 (height 6, west) placed from the tool bar. Source: not read. Remedy: open.
+
 ## The remade level 01 and its opening (2026-09-11, 0.4.9–0.4.10, game machine)
 
 Two fresh starts by the main-menu handoff (`{"level":"01"}`), the author's tutorial setting off, read
@@ -199,11 +247,18 @@ Findings:
    first badtide") open right after the opening. Source: `WardensArchivedBadtides` posts the vanilla
    weather events, as designed for the Cold Boot. Consequence: a card about a badtide the colony never
    lived through. Remedy: deferred; it predates the opening (the Cold Boot replays the same three).
-5. **The Warden close-up is no closer than the Core shot** (zoom 0.25 against 0.6). Source: not read;
-   likely the default zoom limit clamps. Remedy: deferred to the next `cutscene-director` pass, which
-   measures the limit with `camera action=set`.
+5. **The Warden close-up is no closer than the Core shot** (zoom 0.25 against 0.6). Source (read): no
+   clamp. The distance is `1.3^ZoomLevel * 32` (`CameraService`, `CameraService.blueprint.json`), so
+   0.25 is 34 tiles and 0.6 is 37: the same shot. The director sets `ZoomLevel` directly and nothing
+   clamps it; the player's scroll range is -8 to 6. Remedy: the Warden shot flies from -4.5 to -5 (10 to
+   9 tiles); the scale is written into the `cutscene-director` agent.
 6. **The speed would not leave 0** in the 0.4.9 session (`speed value=3` answered `speed: 0`, no scene
-   playing, the author placing Stairs). Source: not found. Remedy: deferred, watch for it.
+   playing, the author placing Stairs). Source (read): `SpeedManager.ChangeSpeed` only queues the value
+   for its `LateUpdate` and drops it while the speed is locked (`OverlayPanelSpeedLocker` locks it for
+   every panel with `LockSpeed`), and the tool answered with `CurrentSpeed` read straight after, which is
+   always the old speed. The tool also passed the button number as the speed, so `3` was x3, not the fastest button (x7). Remedy
+   (0.4.15): the tool maps 0..3 through the buttons (0, 1, 3, 7) like `POST /api/speed`, and answers
+   `was`, `speed`, `applied` and, when locked, the reason.
 
 ## Level 01 played through the MCP server (2026-09-11, 0.4.5–0.4.6, game machine)
 

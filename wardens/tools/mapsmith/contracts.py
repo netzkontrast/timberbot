@@ -300,8 +300,9 @@ def contract_shore(b: MapBuild, params: dict, r: Report) -> None:
     fault by itself: the only waterside ground the colony could walk to was the pad, so the pumps
     took the Core's building room, and the rest of the rim lay below the cliff where nobody could go.
     A shore tile here is a land tile that touches water within `radius` of `at`, that the colony can
-    walk to from `from`, and that lies outside every `reserve` ring (the pad and its doorstep). A
-    Sludge Pump facing the water takes two tiles of shore, so the longest straight run is checked too.
+    reach from `from` (with Stairs, one per level), and that lies outside every `reserve` ring (the
+    pad and its doorstep). A Sludge Pump facing the water takes two tiles of shore, so the longest
+    straight run is checked too.
 
     at (anchor), radius (tiles, default 8), from (anchor, default "start"), min_tiles, min_run (default 3).
     """
@@ -340,9 +341,9 @@ def contract_shore(b: MapBuild, params: dict, r: Report) -> None:
 def contract_crossing(b: MapBuild, params: dict, r: Report) -> None:
     """A place can be reached from the start with one short bridge, and not without one.
 
-    Walks the surface as the colony does (one level per step), except that it may cross water once:
-    a bridge of at most `max_water` water tiles, which has to land within one level of the bank it
-    left. The spring on level 01 is the Green chapter's reward only if it is one short bridge away —
+    Walks the surface as the colony does when it builds Stairs (one level per step), except that it
+    may cross water once: a bridge of at most `max_water` water tiles, which has to land within one
+    level of the bank it left. The spring on level 01 is the Green chapter's reward only if it is one short bridge away —
     unreachable (the old map) makes the chapter impossible, and walkable makes it no reward at all.
 
     to (anchor), radius (tiles around it that count as arriving, default 3), from (anchor, default
@@ -413,7 +414,7 @@ def contract_crossing(b: MapBuild, params: dict, r: Report) -> None:
               f"with one bridge of at most {max_water} water tiles")
     else:
         r.note(f"crossing: {params['to']!r} is one bridge of at most {max_water} water tiles from "
-               f"{params.get('from', 'start')!r}, and not reachable on foot")
+               f"{params.get('from', 'start')!r}, and not reachable without one")
 
 
 CONTRACTS: dict[str, Callable[[MapBuild, dict, Report], None]] = {

@@ -40,8 +40,11 @@ The game reads scenes from its mod folder, not from the repo:
 Units: grid anchors are `x`, `y`, `z` = height, the same coordinates as every Timberbot endpoint and
 as the mapsmith spec (north up, y runs south). Entity positions are in the built map
 (`wardens/src/Maps/*.timber`, `world.json`, `BlockObject.Coordinates`); read them, do not guess.
-`ZoomLevel` sets the camera distance as `ZoomBase^ZoomLevel * BaseDistance`; 0.8 is the spawn view
-and about 3 shows most of a 96 map. `v` is the tilt in degrees (90 looks straight down).
+`ZoomLevel` sets the camera distance as `ZoomBase^ZoomLevel * BaseDistance`, with `ZoomBase` 1.3 and
+`BaseDistance` 32 (`CameraService.blueprint.json`): 0 is 32 tiles away, 3 is 70 and shows most of a
+96 map, -5 is 8.6 and fills the frame with one bot. The scale is exponential, so 0.25 and 0.6 are
+the same shot. The player's scroll range is -8 to 6 (10 with unlocked zoom); the director sets
+`ZoomLevel` directly and nothing clamps it. `v` is the tilt in degrees (90 looks straight down).
 
 ## Captions
 
