@@ -15,8 +15,10 @@ is and how each part works), `wardens/CHANGELOG.md` (what each version added), `
 
 **Plan:** the author asked for clear tasks whose completion loads level 02, scouted over MCP; they chose
 eight tasks to the first beaver and a card whose Continue loads the next level. **Status:** `built`
-(0.4.22) and `verified` up to 7 of 8 tasks on the author's colony; the level-end card and the transition to
-level 02 not yet seen (the first beaver had not woken when this entry was written).
+(0.4.22) and `verified` end to end on the author's colony: all 8 tasks, the level-end card, and its
+Continue loading level 02 as a new Wardens game with no loading problem (addendum, 16:54: the first
+beaver woke, `tasks: level 01 complete`, `transition: starting level 02 (The Sump) … as a new Wardens game`,
+`campaign: level 02 … completed=[01]`, 0 `Can't validate` / exception lines).
 
 ### What I did
 
@@ -34,9 +36,9 @@ and frame fields, level 02 marked shipped, the save auto-loader fixed for `Exper
 
 ### What you should do, in this order
 
-**Game machine:** when the first beaver wakes, the card appears: press Continue once and read Player.log
-for the transition (`transition: … new game`) and level 02 loading; note anything under `missing`.
-Then close the game and build once (0.4.23: the panel under the goods bar, two task texts with the game's
+**Done:** the card and the transition (addendum above). **Next package:** level 02 has no tasks, no
+opening and no ending; write `Levels/02.tasks.json` from its design (`wardens-campaign-map-set.md` §2, the
+one dam decision) after a scouting pass over MCP. **Game machine:** close the game and build once (0.4.23: the panel under the goods bar, two task texts with the game's
 building names). Still open from the entry below: a fresh level 01 with no `Can't validate` line, Skip.
 
 ### Open questions I could not answer

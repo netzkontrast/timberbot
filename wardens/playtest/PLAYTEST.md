@@ -148,6 +148,9 @@ wakes it every 60 game ticks or when something happens, and tells it where to lo
 | Haul, Second power | done once the Hauler Dock had 2 Wardens (7/8); the Badwater Cell making power as soon as haulers fed it |
 | The panel | header and count shown top right; the body was hidden under the selected building's panel on the right, so it moves under the goods bar (0.4.23) |
 | Names | the game calls the tanks, the pile and the dock "Small Tank", "Small Industrial Pile", "Hauler Dock"; the task texts now say so (0.4.23) |
+| First Light, level complete | the first beaver woke: `tasks: FirstLight done (8/8)`, `campaign: Level 01 complete: First Light. Next: level 02, The Sump. …`, `tasks: level 01 complete`; campaign.json `completed: ["01"]` |
+| Continue on the card | the author pressed it: exit save `First Light - … Day 2-15.autosave`, then `transition: starting level 02 (The Sump) on 'Wardens 02 The Sump' as a new Wardens game` |
+| Level 02 loads | `campaign: level 02 (The Sump) … completed=[01]`; `new game: replaced 13 starting beavers with bots, … 10 Scrap Metal in the Core`; no `Can't validate`, no exception (the footprint fix holds on level 02 too). `tasks: none for level 02`: it has no tasks, no opening scene and no ending yet |
 
 ## Checks for cutscenes
 
