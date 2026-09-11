@@ -314,10 +314,13 @@ namespace Wardens
     public sealed class WardensLevelTransitionService : ILoadableSingleton
     {
         private readonly List<ILevelStarter> _starters;
+        private readonly WardensDistrictExports _districtExports;
 
         public WardensLevelTransitionService(GameSceneLoader gameSceneLoader, Autosaver autosaver,
-            ValidatingGameLoader validatingGameLoader, MainMenuSceneLoader mainMenuSceneLoader)
+            ValidatingGameLoader validatingGameLoader, MainMenuSceneLoader mainMenuSceneLoader,
+            WardensDistrictExports districtExports)
         {
+            _districtExports = districtExports;
             // Order matters: the best experience first, the one that always works last.
             _starters = new List<ILevelStarter>
             {
@@ -361,6 +364,9 @@ namespace Wardens
             if (starter == null)
                 return WardensTransition.Fail("No way to start level " + level.Id + " (" + why + ").");
 
+            // What this map's districts produce, recorded while they still exist: a Gate on the
+            // next map links it (WardensGate.cs).
+            _districtExports.Flush();
             var result = starter.Start(level, mode);
             foreach (var missing in result.Missing)
                 Debug.LogWarning("[Wardens] transition (" + result.Strategy + "): " + missing);

@@ -59,6 +59,51 @@ namespace Wardens
         }
     }
 
+    /// One district on a map the player has left, and what it produced beyond its own needs: the
+    /// thing a Gate on another map links in (WardensGate.cs). Keyed by settlement and the district
+    /// center's entity id, so a later visit to the same save replaces the old reading.
+    public sealed class WardensDistrictExport
+    {
+        public string Id = "";                  // "<settlement>|<district center EntityId>"
+        public string Settlement = "";
+        public string District = "";            // the district's display name
+        public string Map = "";
+        public string Level = "";               // the campaign level, or "" for a free map
+        public float Day;                       // the in-game day of the reading
+        public string SavedUtc = "";
+        public readonly Dictionary<string, float> Exports = new Dictionary<string, float>();   // good id -> per day
+
+        public JObject ToJson()
+        {
+            var exports = new JObject();
+            foreach (var pair in Exports) exports[pair.Key] = Math.Round(pair.Value, 2);
+            return new JObject
+            {
+                ["id"] = Id, ["settlement"] = Settlement, ["district"] = District, ["map"] = Map,
+                ["level"] = Level, ["day"] = Math.Round(Day, 2), ["savedUtc"] = SavedUtc, ["exports"] = exports,
+            };
+        }
+
+        public static WardensDistrictExport FromJson(JObject json)
+        {
+            var d = new WardensDistrictExport
+            {
+                Id = json.Value<string>("id") ?? "",
+                Settlement = json.Value<string>("settlement") ?? "",
+                District = json.Value<string>("district") ?? "",
+                Map = json.Value<string>("map") ?? "",
+                Level = json.Value<string>("level") ?? "",
+                Day = json.Value<float?>("day") ?? 0f,
+                SavedUtc = json.Value<string>("savedUtc") ?? "",
+            };
+            if (json["exports"] is JObject exports)
+                foreach (var pair in exports)
+                    if (pair.Value != null && pair.Value.Type is JTokenType.Float or JTokenType.Integer)
+                        d.Exports[pair.Key] = (float)pair.Value;
+            return d;
+        }
+    }
+
     /// campaign.json: what survives a map change. Written by the Game context, read by both.
     public sealed class WardensCampaignRecord
     {
@@ -70,6 +115,7 @@ namespace Wardens
         public string LastMap = "";
         public readonly List<string> Completed = new List<string>();
         public readonly List<JObject> Ledger = new List<JObject>();
+        public readonly List<WardensDistrictExport> Districts = new List<WardensDistrictExport>();
         public string UpdatedUtc = "";
 
         public static string Path => System.IO.Path.Combine(
@@ -95,6 +141,8 @@ namespace Wardens
                 }
                 foreach (var t in json["ledger"] as JArray ?? new JArray())
                     if (t is JObject entry) r.Ledger.Add(entry);
+                foreach (var t in json["districts"] as JArray ?? new JArray())
+                    if (t is JObject district) r.Districts.Add(WardensDistrictExport.FromJson(district));
             }
             catch (Exception ex)
             {
@@ -111,6 +159,7 @@ namespace Wardens
             ["lastMap"] = LastMap,
             ["completed"] = new JArray(Completed.ToArray()),
             ["ledger"] = new JArray(Ledger.ToArray()),
+            ["districts"] = new JArray(Districts.ConvertAll(d => (object)d.ToJson()).ToArray()),
             ["updatedUtc"] = UpdatedUtc,
         };
 
@@ -264,6 +313,26 @@ namespace Wardens
             return stored;
         }
 
+        /// The districts of maps the player has played, with their surplus: what a Gate can link.
+        public IReadOnlyList<WardensDistrictExport> Districts => _record.Districts;
+
+        public WardensDistrictExport FindDistrict(string id) =>
+            string.IsNullOrEmpty(id) ? null : _record.Districts.Find(d => d.Id == id);
+
+        /// A new reading replaces the one with the same id (the latest visit wins). campaign.json has
+        /// one writer, this service, so the district sampler hands its readings over rather than
+        /// writing the file itself.
+        public void RecordDistricts(IEnumerable<WardensDistrictExport> readings, bool save)
+        {
+            foreach (var reading in readings)
+            {
+                int i = _record.Districts.FindIndex(d => d.Id == reading.Id);
+                if (i >= 0) _record.Districts[i] = reading;
+                else _record.Districts.Add(reading);
+            }
+            if (save) _record.Save();
+        }
+
         /// Dev/testing and the MCP `campaign` tool: mark a level done without playing it.
         public void MarkCompleted(string levelId)
         {
@@ -318,6 +387,8 @@ namespace Wardens
                 },
                 ["completed"] = new JArray(_record.Completed.ToArray()),
                 ["ledger_entries"] = _record.Ledger.Count,
+                // What a Gate can link: every district of a map played before, with its surplus per day.
+                ["districts"] = new JArray(_record.Districts.ConvertAll(d => (object)d.ToJson()).ToArray()),
                 ["record_path"] = WardensCampaignRecord.Path,
                 ["levels"] = levels,
             };
