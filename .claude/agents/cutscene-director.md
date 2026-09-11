@@ -30,7 +30,9 @@ The game reads scenes from its mod folder, not from the repo:
    `System.Drawing` `CopyFromScreen` of the primary screen, saved at a third of the size into the
    session scratchpad, then Read it). Call `SetProcessDPIAware()` (user32) before reading the screen
    bounds: the game machine scales its display, and an unaware process captures only the top-left
-   part of the screen, without the bottom letterbox bar or the caption. Judge each frame against its
+   part of the screen, without the bottom letterbox bar or the caption. Capture only while Timberborn
+   is the foreground window (`GetForegroundWindow` → `GetWindowThreadProcessId` → process name): the
+   author works beside the game, and a capture over their browser or chat is theirs, not a frame. Judge each frame against its
    caption: the thing the caption names is in the picture, the letterbox does not cover it, nothing
    blocks the view.
 5. Adjust `zoom`, `v`, `h`, anchors and `seconds`; repeat from 1. At most five passes per scene; the
