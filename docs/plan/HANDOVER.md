@@ -11,6 +11,88 @@ is and how each part works), `wardens/CHANGELOG.md` (what each version added), `
 
 ---
 
+## 2026-09-11: level 02 reworked, given an opening and six tasks, and played to its end (game machine)
+
+**Plan:** the author asked for the level 02 cutscene and a map overhaul, then for six tasks, better
+buildings and the Iron Teeth water-control set. They chose Wasserkontrolle and Brücken, and "Das
+Wasser-Rätsel" for the tasks. In chat they asked Claude to finish the level. **Status:** `verified` on
+0.4.24: all six tasks done on day 7 by Claude over MCP and the author by hand. Level 02's water at tick 0
+and Salvage at 20 are `built` in 0.4.25 but not yet seen in the game.
+
+### What I did
+
+1de5047: the level 02 rework (mapsmith watercourse fix and `check_watercourses`), `Cutscenes/TheSump.json`
+(11 shots), `Levels/02.tasks.json`, the check types `built_in` and `clean_water`, and Levee, Floodgate,
+Double Floodgate and Cable Bridge 2/3/4 re-specced by `gen_buildings.py`. f3d39ef: `[water] fill` in the
+level 02 spec, Salvage 40 → 20. 5d531dd: the PLAYTEST record, the warden-play level 02 task list,
+design §2, CHANGELOG 0.4.25.
+
+| Command | Result line |
+|---|---|
+| `pytest wardens/tools` | `177 passed` |
+| `validate.py wardens/src` | `problems: none` |
+| `mapsmith check wardens/maps/wardens-02-the-sump.map.toml` | `problems: none`; `single_gorge … one narrows at 62,48`; `never_touch … 0 stray contact(s)` |
+| `check_level_tasks.py wardens/src` | `task files: 2`, `problems: none` |
+| `dotnet build … -c Release` (game closed) | `Wardens version 0.4.24 -> 0.4.25`, `0 Warnung(en)`, `0 Fehler` |
+| Player.log (0.4.24) | `handoff: starting level 02` (61) … `Gorge done (5/6)`, `Power done (6/6)`, `tasks: level 02 complete` (6939–6945); no exception |
+
+### Publish check
+
+`git ls-remote origin feat/first-light-opening` → `5d531dd4bcfccd19456e64b29b88afbd95e19fcd`; this entry
+goes on top of it.
+
+### Disposition of the entry below
+
+- Level 02 tasks, opening, ending: **done** (1de5047; the ending is the task card).
+- Build 0.4.23: **done** (0.4.24 and 0.4.25 built and deployed with the game closed).
+- Skip: **done** for TheSump. The author pressed it at shot 4, and the game came back paused and unlocked.
+- A fresh level 01 with no `Can't validate` line: **deferred** (no level 01 start this session; level 02's
+  new game logged none).
+- 13 → 19 Wardens: **blocked (question)**, still unread.
+
+### What I found
+
+Seven findings in `wardens/playtest/PLAYTEST.md`, "Level 02 played through". The ones that shape the next
+package:
+
+1. Keep it clean and Hold the gorge both pass without the water the level is about. The creek as it runs
+   has 83 clean tiles against the 40 asked for. Three one-block Levees at x 56, one tile short of the high
+   banks, count as the gorge held.
+2. New Floodgates stand at 0.6–0.7, below the creek's surface, so nothing pools until they are raised.
+3. The placement finder offers no Sludge Pump site. The path router puts Paths on the creek bed.
+
+### What you should do, in this order
+
+**Game machine:**
+
+1. Start level 02 fresh on 0.4.25. Write `{"level":"02"}` to
+   `Documents/Timberborn/Mods/Wardens/campaign.handoff.json` and start the game.
+2. Watch TheSump to the end, all 11 shots, and check that the river and the creek are wet at tick 0.
+3. Screenshot the scene with `scene-shots.ps1` while Timberborn is in the foreground.
+
+**Next package (either machine):** decide how level 02 checks held water (findings 3 and 4). Options:
+
+- A `water_level` check: the river's surface in the gorge box above a set height.
+- A Keep it clean threshold measured on a pond behind raised gates.
+- The Gorge box moved to x ≥ 57.
+
+### How you know it is done
+
+- A fresh level 02 shows water in the opening's first shot.
+- On a replay, a Levee line at x 56 no longer completes the Gorge task.
+
+### Open questions I could not answer
+
+- Does the river actually back up behind the three Levees? The water level behind them was not measured.
+- Should the Creek task tell the player to raise the gates, or should the check require water behind them?
+
+### What I deliberately did not do
+
+I did not press the level-end card: level 03 is not shipped, so it has no Continue. I did not change the
+Clean or Gorge checks either. Both are proposals and need the author's call.
+
+---
+
 ## 2026-09-11: level tasks and the level-end card that starts level 02 (game machine)
 
 **Plan:** the author asked for clear tasks whose completion loads level 02, scouted over MCP; they chose
