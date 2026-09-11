@@ -9,7 +9,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>Wardens</AssemblyName>
     <RootNamespace>Wardens</RootNamespace>
-    <Version>0.4.1</Version>
+    <Version>0.4.2</Version>
     <LangVersion>9.0</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>

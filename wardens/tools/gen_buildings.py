@@ -317,6 +317,11 @@ f = fac["FactionSpec"]
 # exactly one planter building in its bar (see Planter.Wardens).
 f["TemplateCollectionIds"] = ["Buildings.Wardens", "Characters.IronTeeth", "ModularShaftParts.IronTeeth",
                              "NaturalResources.Wardens", "Planes.IronTeeth"]
+# Borrowed Folktails models (the Sludge Reed is vanilla Cattail; the Badwater Rig's underground part is
+# the Folktails one) look their materials up by name in the faction's collections, and without
+# Folktails the Reed's prefab throws "Material Cattail not found in repository". The three vanilla
+# collections have disjoint material names, so loading Folktails adds and never shadows.
+f["MaterialCollectionIds"] = ["IronTeeth", "Folktails"]
 f["StartingBuildingId"] = "Core.Wardens"
 f["BlueprintModifiers"] = [m for m in f["BlueprintModifiers"] if m["Original"].startswith("tutorials/")]
 write("Factions/Faction.Wardens.blueprint.json", fac)
@@ -413,4 +418,9 @@ for folder in ("Buildings", "NaturalResources", "IlluminationColors"):
     if token not in s:
         s = s.replace(f"Factions{bs}**;", f"Factions{bs}**;{token}", 1)
 open(cp, "w", encoding="utf-8", newline="\n").write(s)
+
+# --- The workforce rule: bots by default, no bot science (tools/bot_workforce.py) ----------------------
+import bot_workforce  # noqa: E402  (same folder; last, so it sees every blueprint written above)
+for p in bot_workforce.apply_tree(SRC):
+    print("botified", p.relative_to(SRC).as_posix())
 print("done")

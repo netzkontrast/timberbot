@@ -4,6 +4,26 @@ The patch number moves with every local build (`tools/bump_version.py`, run by t
 version marks a milestone (`bump_version.py --minor`) and gets an entry here. Nothing below has been
 verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first run must answer.
 
+## 0.4.2: bots work everywhere, and the Sludge Reed loads
+
+- **Bots are the default worker in every Wardens building, and nothing about bots costs science.**
+  The Warden knows everything there is to know about bots. Every Wardens workplace now defaults to
+  Bot with no per-building unlock cost (vanilla priced bots at 250 to 10,000 science per building),
+  and bot buildings (Bot Assembler, Bot Part Factory) cost no science. The rule lives in
+  `tools/bot_workforce.py`: both generators apply it and `validate.py` fails on any blueprint that
+  breaks it. Exceptions: a building locked to its own worker type (the Power Treadmill a beaver runs,
+  the Data Desk) and a chapter padlock, which is story gating, not science.
+- **The district default is Bot too** (`WardensBotWorkforce.cs`). A finishing workplace copies its
+  district's default worker type over the blueprint's, and vanilla starts every district as Beaver,
+  so the blueprint rule alone never showed. Wardens district centers carry `WardensBotWorkforceSpec`,
+  and saves made before this are moved over once.
+- **Fixed:** hovering the planting tool threw `Material Cattail not found in repository` (the Sludge
+  Reed is vanilla Cattail, whose material only the Folktails collection holds). The faction now also
+  loads the `Folktails` material collection; its names are disjoint from IronTeeth's and Common's.
+
+State: `built` (0.4.2, 0 warnings, 0 errors); `pytest wardens/tools` and `validate.py wardens/src`
+clean apart from the known level-02 `shipped=false` note. Not yet seen in the game.
+
 ## 0.4.1: the level loader, on the game's real API
 
 - **The level transition is rewritten against the 1.1.2.4 decompile** (`WardensLevelTransition.cs`,

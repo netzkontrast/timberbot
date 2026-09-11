@@ -68,6 +68,10 @@ namespace Wardens
             // Decorated components are resolved through the container (BaseInstantiator ->
             // Container.GetInstance), so every component type needs a transient binding.
             Bind<PollutingBuilding>().AsTransient();
+            // Bots work everywhere by default: a Wardens district center's default worker type is
+            // Bot, and older saves are moved over once (WardensBotWorkforce.cs).
+            Bind<WardensBotWorkforce>().AsTransient();
+            Bind<WardensBotWorkforceMigration>().AsSingleton();
             MultiBind<TemplateModule>().ToProvider(ProvideTemplateModule).AsSingleton();
         }
 
@@ -75,6 +79,7 @@ namespace Wardens
         {
             var builder = new TemplateModule.Builder();
             builder.AddDecorator<PollutingBuildingSpec, PollutingBuilding>();
+            builder.AddDecorator<WardensBotWorkforceSpec, WardensBotWorkforce>();
             return builder.Build();
         }
     }
