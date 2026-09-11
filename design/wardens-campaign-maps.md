@@ -154,17 +154,26 @@ In order of how much depends on the answer (decompile setup: [`faction-wardens.m
 2. ~~`MapFileReference`: all eight fields.~~ **Answered 2026-09-10**: four properties, a private constructor
    and three static factories (§1). A user-folder map carries an empty `Path` and `UserFolder = true`;
    `CustomMapNameToFileName` resolves it to `UserMapsDirectory/<name>.timber`.
-3. `Timberborn.NewGameConfigurationSystem.NewGameConfiguration` constructor;
-   `Timberborn.GameSceneLoading.GameSceneLoader`'s start-new-game method; and which configurator binds
-   `GameSceneLoader` (MainMenu only, or Game too). EditSaveDifficulty passes `null` for that parameter of
-   `NewGameModePanel` inside a game, which hints it is MainMenu-only; if so, C runs its transition
-   through a save-and-return-to-menu (`autoload.json`-style handoff) rather than a direct scene switch.
+3. ~~`NewGameConfiguration` constructor; `GameSceneLoader`'s start method and binding.~~ **Answered
+   2026-09-11** (`ilspycmd Timberborn.GameSceneLoading.dll`, 1.1.2.4): `NewGameConfiguration(string
+   factionId, MapFileReference, GameModeSpec, string settlementName)`; `GameSceneLoader.StartNewGame(
+   NewGameConfiguration)` and `StartNewGameInstantly(string factionId, MapFileReference, string
+   settlementName)`, the latter taking `GameModeSpecService.GetDefaultSpec()` itself;
+   `GameSceneLoadingConfigurator` binds `GameSceneLoader` AsTransient in **MainMenu and Game**. So C
+   switches scenes directly from inside a game. Leaving to the menu is
+   `MainMenuSceneLoader.SaveAndOpenMainMenu()` / `OpenMainMenu()` (MainMenu, Game, MapEditor); the exit
+   save is `Autosaver.CreateExitSave()` (Game). Built on it: `WardensLevelTransition.cs`; the main-menu
+   start was seen in the game (0.4.1, Player.log `FactionId: Wardens, MapFileReference: Name: Wardens
+   01 First Light`).
 4. `NewGameModePanel`'s second constructor parameter type; `CustomNewGameModeController`'s
-   dependencies; where the per-faction default `NewGameMode` comes from (a spec in the blueprints?).
+   dependencies. Where the default mode comes from is answered: `GameModeSpecService.GetDefaultSpec()`
+   (1.1 has `GameModeSpec`, not `NewGameMode`). Only needed if the player should confirm difficulty
+   per level.
 5. ~~`MapNameService`: namespace, and whether `Name` is the file name or the localized display name.~~
    **Answered 2026-09-10**: `Timberborn.GameWonderCompletion`, Game context, the file name (§1). The
    level table in `WardensCampaign.cs` is keyed on it.
-6. `ValidatingGameLoader` in the Game context (for B).
+6. ~~`ValidatingGameLoader` in the Game context (for B).~~ **Answered 2026-09-11**:
+   `GameSaveRepositorySystemUIConfigurator` binds it in MainMenu and Game.
 7. `UserDataFolder.Folder` under Proton, against `TimberbotPaths`.
 
 ## 6. Work plan (in order, each step testable in-game)
@@ -179,6 +188,9 @@ In order of how much depends on the answer (decompile setup: [`faction-wardens.m
    `TutorialService._finishedTutorials` for the level's ending tutorial, toast + Uplink line, and the MCP
    `campaign` tool (`status`, `ledger`, `record`, `complete`, `reset`). No transition: the player starts the
    next level by hand from the New Game screen. **Not yet loaded in-game.**
+3. ~~**Programmatic level start** (C)~~ — **built 2026-09-11**: `WardensLevelTransition.cs` (in a game,
+   MCP `campaign next`) and `WardensHandoff.cs` (at the menu, `campaign.handoff.json`). Starting a level
+   from the menu is verified in-game; the in-game switch is built, not yet run.
 4. **Main-menu *Continue campaign*** button after `LoadMapButton` (MapBrowser precedent) that starts the
    level named in `campaign.json`.
 5. **Second map**: `gen_map.py --level 02` (The Pods: clean water within reach, contaminated core), the

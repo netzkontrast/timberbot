@@ -179,27 +179,28 @@ menu, consumed and deleted by `WardensHandoff` at the next menu load, exactly as
 
 ### 4.4 `ILevelStarter` and the three strategies (`WardensLevelTransition.cs`)
 
-> **`written` (2026-09-10, cloud)** as `wardens/src/WardensLevelTransition.cs`, `WardensHandoff.cs`,
-> `WardensReflect.cs` and `WardensServiceLocator.cs`, plus `campaign action=next`. `written` in the
-> sense the `driving-iterations` skill gives it: the change exists on a branch and **nothing has
-> compiled it** — the container had no .NET SDK and no game DLLs, so every line waits on a
-> game-machine build before it can be called anything more. The unverified APIs in the table below are reached by reflection rather than referenced, and
-> nothing new is injected — a Bindito dependency that turns out not to be bound in a context takes
-> the whole configurator down with it, and a campaign convenience is not worth the MCP server. Each
-> lookup that fails is logged with the member's name, so the first real run answers §5 of
-> `wardens-campaign-maps.md` with findings instead of leaving it open.
+> **2026-09-11 (game machine, 0.4.1): rewritten on the read API, `built`; the main-menu start is
+> `verified`.** The 2026-09-10 cloud version reached every game API by reflection; the 1.1.2.4
+> decompile showed each guess missed (`NewGameConfiguration` takes four arguments, the mode type is
+> `GameModeSpec`, `GameSceneLoader` has no main-menu method), so it compiled and could never have
+> started a level. The rewrite injects `GameSceneLoader`, `Autosaver`, `ValidatingGameLoader` and
+> `MainMenuSceneLoader`, all read as bound in the Game context, and `WardensReflect.cs` /
+> `WardensServiceLocator.cs` are deleted. `campaign.handoff.json` containing `{"level":"01"}` at
+> launch opened the game on `Wardens 01 First Light` as a new Wardens game (Player.log:
+> `FactionId: Wardens, MapFileReference: Name: Wardens 01 First Light`). The in-game half
+> (`campaign action=next` from inside a level) is `built`, not yet run.
 
 ```csharp
-public interface ILevelStarter { bool CanStart(WardensLevel level); void Start(WardensLevel level, CampaignMode mode); }
+public interface ILevelStarter { bool CanStart(WardensLevel level, out string why); WardensTransition Start(WardensLevel level, CampaignMode mode); }
 ```
 
-Selected at `Load()` in this order; the first whose `CanStart` is true wins, and the choice is logged.
+Tried in this order; the first whose `CanStart` is true wins, and the choice is logged.
 
 | Strategy | Scene | Mechanism | Status |
 |---|---|---|---|
-| `NewGameLevelStarter` | Game + MainMenu | `MapFileReference` taken from `MapItemProvider.GetCustomMaps()` by name (never built by hand); `NewGameMode` from the vanilla `NewGameModePanel` in a dialog (EditSaveDifficulty precedent) or from `mode`; then `GameSceneLoader` start-new-game with `FactionId = "Wardens"`. | **(unverified)**: `NewGameConfiguration` ctor, the start method, `GameSceneLoader`'s binding context. |
-| `HandoffLevelStarter` | Game | Write `campaign.handoff.json`, autosave through the existing save path, return to the main menu (the pause menu's own action); `WardensHandoff` starts the level from the menu with `NewGameLevelStarter` (MainMenu binding of `GameSceneLoader` is the likelier one). | Depends on the MainMenu half of the row above only. |
-| `SaveLevelStarter` | Game + MainMenu | Shipped save `Saves/Wardens Campaign/<Level>.timber`, installed like maps; `ValidatingGameLoader.LoadGame(new SaveReference(...))`. Level start state comes from the save, not from §3.3. | Proven API (`TimberbotAutoLoad`); Game-context binding of `ValidatingGameLoader` to confirm. |
+| `NewGameLevelStarter` | Game + MainMenu | In a game, `Autosaver.CreateExitSave()` first (what *Exit to main menu* does); then `GameSceneLoader.StartNewGameInstantly("Wardens", MapFileReference.FromUserFolder(map), level.Title)`, which takes the default `GameModeSpec` itself. | Read in the decompile; MainMenu half **verified** 2026-09-11, Game half `built`. |
+| `SaveLevelStarter` | Game + MainMenu | Shipped save `Saves/Wardens Campaign/<Level>.timber`, installed like maps; `ValidatingGameLoader.LoadGame(new SaveReference(...))`. Level start state comes from the save, not from §3.3. | Binding read (MainMenu + Game); inert, no level ships a save. |
+| `HandoffLevelStarter` | Game | Reached when the map is not installed. Write `campaign.handoff.json`, then `MainMenuSceneLoader.SaveAndOpenMainMenu()` (the pause menu's own action, exit save included); `WardensHandoff` installs the maps and starts the level from the menu. | Read; the menu half is the verified path above. |
 
 The transition is always **offered, not forced**: the level-complete card has *Continue to Level 02*
 and *Stay* (the player may want to finish something). The Warden may call `campaign next` only after

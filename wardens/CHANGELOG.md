@@ -4,6 +4,28 @@ The patch number moves with every local build (`tools/bump_version.py`, run by t
 version marks a milestone (`bump_version.py --minor`) and gets an entry here. Nothing below has been
 verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first run must answer.
 
+## 0.4.1: the level loader, on the game's real API
+
+- **The level transition is rewritten against the 1.1.2.4 decompile** (`WardensLevelTransition.cs`,
+  `WardensHandoff.cs`). The first compile of the cloud version (0.3.7, 0 errors) showed the problem
+  was not the compiler: every reflection guess missed the real shape (`NewGameConfiguration` takes
+  four arguments, the mode type is `GameModeSpec`, `GameSceneLoader` has no main-menu method), so it
+  could never have started a level. It now calls `GameSceneLoader.StartNewGameInstantly("Wardens",
+  MapFileReference.FromUserFolder(map), title)` directly, exit-saves the colony it leaves
+  (`Autosaver.CreateExitSave()`), and falls back to `MainMenuSceneLoader.SaveAndOpenMainMenu()` plus
+  the handoff file when the map is not installed. `WardensReflect.cs` and `WardensServiceLocator.cs`
+  are gone.
+- **Launch straight onto a level.** `{"level": "01"}` in `campaign.handoff.json` (mod folder) makes the
+  main menu start that level as a new Wardens game, once.
+- **Fixed:** a retired map (`Wardens Wasteland`) was only removed on a launch that also installed
+  something, so it survived in the player's Maps folder forever. It is now removed on every launch.
+- The install is idempotent (`EnsureInstalled`), so the handoff can make sure the map is there
+  whichever MainMenu singleton loads first.
+
+State: `built` (game machine, `dotnet build -c Release` → 0 warnings, 0 errors). **`verified`**: the
+main-menu start (Player.log: `FactionId: Wardens, MapFileReference: Name: Wardens 01 First Light`).
+The in-game `campaign action=next` switch is `built`, not yet run.
+
 ## Unreleased
 
 ### Added
