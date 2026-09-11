@@ -209,3 +209,16 @@ the save (or the scene) after a tuning run.
 Open thread from the same conversation: whether the *starting* resources/buildings should change to
 match a world that has already been through this (more Scrap on the map, a saltier opening economy,
 etc.) - not implemented, flagged for a follow-up design pass.
+
+## Status 2026-09-11, the gate is gone
+
+§4's padlock is retired. Every building the faction ships carries `ScienceCost: 0`, so the whole bar
+is buildable from the first frame of every level, on every map; the nine chapter padlocks and the
+science prices of Planter Rig, Stairs and Platform are gone from the blueprints and from
+`tools/gen_buildings.py`. `WardensChapterService` keeps the chapters as story beats: toast, Uplink
+line and cutscene when a chapter's tutorial finishes, nothing unlocked, plus a safety net at load
+that unlocks (and logs) anything still carrying a cost. `validate.py` refuses a science cost in the
+faction's collections. §4.1's open question (hide vs. padlock) is moot; the "visible-but-locked" idea
+survives only as the tutorial line's order. The Reforestation tutorial builds the rig without a
+science step and Vertical architecture follows Maintenance instead of `StairsUnlockedTrigger`.
+Not yet verified in-game; the C# was written where nothing compiles it.

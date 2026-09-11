@@ -1,9 +1,9 @@
 {
   "Name": "The Wardens",
-  "Version": "0.4.7",
+  "Version": "0.4.22",
   "Id": "Wardens",
   "MinimumGameVersion": "1.1.2.0",
-  "Description": "A bot faction stranded in a poisoned wasteland; their wellbeing is Data. A story tutorial opens the building bar chapter by chapter, with cutscenes, on a generated wasteland map. Ships with the Timberbot API (HTTP/WebSocket + in-game widget) and an in-game MCP server so an AI agent can play alongside you. Disable the standalone Timberbot API mod when this one is on.",
+  "Description": "A bot faction stranded in a poisoned wasteland; their wellbeing is Data. Every building is on the bar from the first frame of every level; a story tutorial walks the chapters, with cutscenes, on a generated wasteland map. Ships with the Timberbot API (HTTP/WebSocket + in-game widget) and an in-game MCP server so an AI agent can play alongside you. Disable the standalone Timberbot API mod when this one is on.",
   "RequiredMods": [],
   "OptionalMods": []
 }

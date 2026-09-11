@@ -7,8 +7,8 @@
 // population and charge, the archive (Data Cores) and science, chapter, cutscene and open tutorial
 // steps, what the human has selected,
 // the camera pose and how long the human has left it alone, the events since the last frame, and an
-// `attention` list: where to look first, in priority order, with world positions the `camera` and
-// `point` tools accept. The agent never polls the read API to find out whether anything changed.
+// `attention` list: where to look first, in priority order. Each `at` is a world position (`camera`,
+// world: true) with the grid tile under it in `at.grid` (`point`, every Timberbot endpoint). The agent never polls the read API to find out whether anything changed.
 //
 // Threading follows WardensChat: the main thread publishes under a lock and pulses; the listener
 // thread waits on the lock in short slices so a chat message (kept in WardensChat's own store) can
@@ -85,13 +85,15 @@ namespace Wardens
         private float _poseChangedAt;
         private string _lastSelection;
         private string _lastCutscene;
+        private readonly WardensLevelTasks _tasks;
 
         public WardensFrames(EventBus eventBus, IDayNightCycle dayNightCycle, GameCycleService cycles,
             WeatherService weather, SpeedManager speedManager, PopulationService populationService,
             CharacterPopulation population, DistrictCenterRegistry districts, ScienceService science,
             TutorialService tutorialService, EntitySelectionService selection, WardensCameraDirector director,
-            WardensChat chat, WardensChapterService chapters, WardensCutscenes cutscenes)
+            WardensChat chat, WardensChapterService chapters, WardensCutscenes cutscenes, WardensLevelTasks tasks)
         {
+            _tasks = tasks;
             _eventBus = eventBus;
             _dayNightCycle = dayNightCycle;
             _cycles = cycles;
@@ -115,6 +117,8 @@ namespace Wardens
         public void Load()
         {
             _eventBus.Register(this);
+            _tasks.TaskDone += task => Note("task.done:" + task.Id);
+            _tasks.LevelComplete += () => Note("level.complete");
             _lastPose = _director.Current();
             _poseChangedAt = Time.unscaledTime;
         }
@@ -134,7 +138,7 @@ namespace Wardens
         private void Note(string what, Vector3? at = null)
         {
             _events.Add(what);
-            if (at != null) _spots.Add(new JObject { ["what"] = what, ["at"] = WardensCameraDirector.Vec(at.Value) });
+            if (at != null) _spots.Add(new JObject { ["what"] = what, ["at"] = WardensCameraDirector.At(at.Value) });
             _pending = true;
         }
 
@@ -231,7 +235,7 @@ namespace Wardens
         {
             int n = 0;
             foreach (var chapter in WardensChapterService.Chapters)
-                if (_chapters.IsComplete(chapter)) n++;
+                if (_chapters.Opened(chapter)) n++;
             return n;
         }
 
@@ -272,7 +276,7 @@ namespace Wardens
                     {
                         ["entityId"] = entity != null ? entity.EntityId.ToString() : null,
                         ["energy"] = energy.Value,
-                        ["at"] = WardensCameraDirector.Vec(c.Transform.position),
+                        ["at"] = WardensCameraDirector.At(c.Transform.position),
                     });
                 }
             }
@@ -299,6 +303,7 @@ namespace Wardens
 
             // story
             frame["chapter"] = _chapters.Summary();
+            if (_tasks.Active) frame["task"] = _tasks.Summary();
             frame["cutscene"] = _cutscenes.Summary();
             var open = new JArray();
             foreach (var kv in _tutorialService._activeTutorialStages)
@@ -323,7 +328,7 @@ namespace Wardens
                 selection = new JObject { ["template"] = so.GetComponent<TemplateSpec>()?.TemplateName };
                 var block = so.GetComponent<BlockObject>();
                 if (block != null) selection["coords"] = new JObject { ["x"] = block.Coordinates.x, ["y"] = block.Coordinates.y, ["z"] = block.Coordinates.z };
-                selection["at"] = WardensCameraDirector.Vec(so.Transform.position);
+                selection["at"] = WardensCameraDirector.At(so.Transform.position);
             }
             frame["selection"] = selection;
             frame["camera"] = _director.State();

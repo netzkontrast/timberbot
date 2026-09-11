@@ -175,17 +175,7 @@ variants = ["A", "B", "C"]
 orientation = "Cw0"
 yield = { good = "ScrapMetal", amount_per_level = 15 }
 
-[[scatter]]
-name = "underground ruins"
-template = "UndergroundRuins"
-around = [48, 48]
-radius = [12, 40]
-count = 8
-spacing = 4
-height_range = [8, 16]
-buried = 3
-margin = 4
-orientation = "Cw0"
+# No UndergroundRuins: a 5x5 surface object the game deletes when buried (PLAYTEST.md, 2026-09-11).
 
 # --- green: more than level 1, because the water is here ----------------------------------------------
 

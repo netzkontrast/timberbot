@@ -288,11 +288,142 @@ def contract_unreachable(b: MapBuild, params: dict, r: Report) -> None:
         r.note(f"unreachable: {mask_name!r} is {area} tiles and none of them can be walked to")
 
 
+def _water(b: MapBuild) -> set[tuple[int, int]]:
+    return b.water_cells()
+
+
+def contract_shore(b: MapBuild, params: dict, r: Report) -> None:
+    """Enough walkable land along a body of water to work it from, outside the start's own ground.
+
+    Level 01's first Sump (PLAYTEST.md, 2026-09-11) sat against the Core's pad under a four-level
+    cliff. A pump stands on a cliff top happily — its pipe reaches down — so the cliff was not the
+    fault by itself: the only waterside ground the colony could walk to was the pad, so the pumps
+    took the Core's building room, and the rest of the rim lay below the cliff where nobody could go.
+    A shore tile here is a land tile that touches water within `radius` of `at`, that the colony can
+    reach from `from` (with Stairs, one per level), and that lies outside every `reserve` ring (the
+    pad and its doorstep). A Sludge Pump facing the water takes two tiles of shore, so the longest
+    straight run is checked too.
+
+    at (anchor), radius (tiles, default 8), from (anchor, default "start"), min_tiles, min_run (default 3).
+    """
+    cx, cy = b.resolve_point(params["at"])
+    radius = float(params.get("radius", 8))
+    origin = b.resolve_point(params.get("from", "start"))
+    walk = b.walkable_cached((int(round(origin[0])), int(round(origin[1]))))
+    water = _water(b)
+    near = {(x, y) for x, y in water if math.hypot(x + 0.5 - cx, y + 0.5 - cy) <= radius}
+    shore = set()
+    for x, y in near:
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            p = (x + dx, y + dy)
+            if p not in water and b.height.inside(*p) and walk.at(*p) and not b.reserved.at(*p):
+                shore.add(p)
+    run = 0
+    for x, y in shore:
+        for dx, dy in ((1, 0), (0, 1)):
+            if (x - dx, y - dy) in shore:
+                continue                                  # not the start of a run
+            n = 0
+            while (x + dx * n, y + dy * n) in shore:
+                n += 1
+            run = max(run, n)
+    need_tiles, need_run = int(params.get("min_tiles", 1)), int(params.get("min_run", 3))
+    if len(shore) < need_tiles:
+        r.err(f"contract shore: {len(shore)} walkable shore tiles by {params['at']!r}, the contract asks for "
+              f"at least {need_tiles} — the colony can reach the water only from its own pad, or not at all")
+    if run < need_run:
+        r.err(f"contract shore: the longest straight walkable shore by {params['at']!r} is {run}, a pump "
+              f"needs {need_run}")
+    if len(shore) >= need_tiles and run >= need_run:
+        r.note(f"shore: {len(shore)} walkable shore tiles by {params['at']!r}, longest straight run {run}")
+
+
+def contract_crossing(b: MapBuild, params: dict, r: Report) -> None:
+    """A place can be reached from the start with one short bridge, and not without one.
+
+    Walks the surface as the colony does when it builds Stairs (one level per step), except that it
+    may cross water once: a bridge of at most `max_water` water tiles, which has to land within one
+    level of the bank it left. The spring on level 01 is the Green chapter's reward only if it is one short bridge away —
+    unreachable (the old map) makes the chapter impossible, and walkable makes it no reward at all.
+
+    to (anchor), radius (tiles around it that count as arriving, default 3), from (anchor, default
+    "start"), max_water (default 4), on_foot = "forbid" | "allow" (default "forbid").
+    """
+    tx, ty = b.resolve_point(params["to"])
+    radius = float(params.get("radius", 3))
+    ox, oy = b.resolve_point(params.get("from", "start"))
+    start = (int(round(ox)), int(round(oy)))
+    max_water = int(params.get("max_water", 4))
+    water = _water(b)
+    size = b.size
+
+    def target(x: int, y: int) -> bool:
+        return (x, y) not in water and math.hypot(x + 0.5 - tx, y + 0.5 - ty) <= radius
+
+    walk = b.walkable_cached(start)
+    on_foot = any(walk.at(x, y) and target(x, y) for x in range(size) for y in range(size))
+    if on_foot:
+        if params.get("on_foot", "forbid") == "forbid":
+            r.err(f"contract crossing: {params['to']!r} can be walked to without a bridge")
+        else:
+            r.note(f"crossing: {params['to']!r} is reachable on foot")
+        return
+    # States: (x, y, run, bank) while on the bridge; (x, y, -1, 0) on land after it.
+    seen: set[tuple[int, int, int, int]] = set()
+    stack: list[tuple[int, int, int, int]] = []
+    found = False
+    for x in range(size):
+        for y in range(size):
+            if not walk.at(x, y):
+                continue
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx, ny = x + dx, y + dy
+                if b.height.inside(nx, ny) and (nx, ny) in water:
+                    s = (nx, ny, 1, int(b.h(x, y)))
+                    if s not in seen:
+                        seen.add(s)
+                        stack.append(s)
+    while stack:
+        x, y, run, bank = stack.pop()
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, ny = x + dx, y + dy
+            if not b.height.inside(nx, ny):
+                continue
+            if run >= 0:                                  # on the bridge
+                if (nx, ny) in water:
+                    s = (nx, ny, run + 1, bank)
+                    if run + 1 <= max_water and s not in seen:
+                        seen.add(s)
+                        stack.append(s)
+                elif abs(int(b.h(nx, ny)) - bank) <= 1 and not walk.at(nx, ny):
+                    s = (nx, ny, -1, 0)
+                    if s not in seen:
+                        seen.add(s)
+                        stack.append(s)
+                        found = found or target(nx, ny)
+            else:                                         # landed on the far side
+                if (nx, ny) in water or abs(b.h(nx, ny) - b.h(x, y)) > 1:
+                    continue
+                s = (nx, ny, -1, 0)
+                if s not in seen:
+                    seen.add(s)
+                    stack.append(s)
+                    found = found or target(nx, ny)
+    if not found:
+        r.err(f"contract crossing: {params['to']!r} cannot be reached from {params.get('from', 'start')!r} "
+              f"with one bridge of at most {max_water} water tiles")
+    else:
+        r.note(f"crossing: {params['to']!r} is one bridge of at most {max_water} water tiles from "
+               f"{params.get('from', 'start')!r}, and not reachable without one")
+
+
 CONTRACTS: dict[str, Callable[[MapBuild, dict, Report], None]] = {
     "single_gorge": contract_single_gorge,
     "confluence_upstream": contract_confluence_upstream,
     "never_touch": contract_never_touch,
     "unreachable": contract_unreachable,
+    "shore": contract_shore,
+    "crossing": contract_crossing,
 }
 
 

@@ -102,6 +102,7 @@ namespace Wardens
         public string Instructions { get; private set; } = "";
         private float _instructionsRefreshed = -999f;
         private JObject _campaignSnapshot = new JObject();
+        private readonly WardensLevelTasks _tasks;
         private JArray _ledgerSnapshot = new JArray();
 
         public WardensMcpTools(FactionService factionService, SpeedManager speedManager,
@@ -109,8 +110,9 @@ namespace Wardens
             WardensPointer pointer, WardensChat chat, WardensCameraDirector director, WardensCutscenes cutscenes,
             EntitySelectionService selection, QuickNotificationService quickNotifications, TimberbotService timberbot,
             WardensAssetDump assetDump, WardensChapterService chapters, WardensFrames frames,
-            WardensCampaignService campaign, WardensLevelTransitionService transition)
+            WardensCampaignService campaign, WardensLevelTransitionService transition, WardensLevelTasks tasks)
         {
+            _tasks = tasks;
             _factionService = factionService;
             _speedManager = speedManager;
             _population = population;
@@ -201,8 +203,9 @@ namespace Wardens
             sb.Append("THE LOOP\n")
               .Append("`frame` is the heartbeat and the only thing you wait on. It returns every N game ticks, or the moment something ")
               .Append("happens (the human typed, a day or night started, a building finished, a chapter opened, a beaver was born, an ")
-              .Append("alert appeared, the human selected something), and it carries `attention`: where to look, in order, with positions ")
-              .Append("`camera` and `point` accept. Pass `after` = the last seq you saw. Never poll the read API to find out whether ")
+              .Append("alert appeared, the human selected something), and it carries `attention`: where to look, in order. Each `at` is ")
+              .Append("a world position (`camera` with world:true); `at.grid` is the tile (`point`, Timberbot: y north, z height). ")
+              .Append("Pass `after` = the last seq you saw. Never poll the read API to find out whether ")
               .Append("anything changed. Every tool result may carry \"chat\": messages the human typed that you have not seen. Answer ")
               .Append("those with `say` before anything else.\n\n");
 
@@ -441,7 +444,7 @@ namespace Wardens
                 }, offThread: true);
 
             Add("chapter",
-                "Story chapters that gate the building bar (WardensChapters.cs): each chapter opens when its tutorial finishes and unlocks the padlocked buildings. action=status lists every chapter with its gate and per-building lock state; action=unlock opens chapter_id now (dev/testing).",
+                "Story chapters (WardensChapters.cs): the beats of the tutorial line. Nothing is locked: every building is on the bar from the first frame of every level. A chapter opens when its tutorial finishes (toast, Uplink line, its cutscene). action=status lists every chapter with its tutorial, whether the story has reached it (opened) and the buildings it is about; unlocked_at_load names buildings the load check had to unlock (empty when the data is right). action=unlock announces chapter_id now (dev/testing; replays its beat).",
                 Schema(new JObject
                 {
                     ["action"] = Prop("string", "status | unlock", "status"),
@@ -460,14 +463,16 @@ namespace Wardens
             Add("campaign",
                 "The campaign across maps. Timberborn has no objective system, so a level is a map plus the chapter line that runs on it, " +
                 "and what survives a map change lives in campaign.json beside the mod. action=status returns the level table, which level this " +
-                "map is, whether it is complete and which map comes next; action=ledger returns the last `limit` Ledger entries written on any " +
+                "map is, whether it is complete and which map comes next, and the level's tasks; action=tasks returns only the tasks (Levels/<id>.tasks.json: " +
+                "done ones, the current one with a progress line per check; the last one done completes the level and the panel offers the next level); " +
+                "action=ledger returns the last `limit` Ledger entries written on any " +
                 "level; action=record appends one Ledger entry (`entry`, any JSON object: the daily poisoned/healed/green/archive/born line from " +
                 "WARDEN.md is what belongs here) and is the only memory you have that outlives this map; action=next loads the next level's map " +
                 "(only after the player has said in chat that they want to move on \u2014 the transition is offered, never forced, and it ends this " +
                 "colony); action=complete marks a level done and action=reset wipes the record (both dev/testing).",
                 Schema(new JObject
                 {
-                    ["action"] = Prop("string", "status | ledger | record | next | complete | reset", "status"),
+                    ["action"] = Prop("string", "status | tasks | ledger | record | next | complete | reset", "status"),
                     ["entry"] = new JObject { ["type"] = "object", ["description"] = "for record: the Ledger entry, e.g. {\"day\":12,\"poisoned\":214,\"healed\":0,\"green\":31,\"archive\":9,\"born\":0,\"seen\":\"...\"}" },
                     ["limit"] = Prop("integer", "for ledger: how many entries", 20),
                     ["level_id"] = Prop("string", "for complete and next: the level, e.g. 02; next defaults to this level's successor"),
@@ -491,8 +496,12 @@ namespace Wardens
                         case "reset":
                             _campaign.Reset();
                             break;
+                        case "tasks":
+                            return _tasks.State();
                     }
-                    return _campaign.State();
+                    var state = _campaign.State();
+                    state["tasks"] = _tasks.State();
+                    return state;
                 });
 
             Add("point",
@@ -620,9 +629,22 @@ namespace Wardens
                     return _cutscenes.State();
                 });
 
-            Add("speed", "Set game speed: 0 = pause, 1..3 = the speed buttons.",
+            // SpeedManager.ChangeSpeed only queues the value (applied in its LateUpdate) and drops it
+            // while the speed is locked (an open vanilla panel, a playing cutscene). Reading
+            // CurrentSpeed right after it therefore returns the old speed, which read as "stuck at 0".
+            Add("speed", "Set game speed: 0 = pause, 1..3 = the speed buttons (x1, x3, x7). The change applies on the next frame; applied=false means the speed is locked (an open panel or a cutscene) and nothing changed.",
                 Schema(new JObject { ["value"] = Prop("integer", "0-3") }, "value"),
-                a => { _speedManager.ChangeSpeed(Mathf.Clamp(Int(a, "value", 1), 0, 3)); return new JObject { ["speed"] = _speedManager.CurrentSpeed }; });
+                a =>
+                {
+                    int button = Mathf.Clamp(Int(a, "value", 1), 0, 3);
+                    int target = TimberbotReadV2.SpeedScale[button];
+                    bool locked = _speedManager._isLocked;
+                    float was = _speedManager.CurrentSpeed;
+                    _speedManager.ChangeSpeed(target);
+                    var r = new JObject { ["was"] = was, ["speed"] = locked ? was : target, ["applied"] = !locked };
+                    if (locked) r["reason"] = "speed locked by an open panel or a playing cutscene";
+                    return r;
+                });
 
             Add("timberbot",
                 "Call the Timberbot HTTP API compiled into this mod (loopback). method GET with optional query, or POST with a JSON body. Paths as in docs/api-reference.md, e.g. GET /api/summary, POST /api/building/place. The API refuses everything except ping/agent until timberbot_ready has been called (HTTP 409).",
@@ -706,7 +728,7 @@ namespace Wardens
                 ["campaign"] = _campaign.State(),
                 ["pointers"] = _pointer.Count,
                 ["camera"] = _director.State(),
-                ["cutscene_played"] = _cutscenes.HasPlayed(WardensCutscenes.ColdBootId),
+                ["cutscene_played"] = _cutscenes.OpeningPlayed,
                 ["cutscene"] = _cutscenes.Summary(),
                 ["chat_unread"] = _chat.UndeliveredCount(),
                 ["timberbot"] = new JObject { ["http_port"] = _settings.HttpPort, ["ready"] = _timberbot.AgentState.Ready },

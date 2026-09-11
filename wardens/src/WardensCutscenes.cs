@@ -13,7 +13,10 @@
 // Triggers: NewGameInitializedEvent (new_game), the chapter service's ChapterOpened event
 // (chapter:<Id>) and the finished tutorial set polled twice a second (tutorial:<Id>, first poll
 // silent), all under the policy the Cold Boot had: Wardens faction, tutorial on, and
-// "cutscenes": true in settings.json. Triggered scenes are queued and started on the next
+// "cutscenes": true in settings.json. The one exception is level:<Id>, a new game on campaign level
+// <Id>: a level's opening is the level, not a tutorial, so it plays with the tutorial off too
+// (DisableTutorial is the player's global setting), and when one fires the new_game scenes do not
+// (the level's opening replaces the Cold Boot there). Triggered scenes are queued and started on the next
 // UpdateSingleton, one at a time, in file-name order when one trigger fires several. The MCP
 // `cutscene` tool bypasses the policy: play, skip, continue, choose, reload are the tuning loop.
 // No save state of its own: every trigger is an event a loaded save does not re-post; the story
@@ -73,6 +76,7 @@ namespace Wardens
         private readonly WardensChapterService _chapters;
         private readonly WardensStoryState _story;
         private readonly WardensArchivedBadtides _badtides;
+        private readonly WardensCampaignService _campaign;
 
         private readonly List<CutsceneScene> _scenes = new List<CutsceneScene>();
         private readonly Dictionary<string, CutsceneScene> _byId = new Dictionary<string, CutsceneScene>(StringComparer.OrdinalIgnoreCase);
@@ -82,6 +86,7 @@ namespace Wardens
         private readonly HashSet<string> _finishedSeen = new HashSet<string>();
         private string _folder = "";
         private bool _triggersEnabled;
+        private bool _levelTriggersEnabled;
         private bool _pollTutorials;
         private bool _reconciled;
         private float _nextPoll;
@@ -103,7 +108,8 @@ namespace Wardens
             EntitySelectionService selection, CharacterPopulation population, IDayNightCycle dayNightCycle,
             GameCycleService cycles, ScienceService science, ILoc loc, QuickNotificationService quickNotifications,
             WardensCameraDirector director, WardensPointer pointer, WardensChat chat, WardensCutsceneOverlay overlay,
-            WardensChapterService chapters, WardensStoryState story, WardensArchivedBadtides badtides)
+            WardensChapterService chapters, WardensStoryState story, WardensArchivedBadtides badtides,
+            WardensCampaignService campaign)
         {
             _eventBus = eventBus;
             _factionService = factionService;
@@ -125,13 +131,33 @@ namespace Wardens
             _chapters = chapters;
             _story = story;
             _badtides = badtides;
+            _campaign = campaign;
         }
 
         public bool Playing => _scene != null;
+
+        /// A choice card was answered: (choice key, choice id). WardensLevelTasks starts the next level
+        /// on the LevelEnd card's continue.
+        public event Action<string, string> Chose;
         public string CurrentId => _scene?.Id;
         public bool TriggersEnabled => _triggersEnabled;
         public int Count => _scenes.Count;
         public bool HasPlayed(string id) => _played.Contains(id);
+
+        /// The game's opening has played this session: the Cold Boot, or a level's own opening
+        /// (a scene bound to level:<Id>), which replaces it on that level.
+        public bool OpeningPlayed
+        {
+            get
+            {
+                if (HasPlayed(ColdBootId)) return true;
+                foreach (var scene in _scenes)
+                    if (_played.Contains(scene.Id))
+                        foreach (var t in scene.Triggers)
+                            if (t.StartsWith(WardensCutsceneScript.TriggerLevelPrefix, StringComparison.Ordinal)) return true;
+                return false;
+            }
+        }
 
         public void Load()
         {
@@ -143,8 +169,10 @@ namespace Wardens
             bool wardens = _factionService.Current?.Id == WardensStartingPopulation.FactionId;
             bool setting = WardensSettings.Load().Cutscenes;
             _triggersEnabled = wardens && setting && !_tutorialSettings.DisableTutorial;
+            _levelTriggersEnabled = wardens && setting;
             LoadScenes();
-            Debug.Log($"[Wardens] cutscenes: {_scenes.Count} loaded from {_folder}, triggers={_triggersEnabled} " +
+            Debug.Log($"[Wardens] cutscenes: {_scenes.Count} loaded from {_folder}, triggers={_triggersEnabled}, " +
+                      $"level triggers={_levelTriggersEnabled} " +
                       $"(wardens={wardens}, setting={setting}, tutorial={!_tutorialSettings.DisableTutorial})");
         }
 
@@ -157,9 +185,16 @@ namespace Wardens
 
         // ---- triggers (main thread) -----------------------------------------------------------
 
-        // Posted by GameInitializer for a NEW game only; loaded saves never see it.
+        // Posted by GameInitializer for a NEW game only; loaded saves never see it. On a campaign
+        // level, a scene bound to level:<Id> is the opening and the new_game scenes stay quiet.
         [OnEvent]
-        public void OnNewGameInitialized(NewGameInitializedEvent e) => Trigger(WardensCutsceneScript.TriggerNewGame);
+        public void OnNewGameInitialized(NewGameInitializedEvent e)
+        {
+            var level = _campaign.Enabled ? _campaign.Level : null;
+            if (level != null && _levelTriggersEnabled &&
+                Trigger(WardensCutsceneScript.TriggerLevelPrefix + level.Id, force: true) > 0) return;
+            Trigger(WardensCutsceneScript.TriggerNewGame);
+        }
 
         private void OnChapterOpened(WardensChapter chapter) => Trigger(WardensCutsceneScript.TriggerChapterPrefix + chapter.Id);
 
@@ -173,15 +208,20 @@ namespace Wardens
                 if (_finishedSeen.Add(id) && announce) Trigger(WardensCutsceneScript.TriggerTutorialPrefix + id);
         }
 
-        private void Trigger(string trigger)
+        // Queues every scene bound to `trigger`; returns how many. `force` skips the tutorial half of
+        // the policy (the caller has checked the rest), which only level:<Id> does.
+        private int Trigger(string trigger, bool force = false)
         {
-            if (!_triggersEnabled) return;
+            if (!_triggersEnabled && !force) return 0;
+            int queued = 0;
             foreach (var scene in _scenes)
             {
                 if (!scene.HasTrigger(trigger)) continue;
                 _queue.Enqueue(scene.Id);
+                queued++;
                 Debug.Log($"[Wardens] cutscene {scene.Id}: queued by {trigger}");
             }
+            return queued;
         }
 
         // ---- the loop (main thread, every frame) ------------------------------------------------
@@ -269,6 +309,8 @@ namespace Wardens
                 throw new ArgumentException($"no choice '{id}' in {_scene.Id}/{shot.Id}; choices: {string.Join(", ", ids)}");
             }
             _story.SetChoice(shot.ChoiceKey, found.Id);
+            try { Chose?.Invoke(shot.ChoiceKey, found.Id); }
+            catch (Exception ex) { Debug.LogWarning($"[Wardens] cutscene choice listener: {ex.Message}"); }
             _continued = true;
             _overlay.SetChoices(null);
             Debug.Log($"[Wardens] cutscene {_scene.Id}/{shot.Id}: chose {found.Id} ({shot.ChoiceKey})");
@@ -411,13 +453,28 @@ namespace Wardens
 
         // ---- captions and args ----------------------------------------------------------------
 
+        // ILoc has T(key) and generic T<T1..T3>(key, p1..p3), no params object[]: an array passed
+        // whole binds to T<object[]> and the caption reads "System.Object[]" (seen in the game,
+        // 0.4.10). Past three args, format the row ourselves.
+        private string Localize(string key, object[] v)
+        {
+            switch (v.Length)
+            {
+                case 0: return _loc.T(key);
+                case 1: return _loc.T(key, v[0]);
+                case 2: return _loc.T(key, v[0], v[1]);
+                case 3: return _loc.T(key, v[0], v[1], v[2]);
+                default: return string.Format(_loc.T(key), v);
+            }
+        }
+
         private string CaptionText(string key, string literal, List<string> args)
         {
             var values = new object[args != null ? args.Count : 0];
             for (int i = 0; i < values.Length; i++) values[i] = ArgValue(args[i]);
             if (!string.IsNullOrEmpty(key))
             {
-                try { return values.Length > 0 ? _loc.T(key, values) : _loc.T(key); }
+                try { return Localize(key, values); }
                 catch (Exception ex)
                 {
                     Debug.LogWarning($"[Wardens] cutscene caption {key}: {ex.Message}");

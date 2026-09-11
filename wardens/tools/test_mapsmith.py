@@ -32,7 +32,7 @@ from mapsmith.build import SpecError
 from mapsmith.spec import deep_merge
 
 REPO = Path(__file__).resolve().parents[2]
-WASTELAND = REPO / "wardens" / "maps" / "wardens-wasteland.map.toml"
+FIRST_LIGHT = REPO / "wardens" / "maps" / "wardens-01-first-light.map.toml"
 NAMES = {"world.json", "map_metadata.json", "version.txt", "map_thumbnail.jpg"}
 
 MINIMAL = """
@@ -209,14 +209,20 @@ def test_away_from_an_unknown_name_raises(minimal):
         build(spec)
 
 
-def test_buried_entities_sit_inside_the_terrain(minimal):
+def test_buried_entities_sit_inside_the_terrain_and_the_checker_refuses_them(minimal):
+    """`buried` puts an entity inside the terrain, and the checker says the game deletes it: level 01's
+    six buried UndergroundRuins (a 5x5 surface object) were all deleted on load. `buried_ok` is the
+    escape hatch for a template whose blocks really are underground."""
     spec = deep_merge(minimal, {"scatter": [{"template": "UndergroundRuins", "around": [16, 16],
                                              "radius": 10, "count": 3, "buried": 3, "margin": 2}]})
     b = build(spec)
     ruins = [e for e in b.entities if e.template == "UndergroundRuins"]
     assert len(ruins) == 3
     assert all(e.z == b.h(e.x, e.y) - 3 for e in ruins)
-    assert report_for(spec, b).ok
+    report = report_for(spec, b)
+    assert any("deletes it on load" in str(p) for p in report.errors), report.summary()
+    allowed = deep_merge(spec, {"checks": {"buried_ok": ["UndergroundRuins"]}})
+    assert not any("buried" in str(p) for p in report_for(allowed, b).errors)
 
 
 def test_two_rivers_with_one_tag_must_be_named(minimal):
@@ -446,7 +452,7 @@ def test_checker_catches_a_boxed_in_start(minimal):
                     array[z * plane + y * 32 + x] = "1"
     world["Singletons"]["TerrainMap"]["Voxels"]["Array"] = " ".join(array)
     problems = [str(p) for p in check_world(world, meta, set(NAMES), {"min_reachable": 200}).errors]
-    assert any("walkable" in p for p in problems), problems
+    assert any("boxed in" in p for p in problems), problems
 
 
 def test_checker_catches_a_size_mismatch(minimal):
@@ -556,7 +562,7 @@ def test_walk_distances_measure_steps_not_straight_lines(minimal):
     assert dist[(start.x, start.y)] == 0
     assert dist[(start.x + 3, start.y + 4)] == 7        # 4-neighbour steps, not 5
     report = spec_mod.walk_report(b)
-    assert "reachable on foot" in report
+    assert "tiles on foot" in report
 
 
 def test_walk_report_names_a_cluster_the_colony_cannot_reach(minimal):
@@ -568,12 +574,72 @@ def test_walk_report_names_a_cluster_the_colony_cannot_reach(minimal):
         "scatter": [{"name": "far side", "template": "RuinColumnH1", "around": [27, 16],
                      "radius": 3, "count": 3, "height_range": [6, 6]}]})
     assert "far side" in spec_mod.walk_report(build(spec))
-    assert "unreachable on foot" in spec_mod.walk_report(build(spec))
+    assert "unreachable, even with Stairs" in spec_mod.walk_report(build(spec))
+
+
+# --- one level: Wardens walk only between tiles of the same height ---
+
+def _step(minimal, scatter=None, checks=None):
+    """A 32 map whose start pad (height 7) has ground at 6 to its east: one level down."""
+    spec = deep_merge(minimal, {
+        "terrain": [{"op": "base", "height": 6},
+                    {"op": "pad", "at": [8, 16], "size": 8, "height": 7, "name": "start", "reserve": 0},
+                    {"op": "clamp", "min": 3, "max": 19}],
+        "scatter": scatter or [],
+        "checks": {"require": ["StartingLocation"], **(checks or {})}})
+    return spec
+
+
+def test_on_foot_stays_on_one_level_and_stairs_cross_it(minimal):
+    """The game joins a tile only to neighbours of its own height (TerrainNavMeshUpdater); level 01
+    showed it: flags on the pad found no ruin one level down until a Stairs stood."""
+    from mapsmith.build import ON_FOOT
+    b = build(_step(minimal))
+    start = next(e for e in b.entities if e.template == "StartingLocation")
+    on_foot = b.walkable_from((start.x, start.y), ON_FOOT)
+    stairs = b.walkable_from((start.x, start.y))
+    assert on_foot.at(start.x, start.y) and not on_foot.at(28, 16), "height 6 is a level down"
+    assert stairs.at(28, 16), "one Stairs reaches it"
+    best = b.stairs_from((start.x, start.y))
+    assert best[(start.x, start.y)] == (0, 0)
+    assert best[(28, 16)][0] == 1
+
+
+def test_on_foot_scatter_catches_a_ruin_one_level_down(minimal):
+    down = {"name": "down", "template": "RuinColumnH1", "around": [26, 16], "radius": 3, "count": 2,
+            "height_range": [6, 6]}
+    spec = _step(minimal, [down], {"reachable_scatter": ["down"]})
+    assert spec_mod.check(spec, build(spec)).ok, "reachable with Stairs"
+    strict = _step(minimal, [down], {"on_foot_scatter": ["down"]})
+    report = spec_mod.check(strict, build(strict))
+    assert any("need Stairs" in str(p) for p in report.errors), report.summary()
+    assert "1 Stairs" in spec_mod.walk_report(build(strict))
+
+
+def test_on_foot_from_keeps_a_cluster_on_the_start_level(minimal):
+    rule = {"name": "first", "template": "RuinColumnH1", "around": [11, 19], "radius": [3, 12],
+            "count": 3, "spacing": 2, "on_foot_from": "start"}
+    spec = _step(minimal, [rule], {"on_foot_scatter": ["first"]})
+    b = build(spec)
+    assert all(b.h(e.x, e.y) == 7 for e in b.entities if e.rule == "first")
+    assert spec_mod.check(spec, b).ok
+    assert "on foot" in spec_mod.walk_report(b)
+
+
+def test_first_light_opens_with_scrap_on_the_pad():
+    """The 10 starting scrap buy two Charging Posts, so the first ruins must need no Stairs."""
+    spec = load(FIRST_LIGHT)
+    assert "first light" in spec["checks"]["on_foot_scatter"]
+    b = build(spec)
+    start = next(e for e in b.entities if e.template == "StartingLocation")
+    pad = b.h(start.x, start.y)
+    first = [e for e in b.entities if e.rule == "first light"]
+    assert first and all(b.h(e.x, e.y) == pad for e in first)
 
 
 @pytest.mark.parametrize("argv", [
-    ["--strict", "check", str(WASTELAND)],
-    ["check", str(WASTELAND), "--strict"],
+    ["--strict", "check", str(FIRST_LIGHT)],
+    ["check", str(FIRST_LIGHT), "--strict"],
 ])
 def test_strict_is_accepted_on_either_side_of_the_subcommand(argv, capsys):
     """Putting a flag after the spec is the natural guess; an argparse error there wastes a run."""
@@ -616,7 +682,7 @@ def test_no_ground_renders_as_blank(minimal):
 def test_entity_marks_survive_sampling(step):
     """At --step 2 a StartingLocation on an odd tile used to vanish with no warning — while the
     skill tells you to look for exactly that mark."""
-    spec = load(WASTELAND)
+    spec = load(FIRST_LIGHT)
     rows = [line for line in ascii_map(build(spec), step=step).splitlines()
             if line and not line.startswith(("96x96", "north", "legend"))]
     assert any("A" in row for row in rows), f"the starting location vanished at step {step}"
@@ -794,11 +860,207 @@ def test_every_shipped_spec_builds_and_passes_its_own_checks(spec_path):
     assert report.ok, f"{spec_path.name}: {report.summary()}"
 
 
-def test_wasteland_spec_builds_and_passes_its_own_checks():
-    spec = load(WASTELAND)
+def test_first_light_spec_builds_and_passes_its_own_checks():
+    spec = load(FIRST_LIGHT)
     b = build(spec)
     report = report_for(spec, b)
     assert report.ok, report.summary()
     templates = {e.template for e in b.entities}
-    assert {"StartingLocation", "BadwaterSource", "WaterSource", "UndergroundRuins"} <= templates
+    assert {"StartingLocation", "BadwaterSource", "WaterSource"} <= templates
+    assert "UndergroundRuins" not in templates, "the game deleted every buried one; see SIZES"
     assert sum(1 for e in b.entities if e.template.startswith("RuinColumn")) >= 30
+
+
+# --- footprints: the game validates every block of a big entity ---
+
+def test_adjacent_badwater_sources_are_not_placed_on_top_of_each_other(minimal):
+    """A BadwaterSource is 3x3. Level 01 placed three side by side; the game kept one."""
+    spec = deep_merge(minimal, {
+        "terrain": [{"op": "base", "height": 6},
+                    {"op": "river", "points": [[16, -2], [16, 34]], "bed": 3, "width": 4.0, "tag": "badwater"},
+                    {"op": "pad", "at": [4, 4], "size": 8, "height": 6, "name": "start", "reserve": 2},
+                    {"op": "clamp", "min": 1, "max": 19}],
+        "place": [{"template": "BadwaterSource", "along": "badwater", "segment": [0.1, 0.5], "count": 2,
+                   "orientation": "Cw0"}]})
+    b = build(spec)
+    src = [(e.x, e.y) for e in b.entities if e.template == "BadwaterSource"]
+    assert len(src) == 2
+    (ax, ay), (bx, by) = src
+    assert abs(ax - bx) >= 3 or abs(ay - by) >= 3, src
+
+
+def _with_entity(world, template, x, y, z):
+    world = copy.deepcopy(world)
+    world["Entities"].append({"Id": f"t-{template}-{x}-{y}", "Template": template, "Components": {
+        "BlockObject": {"Coordinates": {"X": x, "Y": y, "Z": z}, "Orientation": "Cw0"}}})
+    return world
+
+
+def test_checker_catches_a_big_footprint_the_game_would_delete(minimal):
+    world, meta, _ = _good(minimal)
+    ground = 6
+    ok = check_world(_with_entity(world, "BadwaterSource", 24, 24, ground), meta, set(NAMES))
+    assert ok.ok, ok.summary()
+    both = _with_entity(_with_entity(world, "BadwaterSource", 24, 24, ground), "BadwaterSource", 25, 24, ground)
+    assert any("overlaps" in str(p) for p in check_world(both, meta, set(NAMES)).errors)
+    edge = _with_entity(world, "BadwaterSource", 30, 24, ground)
+    assert any("runs off the map" in str(p) for p in check_world(edge, meta, set(NAMES)).errors)
+    buried = _with_entity(world, "UndergroundRuins", 24, 24, ground - 3)
+    assert any("buried" in str(p) for p in check_world(buried, meta, set(NAMES)).errors)
+    under = _with_entity(_with_entity(world, "BadwaterSource", 24, 24, ground), "RuinColumnH1", 25, 25, ground)
+    assert any("inside the footprint" in str(p) for p in check_world(under, meta, set(NAMES)).errors)
+
+
+def test_first_light_opens_with_its_water():
+    """Level 01 pre-fills the level its day-3 autosave settled at, so the opening shows water."""
+    spec = load(FIRST_LIGHT)
+    b = build(spec)
+    cols = world_json(b, spec)["Singletons"]["WaterMapNew"]["WaterColumns"]["Array"].split()
+    sump = cols[48 * b.size + 38].split(":")
+    assert (float(sump[0]), float(sump[1]), int(sump[3])) == (1.2, 1.0, 3)      # bed 3, surface 4.2, badwater
+    spring = cols[14 * b.size + 82].split(":")
+    assert float(spring[1]) == 0.0 and float(spring[0]) > 0                      # clean
+    assert sum(1 for c in cols if c != "0") > 300
+
+
+# --- pre-filled water ------------------------------------------------------------------------------
+#
+# The encoding is the game's (decompiled WaterColumnPackedListSerializer, 1.1.2.4): "0" dry, else
+# depth:contamination:overflow:floor:oldDepth. A floor that is not the ground top, or a field the
+# reader cannot parse, is what would break a load; the checker names both.
+
+def _pond(minimal, water):
+    return deep_merge(minimal, {"terrain": [
+        {"op": "base", "height": 6},
+        {"op": "basin", "at": [24, 24], "radii": [3, 3], "bed": 3, "shore": 6, "tag": "badwater", "name": "pond"},
+        {"op": "pad", "at": [10, 10], "size": 8, "height": 6, "name": "start", "reserve": 2},
+        {"op": "clamp", "min": 3, "max": 19}], "water": water})
+
+
+def _columns(spec):
+    b = build(spec)
+    return b, world_json(b, spec)["Singletons"]["WaterMapNew"]["WaterColumns"]["Array"].split()
+
+
+def test_no_water_section_writes_every_column_dry(minimal):
+    _, cols = _columns(minimal)
+    assert set(cols) == {"0"}
+
+
+def test_water_fill_to_a_level_writes_the_game_encoding(minimal):
+    b, cols = _columns(_pond(minimal, {"fill": [{"tag": "badwater", "level": 4.5, "contamination": 1.0}]}))
+    assert cols[24 * b.size + 24] == "1.5:1:0:3:1.5"
+    assert cols[10 * b.size + 10] == "0"                                         # the pad stays dry
+    assert report_for(_pond(minimal, {"fill": [{"tag": "badwater", "level": 4.5, "contamination": 1.0}]}), b).ok
+
+
+def test_water_fill_by_depth_and_a_level_below_the_floor(minimal):
+    _, cols = _columns(_pond(minimal, {"fill": [{"tag": "badwater", "depth": 0.5}]}))
+    assert "0.5:0:0:3:0.5" in cols
+    _, dry = _columns(_pond(minimal, {"fill": [{"tag": "badwater", "level": 3.0}]}))
+    assert set(dry) == {"0"}                                                     # at the floor: nothing to fill
+
+
+@pytest.mark.parametrize("entry, message", [
+    ({"tag": "lava", "level": 4}, "tag 'lava' is not a water mask"),
+    ({"tag": "badwater"}, "exactly one of level | depth"),
+    ({"tag": "badwater", "level": 4, "depth": 1}, "exactly one of level | depth"),
+    ({"tag": "badwater", "level": 4, "contamination": 2}, "contamination 2.0 outside 0..1"),
+])
+def test_water_fill_refuses_what_it_cannot_write(minimal, entry, message):
+    with pytest.raises(SpecError, match=message):
+        _columns(_pond(minimal, {"fill": [entry]}))
+
+
+@pytest.mark.parametrize("token, message", [
+    ("1.5:1:0:4:1.5", "floor 4, the ground top is 3"),
+    ("1.5:2:0:3:1.5", "contamination 2.0 outside 0..1"),
+    ("1.5:1", "2 fields (3 to 5)"),
+    ("deep:1:0", "not numbers"),
+    ("-1:0:0:3:0", "negative depth or overflow"),
+])
+def test_checker_names_a_water_column_the_game_would_misread(minimal, token, message):
+    spec = _pond(minimal, {"fill": [{"tag": "badwater", "level": 4.5, "contamination": 1.0}]})
+    b = build(spec)
+    world = world_json(b, spec)
+    cols = world["Singletons"]["WaterMapNew"]["WaterColumns"]["Array"].split()
+    cols[24 * b.size + 24] = token
+    world["Singletons"]["WaterMapNew"]["WaterColumns"]["Array"] = " ".join(cols)
+    report = check_world(world, metadata_json(b, spec), set(NAMES), spec.get("checks", {}))
+    assert not report.ok and message in report.summary(), report.summary()
+
+
+# --- terrace, shore and crossing: level 01's shore and its spring ------------------------------------
+#
+# Level 01's first land put the Sump under a four-level cliff (one pump site) and the spring out of
+# reach entirely (PLAYTEST.md, 2026-09-11). These build the good version of each, then the old one.
+
+def test_terrace_lays_its_bands_from_the_side_it_names(minimal):
+    spec = deep_merge(minimal, {"terrain": [
+        {"op": "base", "height": 8},
+        {"op": "terrace", "box": [4, 4, 8, 10], "steps": [[2, 7], [3, 6]], "side": "west"},
+        {"op": "pad", "at": [14, 14], "size": 8, "height": 8, "name": "start", "reserve": 2},
+        {"op": "clamp", "min": 3, "max": 19}]})
+    b = build(spec)
+    assert [b.h(x, 6) for x in range(3, 10)] == [8, 7, 7, 6, 6, 6, 8]
+
+
+def test_terrace_rejects_an_unknown_side(minimal):
+    spec = deep_merge(minimal, {"terrain": [{"op": "base", "height": 8},
+                                            {"op": "terrace", "box": [1, 1, 4, 4], "steps": [[2, 7]], "side": "up"}]})
+    with pytest.raises(SpecError, match="unknown side"):
+        build(spec)
+
+
+SUMP_LAND = [{"op": "base", "height": 5},
+             {"op": "pad", "at": [4, 18], "size": 8, "height": 8, "name": "start", "reserve": 2}]
+SUMP = {"op": "basin", "at": [23, 22], "radii": [4, 7], "bed": 3, "tag": "badwater", "name": "sump"}
+TERRACE = {"op": "terrace", "box": [12, 12, 19, 32], "steps": [[2, 7], [6, 6]], "side": "west"}
+CLAMP = {"op": "clamp", "min": 3, "max": 19}
+SHORE = {"shore": {"at": "sump", "radius": 9, "min_tiles": 8, "min_run": 4}}
+
+
+def test_shore_passes_on_a_terraced_sump(minimal):
+    spec = gorge_spec(minimal, SUMP_LAND + [TERRACE, SUMP, CLAMP], SHORE)
+    report = spec_mod.check(spec, build(spec))
+    assert report.ok, report.summary()
+    assert any("walkable shore tiles" in str(n) for n in report.notes), report.summary()
+
+
+def test_shore_fails_on_the_old_cliff(minimal):
+    """The first level 01: the Sump against the pad, the rest of its rim below a cliff. The colony
+    reaches the water only from its own pad, which is not room for pumps."""
+    against_the_pad = dict(SUMP, at=[15, 22], radii=[3, 5])
+    spec = gorge_spec(minimal, SUMP_LAND + [against_the_pad, CLAMP], SHORE)
+    report = spec_mod.check(spec, build(spec))
+    assert any("walkable shore tiles" in str(e) for e in report.errors), report.summary()
+
+
+RIVER_LAND = [{"op": "base", "height": 6},
+              {"op": "pad", "at": [4, 18], "size": 8, "height": 6, "name": "start", "reserve": 2},
+              {"op": "river", "points": [[24, -3], [24, 20], [24, 51]], "bed": 4, "width": 1.2,
+               "tag": "badwater", "name": "the river"},
+              {"op": "hill", "at": [38, 22], "radius": 6, "height": 3, "floor": 6, "name": "spring"}]
+
+
+def test_crossing_passes_when_one_short_bridge_reaches_it(minimal):
+    spec = gorge_spec(minimal, RIVER_LAND + [CLAMP], {"crossing": {"to": "spring", "radius": 4, "max_water": 4}})
+    report = spec_mod.check(spec, build(spec))
+    assert report.ok, report.summary()
+
+
+def test_crossing_fails_when_the_river_is_wider_than_a_short_bridge(minimal):
+    wide = [dict(t) for t in RIVER_LAND]
+    wide[2]["width"] = 4.5
+    spec = gorge_spec(minimal, wide + [CLAMP], {"crossing": {"to": "spring", "radius": 4, "max_water": 4}})
+    report = spec_mod.check(spec, build(spec))
+    assert any("cannot be reached" in str(e) for e in report.errors), report.summary()
+
+
+def test_crossing_fails_when_the_place_can_be_walked_to(minimal):
+    """A reward reachable on foot is no reward: the river here stops short of the map's south edge."""
+    dry = [dict(t) for t in RIVER_LAND]
+    dry[2]["points"] = [[24, -3], [24, 10], [24, 14]]
+    spec = gorge_spec(minimal, dry + [CLAMP], {"crossing": {"to": "spring", "radius": 4, "max_water": 4}})
+    report = spec_mod.check(spec, build(spec))
+    assert any("walked to without a bridge" in str(e) for e in report.errors), report.summary()

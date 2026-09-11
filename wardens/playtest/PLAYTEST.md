@@ -44,7 +44,7 @@ echo '{ "level": "01" }' > ~/Documents/Timberborn/Mods/Wardens/campaign.handoff.
 |---|---|---|
 | `wardens_status` | main | faction, speed, bots/beavers + avg Energy, tutorial + chapter state, pointers, camera, ready gate |
 | `tutorial` | main | `status`, or `next` to force the next stage of a tutorial id |
-| `chapter` | main | `status`: every story chapter with its gating tutorial and per-building lock state; `unlock` forces `chapter_id` open |
+| `chapter` | main | `status`: every story chapter with its tutorial, whether the story has reached it and the buildings it is about (nothing is locked; `unlocked_at_load` is empty when the data is right); `unlock` announces `chapter_id` now |
 | `frame` | listener | long-poll for the next sensor frame: every `every_ticks` game ticks or on an event (chat, day, building, chapter, birth, alert, selection); carries `attention` (where to look) |
 | `manual` | listener | the Warden's playbook, `docs/WARDEN.md` from the mod folder |
 | `point` / `unpoint` | main | highlight + bobbing arrow + toast on a tile, optional camera pan |
@@ -88,25 +88,25 @@ wakes it every 60 game ticks or when something happens, and tells it where to lo
   above 50% (n/5)", Reed Bed, "Plant: Sludge Reed (0/40)"), Working hours (18), Storage (Scrap Pile
   → Scrap Metal, 2 Sludge Tanks → Badwater, Crate Rack → Biomass), Science ("Build: The Cruncher",
   "Power: The Cruncher"), Pods (2 Breeding Pods), Power and pods (Badwater Cell, "Power: Breeding
-  Pod"), First beaver ("Beavers: (0/1)"), Reforestation (accumulate 60 science, unlock + build the
+  Pod"), First beaver ("Beavers: (0/1)"), Reforestation (build the
   Planter Rig, "Plant: Birch (0/20)"), Maintenance (select a Warden, well-being panel, hours 16).
-- Event tutorials: Dams (end of cycle 3 without a Dam), Vertical architecture (unlock Stairs, 70
-  science), Layer tool (first Platform finished), Haulers (cycle ≥ 3 with 3 idle Wardens or 20 bots),
+- Event tutorials: Dams (end of cycle 3 without a Dam), Vertical architecture (after
+  Maintenance), Layer tool (first Platform finished), Haulers (cycle ≥ 3 with 3 idle Wardens or 20 bots),
   Droughts / Badtides (after the first one ends).
 - The building bar shows only the Wardens set (Core is pre-placed; Charging Post, Cruncher, Sludge
   Burner, Power Shaft, Scrap Pile, Reed Bed, Sludge Pump, Badwater Cell, Sludge Tank, two pods,
-  Planter Rig (locked), Stairs (locked), Platform (locked), Dam, Crate Rack, Hauler Dock,
+  Planter Rig, Stairs, Platform, Dam, Crate Rack, Hauler Dock,
   Observation Deck, Scavenger Flag, Path). Placing the Cruncher next to the Core with a Power Shaft
   between them should light its illuminator (Core outputs 150 hp).
-- Chapters (`wardens/README.md`, "How the chapters work"): on a new game the padlock sits on the
-  Sludge Pump, Reed Bed, Sludge Tank, Crate Rack, Cruncher, both pods, Badwater Cell and Sludge
-  Burner; `chapter status` shows `next: Badwater`, `next_waits_for: Wardens.Scrap`. Finishing the
-  Scrap tutorial (or `tutorial next` through it) must clear the first four padlocks within a second,
-  show the "Chapter 2: Badwater." toast and put the same line in the chat panel; the Badwater and
-  Biomass tutorial then starts with its buildings buildable. Reloading the save keeps them unlocked
-  and shows no toast. To test a later building out of order use `chapter unlock chapter_id=Signal`
-  (or start with the tutorial off, which opens every chapter). `"chapterGating": false` in
-  `settings.json` does the same for every game.
+- Chapters (`wardens/README.md`, "How the chapters work"): on a new game **no building is padlocked
+  and none carries a science price** (the whole bar is buildable from the first frame, on every map);
+  `chapter status` shows `complete: []`, `next: Badwater`, `next_waits_for: Wardens.Scrap`, and
+  `unlocked_at_load: []` (a template listed there means a blueprint shipped with a science cost: the log
+  names it, `validate.py` names the file). Finishing the Scrap tutorial (or `tutorial next` through it)
+  must show the "Chapter 2: Badwater." toast within a second and put the same line in the chat panel;
+  `complete` becomes `["Badwater"]`. Reloading the save shows no toast and keeps `complete`. To replay a
+  later chapter's beat use `chapter unlock chapter_id=Signal`; starting with the tutorial off lists every
+  chapter as complete (the story cannot advance without it) and changes nothing on the bar.
 - `python wardens/tools/validate.py` must print `problems: none` before every in-game test (it includes
   `check_cutscenes.py`, which also runs alone and without the game's files:
   `python wardens/tools/check_cutscenes.py wardens/src`).
@@ -122,6 +122,35 @@ wakes it every 60 game ticks or when something happens, and tells it where to lo
   (Reed Bed); a missing planter building for a plantable crashes the bottom bar at load.
 - Power budget to verify: Core 150 hp; Charging Post 50; Cruncher 120; Badwater Cell +100 (needs a Sludge
   Pump on badwater and a bot working it); Sludge Burner +200 once Reed Beds deliver Biomass.
+
+## Checks for level tasks (0.4.20+)
+
+- A campaign level shows its tasks in a panel under the goods bar (`LEVEL 01: First Light  n/8`), with the
+  vanilla tutorial on or off. Player.log: `[Wardens] tasks: level 01, 8 task(s), N done`.
+- The current task shows its instruction and a line per check with progress; done ones are ticked.
+  A task-done line appears in the Uplink and as a toast; a save from later in the level ticks through
+  the tasks it already meets, one per half second.
+- When the last task is done: the panel becomes the level-end card (`LEVEL 01 COMPLETE`), the toast names
+  level 02. **Continue to level 02: The Sump** exit-saves and starts level 02; the log shows the
+  transition. **Stay** folds the card; `+` opens it again.
+- MCP: `campaign action=tasks` lists the checks with `have`/`count`; frames carry `task` and the events
+  `task.done:<id>` and `level.complete`.
+- To launch into a save for testing: `autoload.json` in the mod folder,
+  `{"settlement": "First Light", "save": "<save name without .timber>"}` (one-shot, the game's own
+  saves folder, `ExperimentalSaves` on the experimental branch).
+
+### The tasks on the author's day-31 colony (2026-09-11, 0.4.22)
+
+| Check | Result |
+|---|---|
+| Load by `autoload.json` | `[Timberbot] auto-loading: First Light - 2026-09-11 16h27m, Day 2-14.autosave` |
+| Tasks at load | `tasks: level 01, 8 task(s), 0 done`, then Charge … Reeds done within seconds (5/8), each with its Uplink line |
+| Haul, Second power | done once the Hauler Dock had 2 Wardens (7/8); the Badwater Cell making power as soon as haulers fed it |
+| The panel | header and count shown top right; the body was hidden under the selected building's panel on the right, so it moves under the goods bar (0.4.23) |
+| Names | the game calls the tanks, the pile and the dock "Small Tank", "Small Industrial Pile", "Hauler Dock"; the task texts now say so (0.4.23) |
+| First Light, level complete | the first beaver woke: `tasks: FirstLight done (8/8)`, `campaign: Level 01 complete: First Light. Next: level 02, The Sump. …`, `tasks: level 01 complete`; campaign.json `completed: ["01"]` |
+| Continue on the card | the author pressed it: exit save `First Light - … Day 2-15.autosave`, then `transition: starting level 02 (The Sump) on 'Wardens 02 The Sump' as a new Wardens game` |
+| Level 02 loads | `campaign: level 02 (The Sump) … completed=[01]`; `new game: replaced 13 starting beavers with bots, … 10 Scrap Metal in the Core`; no `Can't validate`, no exception (the footprint fix holds on level 02 too). `tasks: none for level 02`: it has no tasks, no opening scene and no ending yet |
 
 ## Checks for cutscenes
 
@@ -140,6 +169,13 @@ Design and open questions: `design/wardens-cutscenes.md` (§9 is this list, §12
   `Documents/Timberborn/Mods/Wardens/Cutscenes/ColdBoot.json`, `cutscene reload`, `play`: the change shows.
   A broken edit lands in `errors` and the other scenes still load.
 - Tutorial off, or `"cutscenes": false` in `settings.json`: nothing plays on a new game; `play` still works.
+- **Level 01's opening (0.4.10).** A new game on `Wardens 01 First Light`, tutorial on or off (the handoff
+  `{"level":"01"}` is the quick way): `FirstLight` plays instead of the Cold Boot. The log has
+  `level triggers=True`, `cutscene FirstLight: queued by level:01` and `start (trigger, 12 shots, 99 s)`,
+  and no `ColdBoot` line. The camera visits, in order, the whole plateau, the river's head at the north
+  edge, the river, the Sump with its seep lit, the terraced shore, a ruin near the Core, the spring, the
+  crossing, the Core, a Warden; the last card waits for Continue and the game stays paused. With
+  `"cutscenes": false` nothing plays.
 - `chapter unlock chapter_id=Badwater` opens the chapter and plays `Badwater`: two shots around the Core,
   the first caption with the scrap count filled in ("Scrap: 10. ..."), the second with a Continue button
   (Return or Space also continues); the camera flies back to where it was. Signal, Pods (three stock
@@ -156,6 +192,121 @@ Design and open questions: `design/wardens-cutscenes.md` (§9 is this list, §12
 - What to tune first: the zoom scale (`dzoom` ±0.15 is a placeholder), the tilt (`v` 60 and 35), whether
   the letterbox collides with the tutorial panel, and whether the caption is centered (the game's
   `text--centered` class) or needs a fixed width.
+
+## Level 01 played by Claude over MCP, the opening as scripted (2026-09-11, 0.4.14, game machine)
+
+A fresh handoff start of the remade land. Claude played through the `wardens` MCP tools from the end of
+the opening to day 4, following the playbook's opening (two Charging Posts for the 10 starting scrap,
+then two Scavenger Flags and paths); the author built alongside from day 3 and quit at day 8.
+
+| Check | Result |
+|---|---|
+| Opening, Sump caption (0.4.14) | `cutscene status` read "Below the Core, the Sump: badwater, 1.2 deep. The seep and the river keep it full." |
+| After the opening | the scene ended by Continue (`finished at shot 12/12`); `speed value=1` then ran the game, so it was paused and not locked |
+| Skip mid-scene | not pressed: the author pressed Continue at the directive before the MCP `skip` arrived |
+| Warden close-up at zoom -4.5 → -5 | framed the Core's wall: all 13 Wardens stand at 23,48, inside the Core, while the scene plays |
+| The flags | both "Nothing to do in range" from day 1, ruins 2–4 tiles away one level down; cleared within 100 ticks of the first Stairs finishing (18,42) |
+| Energy | 11 of 13 Wardens at 0 by day 2.8 with two Posts (capacity 1 each) |
+
+Findings:
+
+1. **Wardens cannot step one terrain level without Stairs, and every ruin on level 01 sat one level
+   below the pad** (critical, reproduced). Symptom: flags at 18,44 and 21,46 (height 8) said "Nothing to
+   do in range" with ruins at 19,42 and 14,48 (height 7); unemployed Wardens wandered for two days and
+   none left height 8; scrap stayed at 0 after the two Posts. A Stairs at 18,42 cleared both alerts and a
+   ruin paid 15 scrap within the day. The author's earlier colony on this land needed 6 Stairs.
+   Source (read): the terrain nav mesh joins a tile only to same-height neighbours
+   (`TerrainNavMeshUpdater.TilesAreOrthogonallyConnected`), and a flag's range is the terrain it walks to
+   (`BuildingTerrainRange`, `InRangeYielders`). mapsmith assumed one level of climb (`max_step = 1`), so
+   its walk report said "near ruins 10 min" and the level passed `reachable_scatter`. Consequence: the
+   scripted opening softlocks at 0 scrap; recovered here only by taking both Posts down (2 scrap each
+   back) for one Stairs. Remedy (the author chose it): mapsmith models on foot (one level) and with Stairs
+   (`on_foot_from`, `[checks] on_foot_scatter`, Stairs counts in the walk report), and level 01's three
+   first ruins stand on the pad (0.4.16 map); the playbook says Stairs before the Sump.
+2. **Idle Wardens drain to 0 by day 2.8** (reproduced, the 0.4.5 finding 2). Two Posts of capacity 1
+   for 13 Wardens. Remedy: open, the balance pass.
+3. **Wardens at 0 Energy keep walking** (seen). Wardens listed at `energy 0.00` changed position between
+   frames and walked down the new Stairs; unemployed ones refilled from 0 to 0.49–0.98 within a day
+   while no Post stood. The frame's `why` ("a stopped Warden does not get up") and the story ("stops where
+   it stands") say otherwise. Source: not read (the Energy need's effects and the bot behaviours).
+   Remedy: open; read the bot need specs before the balance pass decides what 0 should mean.
+4. **`/api/tiles` reported `badwater: 0` on every Sump tile** at contamination 1. Source (read):
+   `ColumnContamination(x, y, col.Ceiling)` returns 0 unless the water reaches that height. Remedy
+   (0.4.16): the column's own `Contamination`, upstream in `timberbot/src` and re-copied. Not yet seen.
+5. **The frame's `at` is a world position** (`y` is the height), and `point` takes a grid tile, so
+   passing one to the other points at the wrong place. Remedy (0.4.17): every `at` also carries
+   `at.grid`. Not yet seen.
+6. **The Warden close-up has no Warden to show:** at scene time the Wardens are inside the Core.
+   Remedy (0.4.16): the shot looks at the Core's door from the south, where they come out. Not yet
+   judged: on the 0.4.18 start the Loading issues dialog (finding 8) covered the frame's centre, and a
+   vanilla "Drought started" banner stayed up from the Ruins shot to the directive (probably held by the
+   modal dialog; look again once the dialog is gone).
+7. **`/api/placement/find` offered no Sludge Pump site on the Sump's west shelf**, only three in the
+   channel; the author's pump at 32,47 (height 6, west) placed from the tool bar. Source: not read. Remedy: open.
+8. **Every load of the remade level 01 deleted two of its three river-head sources and all six
+   UndergroundRuins**, behind a Loading issues dialog (seen on the 0.4.18 start; the author's day-3 save
+   of the 0.4.9 land has the same two sources and no UndergroundRuins, so it is as old as the remake).
+   Player.log: `Can't validate loaded BlockObject BadwaterSource(Clone) at (34, 1, 4). It's not backward
+   compatible. Deleting it.` Source (read): `BlockObject.AddToServiceAfterLoad` deletes any block object
+   whose blocks do not validate; a `BadwaterSource` is 3x3 (the three were placed one tile apart) and
+   `UndergroundRuins` is a 5x5 surface object (`Underground: false`), which mapsmith buried three levels
+   deep. Consequence: a dialog over the opening, a river on one third of its designed source (every
+   playtest ran on one), and no underground ruins ever. Remedy (0.4.19 map): mapsmith knows the
+   footprints (`SIZES`), the checker refuses a footprint that is not flat, overlaps or is buried; level 01
+   places the one source it always had and no UndergroundRuins, and its Head caption no longer says three.
+
+Verified on the 0.4.18 start: `/api/tiles` reads `badwater: 1` on the Sump; `speed` answers
+`{"was":0,"speed":1,"applied":true}`; a frame's `at` carries `grid` (`{"x":19,"y":59,"z":6}` for the Stairs
+at 19,59,6); two flags by the pad's ruins (17,49 and 18,49) never showed "Nothing to do in range", and by
+day 1 at 87 % the ruin at 16,48 was gone and the one at 16,46 stood a level lower (H2 → H1).
+
+## The remade level 01 and its opening (2026-09-11, 0.4.9–0.4.10, game machine)
+
+Two fresh starts by the main-menu handoff (`{"level":"01"}`), the author's tutorial setting off, read
+through the Wardens MCP server and the log.
+
+| Check | Result |
+|---|---|
+| Boot (0.4.9) | `replaced 13 starting beavers with bots, 13 charged to full, 10 Scrap Metal in the Core`; `bots unlocked for free in 1 workplace template(s)`; no exception in either session |
+| The land | `/api/tiles` heights match the spec: terrace 8 → 7 → shelf 6 at x 26–33, Sump bed 3 at x 34–42, the 3×3 seep at 40–42, 48–50 |
+| The Sump fills on day 1 | at day 1, 41 %: water 0.5 on every Sump tile and along the channel to x 47 (y 47–48) |
+| The opening (0.4.10) | `level triggers=True` with `tutorial=False`; `cutscene FirstLight: queued by level:01`, `start (trigger, 12 shots, 99 s)`, `finished at shot 12/12`; no Cold Boot line. Screenshots: river, Sump (seep lit), shore (Core above the terraces), ruins (one lit beside the Core), spring (lit, grove around it), crossing, Core (lit), a Warden, the directive; each frames what its caption names |
+| Pre-filled water (0.4.13) | a third fresh start: no exception; at tick 1, paused, `water 1.2` on every Sump tile and along the channel to x 47 (`/api/tiles`, y 48); the river shot shows a badwater band across the plateau and the Sump shot a full basin (DPI-aware screenshots, the whole screen with both letterbox bars) |
+| Caption args (0.4.12) | the Core shot reads "The Core. 13 Wardens online, charged to full. Power: the Core, and nothing else." |
+
+Findings:
+
+1. **Captions with args print `System.Object[]`.** Symptom: the Core shot read "The Core. System.Object[]
+   Wardens online, charged to full." Source (read): `WardensCutscenes.CaptionText` passed the args array to
+   `ILoc.T`, which has only `T(key)` and generic `T<T1..T3>` overloads (decompiled `ILoc`), so the array
+   bound as one parameter. Consequence: every caption with `args` was wrong: this one, and the Badwater,
+   Pods, Green and Archive scenes. Remedy: `Localize()` calls the overload for the count (0.4.11); seen fixed in 0.4.12.
+2. **The river is dry while the opening shows it.** Symptom: the river and Sump shots show empty beds.
+   Source: maps ship dry (the pre-filled water encoding is undocumented, `design/wardens-wasteland.md`),
+   and the scene plays at tick 0. Consequence: the captions describe water the picture does not have.
+   Remedy (the author chose it): the map ships pre-filled. The column encoding was decoded from the
+   decompile and a real autosave, mapsmith writes it with `[water] fill`, the levels are the ones a
+   day-3 autosave of this map settled at (4.17), and the load is clean (0.4.13).
+3. **`cutscene_played` stayed false after the opening.** Source (read): the flag tracked the Cold Boot
+   only. Consequence: the Warden's boot check could read a played opening as not played. Remedy:
+   `OpeningPlayed` counts a `level:` scene too (0.4.11).
+4. **The badtide replays finish vanilla's first-badtide tutorial on day 1.** Symptom: `finished:
+   ["SurvivedFirstBadtideTrigger"]` and the `Wardens.Badtides` card ("The settlement has weathered its
+   first badtide") open right after the opening. Source: `WardensArchivedBadtides` posts the vanilla
+   weather events, as designed for the Cold Boot. Consequence: a card about a badtide the colony never
+   lived through. Remedy: deferred; it predates the opening (the Cold Boot replays the same three).
+5. **The Warden close-up is no closer than the Core shot** (zoom 0.25 against 0.6). Source (read): no
+   clamp. The distance is `1.3^ZoomLevel * 32` (`CameraService`, `CameraService.blueprint.json`), so
+   0.25 is 34 tiles and 0.6 is 37: the same shot. The director sets `ZoomLevel` directly and nothing
+   clamps it; the player's scroll range is -8 to 6. Remedy: the Warden shot flies from -4.5 to -5 (10 to
+   9 tiles); the scale is written into the `cutscene-director` agent.
+6. **The speed would not leave 0** in the 0.4.9 session (`speed value=3` answered `speed: 0`, no scene
+   playing, the author placing Stairs). Source (read): `SpeedManager.ChangeSpeed` only queues the value
+   for its `LateUpdate` and drops it while the speed is locked (`OverlayPanelSpeedLocker` locks it for
+   every panel with `LockSpeed`), and the tool answered with `CurrentSpeed` read straight after, which is
+   always the old speed. The tool also passed the button number as the speed, so `3` was x3, not the fastest button (x7). Remedy
+   (0.4.15): the tool maps 0..3 through the buttons (0, 1, 3, 7) like `POST /api/speed`, and answers
+   `was`, `speed`, `applied` and, when locked, the reason.
 
 ## Level 01 played through the MCP server (2026-09-11, 0.4.5–0.4.6, game machine)
 
@@ -245,7 +396,9 @@ required for the very first moves.
 - `/api/alerts` returns `type: "Flooded."` (with the period), not in the documented
   `unstaffed`/`unpowered`/`unreachable`/`status` enum.
 - `chapter status`'s `complete` list already showed Badwater through Green on a brand-new Cold Boot
-  save with nothing built — looks like state not reset per playthrough.
+  save with nothing built — looks like state not reset per playthrough. *(2026-09-11: the check read the
+  unlock state, which the tutorial-off toggle opened at load; `complete` now means the chapter's tutorial
+  has finished, and the bar is open from the start regardless.)*
 
 ## Level start from the main menu (2026-09-11, 0.4.1, game machine)
 

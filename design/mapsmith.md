@@ -66,11 +66,14 @@ by reading an ASCII preview during development, and it is invisible in the JSON.
 
 - structural: four zip members, JPEG magic, voxel and per-cell array lengths, top layer air,
   metadata size agreeing with `MapSize`, unique entity ids;
-- placement: every entity on its column's surface, nothing floating or swallowed by terrain, only
-  `UndergroundRuins` buried, exactly one `StartingLocation` with an orientation, its pad flat with
-  headroom;
-- playability: a flood fill from the starting location over ground a beaver can climb (one level,
-  water blocks), against `min_reachable`, plus "is any scrap actually reachable on foot".
+- placement: every entity on its column's surface, nothing floating or swallowed by terrain,
+  nothing buried (the game deletes it), a big footprint (`BadwaterSource` 3x3, `UndergroundRuins`
+  5x5) flat and not overlapping, exactly one `StartingLocation` with an orientation, its pad flat
+  with headroom;
+- playability: a flood fill from the starting location, on foot (one level only: the game joins a
+  tile to same-height neighbours) and with Stairs (one level per Stairs, water blocks), against
+  `min_reachable`, `reachable_scatter` and `on_foot_scatter`. (Until 2026-09-11 it assumed a beaver
+  climbs one level unaided; level 01 softlocked on that.)
 
 Each check was written by breaking a good map in one specific way and asserting the report names
 it — including the two the original `gen_map.py --check` missed (a `StartingLocation` swallowed by
@@ -83,12 +86,12 @@ any fun. See the skill's `references/timber-format.md` for the verified/assumed 
 
 ## Relationship to gen_map.py
 
-`gen_map.py` remains the provenance of the shipped `Wardens Wasteland.timber` and still runs.
-`wardens/maps/wardens-wasteland.map.toml` is the same design as a spec; its output is equivalent,
-not byte-identical (different RNG). Swap the shipped file over once the spec-built wasteland has
-been seen to load in-game, and retire `gen_map.py` then — not before, because replacing a
-format-verified artefact with an unverified one on the strength of an offline checker is the exact
-trade this tool exists to avoid.
+`gen_map.py` wrote the first level 01 (`Wardens Wasteland.timber`, renamed `Wardens 01 First Light`).
+On 2026-09-11 the spec took the level over: `wardens/maps/wardens-01-first-light.map.toml` was remade
+from what the level did in the game (`wardens/playtest/PLAYTEST.md`) and now builds the shipped file,
+with two new contracts (`shore`, `crossing`) holding the changes. The swap waited, as this section
+used to insist, for a game machine: the spec-built map is loaded and measured there before it ships.
+`gen_map.py` stays as the record of how the first land was made.
 
 ## Found by pointing fresh agents at the skill
 

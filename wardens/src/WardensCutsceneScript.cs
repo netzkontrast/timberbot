@@ -119,6 +119,7 @@ namespace Wardens
         public const string TriggerNewGame = "new_game";
         public const string TriggerChapterPrefix = "chapter:";
         public const string TriggerTutorialPrefix = "tutorial:";
+        public const string TriggerLevelPrefix = "level:";      // a new game on campaign level <Id>
         public const string WaitTime = "time";
         public const string WaitContinue = "continue";
         public const string WaitChoice = "choice";          // reported by the runner for a shot with choices
@@ -158,13 +159,13 @@ namespace Wardens
             return scene;
         }
 
-        /// new_game | chapter:<Id> | tutorial:<Id>. Whether the id exists is the checker's job.
+        /// new_game | level:<Id> | chapter:<Id> | tutorial:<Id>. Whether the id exists is the checker's job.
         public static void ValidateTrigger(string trigger)
         {
             if (trigger == TriggerNewGame) return;
-            if (trigger.StartsWith(TriggerChapterPrefix, StringComparison.Ordinal) && trigger.Length > TriggerChapterPrefix.Length) return;
-            if (trigger.StartsWith(TriggerTutorialPrefix, StringComparison.Ordinal) && trigger.Length > TriggerTutorialPrefix.Length) return;
-            throw new FormatException($"scene.on: '{trigger}' (new_game | chapter:<Id> | tutorial:<Id>)");
+            foreach (var prefix in new[] { TriggerLevelPrefix, TriggerChapterPrefix, TriggerTutorialPrefix })
+                if (trigger.StartsWith(prefix, StringComparison.Ordinal) && trigger.Length > prefix.Length) return;
+            throw new FormatException($"scene.on: '{trigger}' (new_game | level:<Id> | chapter:<Id> | tutorial:<Id>)");
         }
 
         /// day | cycle | cycle_day | bots | beavers | archive | science | good:<Id> | choice:<key> | mark:<name>.

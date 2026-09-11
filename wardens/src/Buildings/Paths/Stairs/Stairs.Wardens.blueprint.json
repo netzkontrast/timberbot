@@ -8,7 +8,7 @@
         "Amount": 3
       }
     ],
-    "ScienceCost": 70,
+    "ScienceCost": 0,
     "PlaceFinished": false,
     "FinishableWithBeaversOnSite": true,
     "DrawRangeBoundsOnIt": false

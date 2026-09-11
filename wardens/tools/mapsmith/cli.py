@@ -1,7 +1,7 @@
 """`mapsmith` — build, inspect and check Timberborn maps from a spec file.
 
-    python wardens/tools/mapsmith build wardens/maps/wardens-wasteland.map.toml
-    python wardens/tools/mapsmith preview wardens/maps/wardens-wasteland.map.toml
+    python wardens/tools/mapsmith build wardens/maps/wardens-01-first-light.map.toml
+    python wardens/tools/mapsmith preview wardens/maps/wardens-01-first-light.map.toml
     python wardens/tools/mapsmith check "wardens/src/Maps/Wardens Wasteland.timber"
     python wardens/tools/mapsmith new wardens/maps/level-02.map.toml --size 96 --seed 7
     python wardens/tools/mapsmith ops
@@ -166,8 +166,8 @@ def cmd_check(args) -> int:
         if args.spec:
             opts = spec_mod.load(Path(args.spec), args.variant).get("checks", {})
         report = check_file(target, opts)
-        print("note: a .timber is written with every bed dry, so this check cannot tell water from "
-              "ground. Walkability here is the lenient model and can report several times the "
+        print("note: a .timber carries no water masks (a dry bed, or one only a `[water] fill` wetted), so "
+              "this check cannot tell a river from ground. Walkability here is the lenient model and can report several times the "
               "reachable area that `check <spec>` does; `reachable_scatter` cannot be evaluated at "
               "all. Check the spec when you have it.")
     print(f"{target}: {report.summary()}")

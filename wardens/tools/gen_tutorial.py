@@ -16,10 +16,10 @@ tutorial for tutorial and stage for stage, with the Wardens' buildings, goods an
   Housing                  Wardens.Housing               Breeding Pods
   PowerAndPlanks           Wardens.Power                 Badwater Cell, power the pods
   MoreBeavers              Wardens.MoreBeavers           first beaver out of a pod (BeaversStepSpec)
-  Forestry                 Wardens.Reforestation         unlock + build the Planter Rig, plant birches
+  Forestry                 Wardens.Reforestation         build the Planter Rig (free from the start), plant birches
   Wellbeing                Wardens.Wellbeing             select a Warden, well-being panel, default hours
   Dams                     Wardens.Dams                  Wardens.MissingDamTrigger (WardensTriggers.cs)
-  VerticalArchitecture     Wardens.VerticalArchitecture  vanilla StairsUnlockedTrigger via the Stairs.Folktails alias
+  VerticalArchitecture     Wardens.VerticalArchitecture  after Maintenance; stairs are free, so no unlock trigger
   Droughts / Badtides      Wardens.Droughts / .Badtides  vanilla weather triggers, new text
   HaulersAndWorkforce      Wardens.Haulers               Wardens.IdleWardensTrigger, Hauler Dock
   LayerTool                Wardens.LayerTool             Wardens.PlatformBuiltTrigger
@@ -108,14 +108,6 @@ def beavers(n: int = 1) -> dict:
     return {"BeaversStepSpec": {"RequiredAmount": n}}
 
 
-def science_for(template: str) -> dict:
-    return {"AccumulateScienceForBuildingStepSpec": {"TemplateName": template}}
-
-
-def unlock(template: str) -> dict:
-    return {"UnlockBuildingTutorialStepSpec": {"TemplateName": template}}
-
-
 def workers(template: str) -> dict:
     return {"IncreaseDesiredWorkersStepSpec": {"TemplateName": template}}
 
@@ -135,7 +127,7 @@ BOT = "Bot.IronTeeth"
 TUTORIALS = [
     ("ColdBoot", "Cold Boot", [], "", 0, True, [
         ("Wake",
-         "SYSTEM RESTART.\n\nThe uptime counter overflowed 3,000 days ago. Sensors report no growth, no water worth drinking, no beavers.\n\nFive Wardens online. Power: the Core, and nothing else.",
+         "SYSTEM RESTART.\n\nThe uptime counter overflowed 3,000 days ago. Sensors report no growth, no water worth drinking, no beavers.\n\nEvery Warden online. Power: the Core, and nothing else.",
          []),
         ("Badtides",
          "The archive kept working after everything else stopped.\n\nThree badtides are logged from before this boot. Nobody was awake to live through them; the sensors recorded them anyway.\n\nThe uplink log is about to read them out.",
@@ -208,7 +200,7 @@ TUTORIALS = [
          "Metal is not the goal. Knowledge is.\n\nBuild the Cruncher and connect it to the Core with a Power Shaft. The Core can barely run it; that is the point.",
          [build("Cruncher.Wardens"), powered("Cruncher.Wardens")]),
         ("SciencePoints",
-         "For now, let the Cruncher think.\n\nOnce enough Science Points accumulate, we will spend them to unlock what the Wardens forgot how to build.",
+         "For now, let the Cruncher think.\n\nEvery building is already yours to place; nothing on the bar waits for Science. Science Points are the measure of what the Wardens learn here. Data Cores feed Firmware and the Archive.",
          []),
     ]),
     ("Housing", "Pods", ["Wardens.Storage"], "", 60, False, [
@@ -230,9 +222,9 @@ TUTORIALS = [
          [beavers(1)]),
     ]),
     ("Reforestation", "Reforestation", ["Wardens.Power", "Wardens.Science"], "", 80, False, [
-        ("UnlockPlanter",
-         "Directive 2: make this land livable.\n\nUsing Science Points from the Cruncher, unlock the Planter Rig. Then build it where you want trees to grow.",
-         [science_for("Planter.Wardens"), unlock("Planter.Wardens"), build("Planter.Wardens")]),
+        ("BuildPlanter",
+         "Directive 2: make this land livable.\n\nBuild the Planter Rig where you want trees to grow. It plants within its range, and nothing else here does.",
+         [build("Planter.Wardens")]),
         ("PlantBirches",
          "Use the Plant Trees and Bushes tool to plant Birches. They grow quickly and ask for little.\n\nTrees only grow on irrigated, green ground. Find some. There is not much.",
          [plant("Birch", 20)]),
@@ -253,7 +245,9 @@ TUTORIALS = [
          "Tanks hold Badwater for a while. Long-term survival depends on taming the flow of water.\n\nBuild a line of Dams across the nearest river, bank to bank, and observe what happens.",
          [build("Dam.Wardens")]),
     ]),
-    ("VerticalArchitecture", "Vertical architecture", ["StairsUnlockedTrigger", "Wardens.Wellbeing"], "", 110, False, [
+    # Vanilla waits for StairsUnlockedTrigger here; the Wardens' stairs are free from the start, so there
+    # is no unlock for that trigger to see and Maintenance alone opens this one.
+    ("VerticalArchitecture", "Vertical architecture", ["Wardens.Wellbeing"], "", 110, False, [
         ("BuildDeck",
          "Space is scarce in the wasteland. The Wardens build upward.\n\nSome buildings have flat roofs that can support other structures. Build an Observation Deck on one; you may need Stairs to connect it.",
          [build("Deck.Wardens"), connect("Deck.Wardens", n=1, unfinished=True, highlight=("Path", "Stairs.Wardens"))]),

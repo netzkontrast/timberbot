@@ -18,9 +18,9 @@ ASCII map and ask whether the land does what the design asked of it.
 ## Start here
 
 ```bash
-python3 wardens/tools/mapsmith preview wardens/maps/wardens-wasteland.map.toml --step 2
-python3 wardens/tools/mapsmith build   wardens/maps/wardens-wasteland.map.toml
-python3 wardens/tools/mapsmith check   wardens/maps/wardens-wasteland.map.toml
+python3 wardens/tools/mapsmith preview --level 01 --step 2
+python3 wardens/tools/mapsmith build   --level 01 --out /tmp/first-light.timber
+python3 wardens/tools/mapsmith check   --level 01
 python3 wardens/tools/mapsmith ops     # every terrain verb and what it takes
 
 python3 wardens/tools/mapsmith levels          # the campaign map index, vs the C# level table
@@ -61,22 +61,27 @@ Work in this order. Each step is cheap and catches a different class of mistake.
    skeleton. Copy an existing spec when the new map is a cousin of an old one.
 3. **`preview` it, and read the output.** This is the step people skip and regret. See below.
 4. **`build` it.** The build re-runs the checker, prints what it made, and prints the walk report:
-   how many steps from the starting location to each named group of entities. This is the answer to
-   "is the scrap within a day's walk" — you cannot read walking distance off a heightmap, and a
-   straight-line radius says nothing about a cliff in the way.
+   how many steps from the starting location to each named group of entities, and how many Stairs
+   the way needs. This is the answer to "is the scrap within a day's walk" — you cannot read walking
+   distance off a heightmap, and a straight-line radius says nothing about a cliff in the way.
 
    ```
-   walk from the start at 22,48 (4159 tiles reachable on foot):
-     across the river         unreachable on foot (9 entities)
-     near ruins                10 min   13 median   19 max
-     the south field           24 min   33 median   36 max
+   walk from the start at 22,48 (127 tiles on foot, 4369 with Stairs):
+     across the river         unreachable, even with Stairs (9 entities)
+     first light                6 min    8 median    9 max   on foot
+     near ruins                 9 min   16 median   22 max   1-2 Stairs
    ```
 
-   `unreachable on foot` is not automatically a bug — "across the river" is meant to need a bridge.
-   It is a bug when the thing the colony opens with is in that list. Name your `[[scatter]]` rules;
-   the report and `reachable_scatter` are both keyed on those names.
+   **Wardens walk on one level.** The game joins a tile only to neighbours of the same height, so
+   every level between the start and a thing is a Stairs (3 scrap) the colony builds first. Level 01
+   shipped with every ruin one level below the pad and the opening softlocked at 0 scrap (PLAYTEST.md,
+   2026-09-11). Whatever the colony opens with has to say `on foot`.
+
+   `unreachable, even with Stairs` is not automatically a bug — "across the river" is meant to need a
+   bridge. It is a bug when the thing the colony opens with is in that list. Name your `[[scatter]]`
+   rules; the report, `reachable_scatter` and `on_foot_scatter` are all keyed on those names.
 5. **Fix what the checker names, then look again.** Warnings are not noise: "only 240 of 9216 tiles
-   are walkable from the start" means the colony is trapped on a shelf.
+   are reachable from the start, even with Stairs" means the colony is trapped on a shelf.
 6. **Say plainly what is still unverified.** The checker proves the file is well-formed and the
    colony is not boxed in. It cannot prove the game accepts a template name, or that the map is
    fun. Hand those to the user as open questions rather than implying they are settled.
@@ -196,13 +201,16 @@ contamination = { from = "badwater", offset = 1.5, reach = 9.0 }
 [checks]                          # what `check` must be able to prove about this map
 require = ["StartingLocation", "WaterSource", "BadwaterSource"]
 min_reachable = 1200
-reachable_scatter = ["the pods"]  # this cluster must be walkable — name it, don't guess a fraction
+reachable_scatter = ["the pods"]  # reachable, Stairs allowed — name it, don't guess a fraction
+on_foot_scatter = ["first scrap"] # reachable before a single Stairs: what the colony opens with
 ```
 
 `reachable_from = "start"` on a `[[scatter]]` is the other half of this: it restricts placement to
-the walkable component around a point, so a cluster cannot land across a river. Reach for it
-whenever water divides the map — it replaces the fiddly business of shrinking radii until the
-annulus happens not to cross the water.
+the ground reachable from a point (Stairs allowed), so a cluster cannot land across a river. Reach
+for it whenever water divides the map — it replaces the fiddly business of shrinking radii until the
+annulus happens not to cross the water. `on_foot_from = "start"` is the strict one: the entity's own
+tile on the point's level, joined by flat ground. Use it for the opening's scrap, and pair it with
+`on_foot_scatter`.
 
 `reachable_scatter` is usually the check you want. Five ruin clusters share the `RuinColumnH*`
 templates, so a template-prefix check (`reachable = ["RuinColumn"]`) can only say "at least one of
@@ -239,10 +247,12 @@ written to tell you the fix:
 | `wanted 3 X, placed 0 — N candidate tiles were outside the map` | The `segment` starts before the path enters the map. Move it inland. |
 | `unknown anchor 'spring'` | The op that would register it runs later, or is spelled differently. Ops run top to bottom. |
 | `[error] ... floating — the ground top here is 9` | An entity's Z is not its column's surface. Almost always a hand-edited coordinate. |
-| `[error] ... buried 3 level(s) under the surface` | Only `UndergroundRuins` (and anything you list in `[checks] buried_ok`) may sit inside terrain. |
+| `[error] ... buried 3 level(s) under the surface; the game deletes it on load` | Nothing mapsmith places is an underground block — not even `UndergroundRuins`, a 5x5 surface object; level 01 lost all six on load. `[checks] buried_ok` is the escape hatch for a template that really is. |
+| `[error] BadwaterSource at …: its 3x3 footprint is not flat` / `overlaps` | A `BadwaterSource` is 3x3 (`StartingLocation` 3x3, `UndergroundRuins` 5x5; `SIZES` in `build.py`). Every block needs ground under it and no other entity; the game logs "Can't validate loaded BlockObject … Deleting it" and shows a Loading issues dialog. Give it a flat pool (`basin`) and room. |
 | `[error] StartingLocation ... pad is not flat` | The pad op ran before something that raised the ground back up, or `at` moved. |
-| `[error] 3 of 7 entities from 'near ruins' cannot be reached on foot` | A cluster listed in `[checks] reachable_scatter` is cut off. Move it to the colony's side, or drop it from the list if being cut off is the point. |
-| `[warning] only N of M tiles are walkable from the start` | Beavers climb one level unaided; the start is ringed by cliffs. |
+| `[error] 3 of 7 entities from 'near ruins' cannot be reached from the starting location, even with Stairs` | A cluster listed in `[checks] reachable_scatter` is cut off (water, or a cliff of two levels or more). Move it to the colony's side, or drop it from the list if being cut off is the point. |
+| `[error] 2 of 3 entities from 'first light' need Stairs` | A cluster listed in `[checks] on_foot_scatter` is off the start's level. Place it with `on_foot_from = "start"`. |
+| `[warning] only N of M tiles are reachable from the start, even with Stairs` | The start is ringed by cliffs of two levels or more. |
 | `[warning] reachable_scatter names 'x', which is not a named rule` | A typo, or you are checking a `.timber` instead of the spec — rule names do not survive into the file. |
 
 ## Contracts: the level design, checked as geometry
@@ -272,6 +282,19 @@ trusts:
 [note] confluence_upstream: joins at 32%, gorge at 51% — one dam holds both
 ```
 
+Two more, written from level 01's playtest, guard what a colony needs from water it has to work:
+
+```toml
+[contract]
+shore = { at = "sump", radius = 8, min_tiles = 16, min_run = 4 }       # walkable land by the water, off the pad
+crossing = { to = "spring", radius = 8, max_water = 5 }                 # one short bridge away, not on foot
+```
+
+`shore` counts land touching the water that the colony can walk to and that is outside every
+`reserve` ring — a pump stands happily on a cliff top (its pipe reaches down), so the fault it catches
+is a Sump the colony can only reach from its own pad. `crossing` is for rewards across water: it fails
+both when the place is unreachable and when it can be walked to without a bridge.
+
 `mapsmith contracts` lists them with their parameters. Write the contract *before* the terrain: it
 tells you when the land is right, and it is the only reviewer you have.
 
@@ -300,8 +323,10 @@ The details, and which parts are verified versus assumed, are in
 - **Plants carry no `Orientation`; every other block object does.** This matches the map the game's
   own editor wrote. Set `orientation = "Cw0"` on ruins, sources and the starting location.
 - **The top voxel layer (Z 22) must be air.**
-- **Water starts dry.** Sources fill their beds during the first in-game day; the pre-filled column
-  encoding is undocumented. Do not fake it.
+- **Water starts dry unless the spec fills it.** Without `[water]`, sources fill their beds during
+  the first in-game day. `[water] fill` pre-fills water masks in the game's own column encoding
+  (decoded 2026-09-11, `references/timber-format.md`); take the levels from an autosave of the map,
+  not from a guess.
 - **The file claims the GameVersion whose layout was verified** (`0.7.10.0`), so the game migrates it
   on load. Do not bump this to look current — that skips the migration for a layout nobody checked.
 - **Template names are unverified against the running game.** `RuinColumnH1..H5`, `UndergroundRuins`,
@@ -333,9 +358,8 @@ uv run --project python --extra dev pytest wardens/tools/test_mapsmith.py -q
 
 ## Relationship to gen_map.py
 
-`wardens/tools/gen_map.py` is the older, numpy-based generator that wrote the currently shipped
-`Wardens Wasteland.timber`. It still works and is still the provenance of that file.
-`wardens/maps/wardens-wasteland.map.toml` is the same design as a spec, and mapsmith's checker
-validates the old file too. Until someone loads the spec-built wasteland in the game, do not
-overwrite the shipped `.timber` with it — swap over once it has been seen to load, and retire
-`gen_map.py` then.
+`wardens/tools/gen_map.py` is the older, numpy-based generator that wrote the first level 01. Since
+2026-09-11 the spec owns that level: `wardens/maps/wardens-01-first-light.map.toml` builds the
+shipped `Wardens 01 First Light.timber` (`build --level 01`), remade from what the level did in the
+game (the Sump under a cliff, the Sump filling on day 5, `PLAYTEST.md`). `gen_map.py` stays as the
+record of how the first land was made; do not use it to write a level.

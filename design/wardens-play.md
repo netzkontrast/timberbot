@@ -113,7 +113,7 @@ What a frame carries, and why:
 | `chapter`, `open_steps` | what the story waits for, and what the human's card asks |
 | `selection`, `camera`, `human.idle_seconds`, `human.unread` | what the human is doing, and whether the camera may be borrowed |
 | `events`, `since` | what changed, so nothing has to be re-read to find out |
-| `attention` | where to look, in order, with positions `camera` and `point` accept |
+| `attention` | where to look, in order; each `at` is a world position (`camera` with `world: true`) and `at.grid` the tile under it (`point`, Timberbot) |
 
 The attention order is fixed and small: the human, then any Warden running dry, then whatever just
 happened somewhere, then what the human is pointing at, then the open tutorial step, then the next

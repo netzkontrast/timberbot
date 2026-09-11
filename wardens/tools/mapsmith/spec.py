@@ -174,31 +174,49 @@ def check(spec: dict, b: MapBuild) -> Report:
 
 
 def walk_report(b: MapBuild, start: tuple[int, int] | None = None) -> str:
-    """How far a beaver actually walks from the start to each named group of entities.
+    """How far a beaver actually walks from the start to each named group of entities, and how many
+    Stairs the way needs.
 
     The design language is "scrap within a day's walk", not "scrap at radius 5" — and you cannot
     read walking distance off a heightmap, which is why this exists rather than leaving it to the
-    eye. Steps are 4-neighbour, so they are a lower bound on the real path.
+    eye. Steps are 4-neighbour, so they are a lower bound on the real path. On foot the colony stays
+    on one level: every level between the start and a group is a Stairs (3 scrap) it builds first.
     """
     if start is None:
         anchor = next((e for e in b.entities if e.template == "StartingLocation"), None)
         if anchor is None:
             return "  walk: no StartingLocation to measure from"
         start = (anchor.x, anchor.y)
-    dist = b.walk_distances(start)
-    lines = [f"  walk from the start at {start[0]},{start[1]} ({len(dist)} tiles reachable on foot):"]
+    best = b.stairs_from(start)
+    on_foot = sum(1 for stairs, _ in best.values() if stairs == 0)
+    lines = [f"  walk from the start at {start[0]},{start[1]} ({on_foot} tiles on foot, "
+             f"{len(best)} with Stairs):"]
     for name, spots in sorted(groups_of(b).items()):
-        steps = sorted(d for s in spots
-                       for d in [min((dist[(s[0] + dx, s[1] + dy)]
-                                      for dx in (-1, 0, 1) for dy in (-1, 0, 1)
-                                      if (s[0] + dx, s[1] + dy) in dist), default=None)]
-                       if d is not None)
-        if not steps:
-            lines.append(f"    {name:24s} unreachable on foot ({len(spots)} entities)")
+        costs = []
+        for sx, sy in spots:
+            own = best.get((sx, sy))           # a ruin counts for a flag only on its own tile's level
+            if own is None:                    # a source stands in water: measure from its bank
+                own = min((best[(sx + dx, sy + dy)] for dx in (-1, 0, 1) for dy in (-1, 0, 1)
+                           if (sx + dx, sy + dy) in best), default=None)
+            if own is not None:
+                costs.append(own)
+        if not costs:
+            lines.append(f"    {name:24s} unreachable, even with Stairs ({len(spots)} entities)")
             continue
+        steps = sorted(c[1] for c in costs)
+        stairs = sorted(c[0] for c in costs)
         mid = steps[len(steps) // 2]
-        tail = "" if len(steps) == len(spots) else f"  ({len(spots) - len(steps)} cut off)"
-        lines.append(f"    {name:24s} {steps[0]:3d} min  {mid:3d} median  {steps[-1]:3d} max{tail}")
+        free = sum(1 for s in stairs if s == 0)
+        if stairs[-1] == 0:
+            need = "on foot"
+        elif stairs[0] == stairs[-1]:
+            need = f"{stairs[0]} Stairs"
+        elif free:
+            need = f"{free} on foot, up to {stairs[-1]} Stairs"
+        else:
+            need = f"{stairs[0]}-{stairs[-1]} Stairs"
+        tail = "" if len(costs) == len(spots) else f"  ({len(spots) - len(costs)} cut off)"
+        lines.append(f"    {name:24s} {steps[0]:3d} min  {mid:3d} median  {steps[-1]:3d} max   {need}{tail}")
     return "\n".join(lines)
 
 

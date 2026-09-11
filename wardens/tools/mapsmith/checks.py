@@ -13,7 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from .build import LAYERS
+from .build import LAYERS, SIZES, cells_of
 from .world import read_timber
 
 
@@ -75,6 +75,45 @@ def _heights(voxels: list[str], size_x: int, size_y: int) -> list[int]:
             if voxels[base + i] == "1":
                 heights[i] = z + 1
     return heights
+
+
+def _check_water_columns(r, block: dict, heights: list[int], plane: int) -> None:
+    """Every WaterColumns token as the game's WaterColumnPackedListSerializer reads it: "0" (dry) or
+    depth:contamination:overflow[:floor[:oldDepth]], numbers, depth >= 0, contamination 0..1, and a
+    floor that is the column's ground top (the level the water stands on)."""
+    tokens = block.get("WaterColumns", {}).get("Array", "").split()
+    if len(tokens) != plane:
+        return                                     # the count is reported by the per-cell check
+    bad = 0
+    for i, t in enumerate(tokens):
+        if t == "0":
+            continue
+        parts = t.split(":")
+        problem = None
+        if not 3 <= len(parts) <= 5:
+            problem = f"{len(parts)} fields (3 to 5)"
+        else:
+            try:
+                depth, contamination, overflow = (float(p) for p in parts[:3])
+                floor = int(parts[3]) if len(parts) >= 4 else None
+                if len(parts) == 5:
+                    float(parts[4])
+            except ValueError:
+                problem = "not numbers"
+            else:
+                if depth < 0 or overflow < 0:
+                    problem = "negative depth or overflow"
+                elif not 0 <= contamination <= 1:
+                    problem = f"contamination {contamination} outside 0..1"
+                elif floor is not None and floor != heights[i]:
+                    problem = f"floor {floor}, the ground top is {heights[i]}"
+        if problem:
+            bad += 1
+            if bad <= 3:
+                r.err(f"WaterMapNew.WaterColumns[{i}] (x {i % int(plane ** 0.5)}, y {i // int(plane ** 0.5)}): "
+                      f"{t!r}: {problem}")
+    if bad > 3:
+        r.err(f"WaterMapNew.WaterColumns: {bad - 3} more bad column(s)")
 
 
 def _reachable(heights: list[int], size: int, start: tuple[int, int], blocked: set[tuple[int, int]],
@@ -160,12 +199,16 @@ def check_world(world: dict, meta: dict, names: set[str], opts: dict | None = No
             r.err(f"{single}: Size missing (the game reads it before the arrays)")
 
     heights = _heights(voxels, size_x, size_y)
+    _check_water_columns(r, sing.get("WaterMapNew", {}), heights, plane)
     entities = world.get("Entities", [])
     ids: set[str] = set()
     cells: dict[tuple[int, int], str] = {}
     starts: list[dict] = []
     templates: dict[str, int] = {}
-    buried_ok = set(opts.get("buried_ok", ["UndergroundRuins"]))
+    # Nothing mapsmith places is an underground block: UndergroundRuins's blocks say Underground false,
+    # and the game deleted every buried one on load (PLAYTEST.md, 2026-09-11).
+    buried_ok = set(opts.get("buried_ok", []))
+    covered: dict[tuple[int, int], str] = {}
 
     for e in entities:
         template = e.get("Template", "?")
@@ -189,10 +232,27 @@ def check_world(world: dict, meta: dict, names: set[str], opts: dict | None = No
             if not solid:
                 r.err(f"{template} at {x},{y},{z}: below the surface but not inside terrain")
             elif template not in buried_ok:
-                r.err(f"{template} at {x},{y},{z}: buried {ground - z} level(s) under the surface. "
-                      f"Only {', '.join(sorted(buried_ok))} may be; everything else stands on top "
-                      f"of its column.")
+                r.err(f"{template} at {x},{y},{z}: buried {ground - z} level(s) under the surface; "
+                      f"the game deletes it on load. Everything mapsmith places stands on top of its "
+                      f"column" + (f" (buried_ok: {', '.join(sorted(buried_ok))})" if buried_ok else "") + ".")
             continue
+        if template in SIZES:
+            sx, sy = SIZES[template]
+            footprint = cells_of(template, x, y)
+            if any(not (0 <= cx < size_x and 0 <= cy < size_y) for cx, cy in footprint):
+                r.err(f"{template} at {x},{y},{z}: its {sx}x{sy} footprint runs off the map")
+            else:
+                uneven = sorted({heights[cy * size_x + cx] for cx, cy in footprint} - {z})
+                if uneven:
+                    r.err(f"{template} at {x},{y},{z}: its {sx}x{sy} footprint is not flat at {z} "
+                          f"(ground at {uneven}); every block needs ground directly below, so the game "
+                          f"deletes it on load")
+                clash = next((covered[c] for c in footprint if c in covered), None)
+                if clash is not None:
+                    r.err(f"{template} at {x},{y},{z}: its {sx}x{sy} footprint overlaps {clash}; the "
+                          f"game keeps the first and deletes the other on load")
+                for c in footprint:
+                    covered.setdefault(c, f"{template} at {x},{y}")
         if solid:
             r.err(f"{template} at {x},{y},{z}: placed inside terrain")
         elif z != ground:
@@ -200,6 +260,12 @@ def check_world(world: dict, meta: dict, names: set[str], opts: dict | None = No
         if (x, y) in cells and template not in ("StartingLocation",):
             r.warn(f"{template} at {x},{y} shares a tile with {cells[(x, y)]}")
         cells[(x, y)] = template
+
+    for (x, y), template in cells.items():            # a one-tile entity under a bigger footprint
+        owner = covered.get((x, y))
+        if owner is not None and template not in SIZES:
+            r.err(f"{template} at {x},{y} stands inside the footprint of {owner}; the game deletes "
+                  f"one of them on load")
 
     if len(starts) != 1:
         r.err(f"{len(starts)} StartingLocation entities, expected exactly 1")
@@ -247,14 +313,30 @@ def check_world(world: dict, meta: dict, names: set[str], opts: dict | None = No
         blocked |= {(e["Components"]["BlockObject"]["Coordinates"]["X"],
                      e["Components"]["BlockObject"]["Coordinates"]["Y"])
                     for e in entities if "Source" in e.get("Template", "")}
+        # `reach` is what the colony gets to by building Stairs (one level each); `on_foot` is what it
+        # gets to before it builds anything: the game joins a tile only to neighbours of its own height.
         reach = _reachable(heights, size_x, (c["X"], c["Y"]), blocked, int(opts.get("max_step", 1)))
+        on_foot = _reachable(heights, size_x, (c["X"], c["Y"]), blocked, 0)
         min_area = int(opts.get("min_reachable", 0))
         if min_area and len(reach) < min_area:
-            r.err(f"only {len(reach)} tiles are walkable from the starting location "
+            r.err(f"only {len(reach)} tiles are reachable from the starting location, even with Stairs "
                   f"(spec asks for {min_area}); the colony is boxed in")
         elif len(reach) < plane * 0.05:
-            r.warn(f"only {len(reach)} of {plane} tiles are walkable from the start "
+            r.warn(f"only {len(reach)} of {plane} tiles are reachable from the start, even with Stairs "
                    f"({100 * len(reach) / plane:.1f}%) — check the pad is not ringed by cliffs")
+        for group in opts.get("on_foot_scatter", []):
+            spots = (groups or {}).get(group)
+            if spots is None:
+                r.warn(f"[checks] on_foot_scatter names {group!r}, which is not a named "
+                       f"[[scatter]]/[[place]] rule in this spec"
+                       + ("" if groups is not None else " (checking a .timber cannot see rule names — "
+                                                        "run `check` on the spec instead)"))
+                continue
+            stranded = [s for s in spots if s not in on_foot]
+            if stranded:
+                r.err(f"{len(stranded)} of {len(spots)} entities from {group!r} need Stairs: their tile is "
+                      f"not on the start's level, joined by flat ground, e.g. {stranded[0]}. A Scavenger "
+                      f"Flag on the pad cannot reach them until one is built.")
         for group in opts.get("reachable_scatter", []):
             spots = (groups or {}).get(group)
             if spots is None:
@@ -266,9 +348,9 @@ def check_world(world: dict, meta: dict, names: set[str], opts: dict | None = No
             cut_off = [s for s in spots
                        if not any(abs(s[0] - rx) <= 1 and abs(s[1] - ry) <= 1 for rx, ry in reach)]
             if cut_off:
-                r.err(f"{len(cut_off)} of {len(spots)} entities from {group!r} cannot be reached on "
-                      f"foot from the starting location, e.g. {cut_off[0]}. If that is deliberate, "
-                      f"drop it from `[checks] reachable_scatter`.")
+                r.err(f"{len(cut_off)} of {len(spots)} entities from {group!r} cannot be reached from "
+                      f"the starting location, even with Stairs, e.g. {cut_off[0]}. If that is "
+                      f"deliberate, drop it from `[checks] reachable_scatter`.")
 
         for template in opts.get("reachable", []):
             spots = [(e["Components"]["BlockObject"]["Coordinates"]["X"],
@@ -276,10 +358,10 @@ def check_world(world: dict, meta: dict, names: set[str], opts: dict | None = No
                      for e in entities if e.get("Template", "").startswith(template)]
             near = [s for s in spots if any(abs(s[0] - rx) <= 1 and abs(s[1] - ry) <= 1 for rx, ry in reach)]
             if spots and not near:
-                r.err(f"no {template}* is reachable on foot from the starting location "
+                r.err(f"no {template}* is reachable from the starting location, even with Stairs "
                       f"({len(spots)} exist, all cut off)")
             elif spots and len(near) < len(spots) * float(opts.get("reachable_fraction", 0.2)):
-                r.warn(f"only {len(near)} of {len(spots)} {template}* are reachable on foot")
+                r.warn(f"only {len(near)} of {len(spots)} {template}* are reachable, even with Stairs")
 
     return r
 

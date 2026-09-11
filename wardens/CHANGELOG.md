@@ -4,6 +4,91 @@ The patch number moves with every local build (`tools/bump_version.py`, run by t
 version marks a milestone (`bump_version.py --minor`) and gets an entry here. Nothing below has been
 verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first run must answer.
 
+## 0.4.20: level tasks, and the level-end card that starts level 02
+
+- **Tasks for the player** (`Levels/<id>.tasks.json`, `WardensLevelTasks.cs`), shown in a panel top right
+  (`WardensTaskPanel.cs`) and checked every half second against the game, whatever the vanilla tutorial
+  setting: the old ending (the tutorial line) never fired with it off, because a stage advances only on the
+  hidden card's Continue. One task at a time; a done task stays done in the save. Check types: built,
+  powered, generating, workers, stock, beavers.
+- **Level 01's eight tasks**, picked from a playthrough scouted over MCP: Charge · Scavenge · Down to the
+  Sump · Store · Reeds · Haul · Second power · First Light (the first pod-born beaver).
+- **The level-end card.** When the last task is done the panel becomes a card: *Continue to level 02:
+  The Sump* exit-saves this colony and starts the next map; *Stay* folds it. The LevelEnd scene's own
+  Continue (tutorial on) starts it too. Level 02 is marked shipped; its map has not been played yet.
+- MCP: `campaign action=tasks`, tasks in `campaign status`, the frame's `task`, events `task.done:<id>`
+  and `level.complete`. `check_level_tasks.py` (run by `validate.py`): types, templates, goods, loc.
+- The save auto-loader (`autoload.json`) looks in the game's own saves folder; it missed
+  `ExperimentalSaves` on the experimental branch. Fixed in `timberbot/src` and re-copied.
+
+## 0.4.10: level 01 opens with a cutscene
+
+- **`Cutscenes/FirstLight.json`**, the level's opening: 12 shots, about 100 s, over the new land in the
+  order the level plays it. The dark plateau and the three archived badtides; the river's head at the north
+  edge; the river across the plateau; the Sump and its seep; the terraced shore; the first ruins; the
+  spring; the crossing; the Core with the Warden count; a Warden; the chapter directive, which waits for
+  Continue. The captions are `Wardens.Cutscene.FirstLight.*` rows, every number checked against the built
+  map (walk report, spec, the archive's badtide count).
+- **A `level:<Id>` trigger.** It fires on a new game on campaign level `<Id>` and plays with the vanilla
+  tutorial off, since `DisableTutorial` is the player's own setting. On level 01 the opening replaces the
+  Cold Boot, which still plays on every other map. `check_cutscenes.py` resolves the id against the level
+  table.
+- The Cold Boot's Wake card says "Every Warden online" instead of "Five": the count is the difficulty's
+  (13 on Normal).
+- **`.claude/agents/cutscene-director.md`**: an agent that connects to the running game over the MCP server
+  and tunes scenes live (reload, play, screenshot, fix). Todo: `docs/plan/first-light-opening.md`.
+- 0.4.11, from the first run of the opening: captions with `args` printed `System.Object[]` (every chapter
+  scene too; `ILoc.T` has no `params` overload), and `wardens_status.cutscene_played` now counts a level's
+  opening, not only the Cold Boot.
+
+- 0.4.13: **level 01 ships with its water.** The river, the channel and the Sump are pre-filled to 4.2 (the
+  surface a day-3 autosave of the map settled at: 0.2 deep in the river bed, 1.2 in the Sump), badwater
+  contamination 1; the spring's crater to 12.25, clean. The opening now flies over water, not dry beds.
+  mapsmith gained `[water] fill` and a checker for the column encoding, which is decoded from the 1.1.2.4
+  decompile (`WaterColumnPackedListSerializer`) and a real save; 9 new tests.
+- 0.4.15: the Warden close-up flies in to 9 tiles (zoom -4.5 → -5; 0.25 was 34 tiles, as far as the
+  Core shot: the zoom is `1.3^ZoomLevel * 32`, not clamped). The `speed` tool maps 0..3 through the
+  speed buttons (x1, x3, x7) and answers `was`, `speed`, `applied`: it used to report the old speed,
+  because the game applies a change on the next frame, and a locked speed drops it.
+- 0.4.16–0.4.18, from Claude playing level 01 over MCP: **Wardens walk on one level.** The game joins a tile
+  only to neighbours of the same height, so a Stairs (3 scrap) is needed for every level; level 01's ruins
+  all sat one level below the pad and the opening (two Posts, then flags) softlocked at 0 scrap. mapsmith
+  now tells on foot from with Stairs (`on_foot_from`, `[checks] on_foot_scatter`, Stairs in the walk report),
+  and level 01's three first ruins stand on the pad (new map; saves on the old land keep it). The opening's
+  Ruins and Shore captions follow the land; the Warden shot looks at the Core's door (the Wardens are inside
+  it while the scene plays). `/api/tiles` reads the water's contamination (it read 0 everywhere; fixed
+  upstream in `timberbot/src` and re-copied). Frame positions carry `at.grid`, the tile `point` takes.
+- Next build (0.4.19): **the map loads without a Loading issues dialog.** A `BadwaterSource` is 3x3 and
+  `UndergroundRuins` a 5x5 surface object; level 01 placed three sources side by side and buried six
+  UndergroundRuins, and the game deleted two sources and all six on every load since the remake. mapsmith
+  knows the footprints and refuses overlap, uneven ground and burying; level 01 ships the one source every
+  playtest ran on and no UndergroundRuins (level 02 and the prototype likewise). The Head caption no
+  longer says three sources.
+
+State: the opening `verified` on the game machine (0.4.10: it played by itself on a handoff start with the
+tutorial off, all 12 shots, screenshots in PLAYTEST.md); the 0.4.11 fixes deployed as 0.4.12.
+`pytest` 139 passed before the water work, mapsmith 100; `check_cutscenes.py wardens/src` → `problems: none`.
+
+## 0.4.9: level 01 remade from its playtest
+
+- **New land for `Wardens 01 First Light`** (same name, seed and size; saves on the first land keep it).
+  mapsmith builds it now, from `wardens/maps/wardens-01-first-light.map.toml`:
+  - the river runs 20 tiles east of the Core instead of curling against the pad;
+  - the Sump is deeper (bed 3), has a Badwater seep of its own (full on day 1, not day 5) and a channel to
+    the river so it never runs dry;
+  - its shore is a terrace, pad 8 → 7 → a shelf at 6, with 32 walkable tiles of waterside off the pad for
+    pumps (the first land: 11, all on or under a cliff);
+  - three small ruins sit 7–14 steps from the start, and "south of the pad" moved off the shore;
+  - the spring is one bridge of at most 5 tiles away (Platforms are free since the open bar).
+- **Two new map contracts** (`shore`, `crossing`) and a `terrace` op in mapsmith, each with tests that
+  build the good land and the old one. The first land fails `shore`; that is the finding it encodes.
+- **Opening balance:** the Wardens boot fully charged and the Core starts with 10 Scrap Metal
+  (`WardensStartingPopulation.cs`); the Badwater Cell burns 0.18 Badwater/h, what one Sludge Pump makes.
+- The Badwater chapter's caption no longer says the Sump is dry.
+
+State: `built` (0.4.9, 0 warnings, 0 errors); `pytest` 136 passed; `mapsmith check --level 01` clean with
+both contracts; `validate.py wardens/src` only the known level-02 note. In-game run: see PLAYTEST.md.
+
 ## 0.4.5: the Gate
 
 - **A new building, the Gate** (`MapGate.Wardens`, District Management, 30 Scrap Metal, no science).
@@ -91,12 +176,33 @@ The in-game `campaign action=next` switch is `built`, not yet run.
   is what makes a gorge possible — the spurs are raised after the river carves.
 
 ### Changed
+- **Every building, on every level, from the first frame.** The chapter padlocks are gone: the nine
+  buildings that shipped with `ScienceCost: 999999` (Sludge Pump, Reed Bed, Sludge Tank, Crate Rack,
+  the Cruncher, both pods, Badwater Cell, Sludge Burner) and the three with vanilla's science price
+  (Planter Rig 60, Stairs 70, Platform 100) all ship at 0, in the blueprints and in
+  `tools/gen_buildings.py`. `WardensChapters.cs` keeps the chapters as story beats: the toast, the
+  Uplink line and the cutscene still fire when a chapter's tutorial finishes, but nothing is unlocked,
+  and `chapter status` reports `complete` as the chapters the story has reached (the old check read
+  the unlock state, which is why a fresh save listed every chapter complete). A safety net at load
+  unlocks anything that still carries a cost and names it in the log (`unlocked_at_load`).
+  `tools/validate.py` now refuses a science cost anywhere in the faction's collections, and
+  `tools/test_validate.py` guards the same rule offline. The Leaf Coats port stays out of the faction:
+  its 44 blueprints reference the local-only bundle.
+- The tutorial line follows: Reforestation builds the Planter Rig straight away (no accumulate/unlock
+  steps; the stage is `Wardens.Reforestation.BuildPlanter`), the Science card no longer promises
+  unlocks, and Vertical architecture requires Maintenance alone instead of `StairsUnlockedTrigger`
+  (stairs are free, so there is no unlock for that trigger to see). The chapter opening lines say what
+  the chapter is about instead of what became available.
+- `chapterGating` is removed from `settings.json` and `WardensSettings`; a leftover key logs one line
+  and is ignored.
 - The prototype spec that briefly claimed to be level 02 is now `prototype-two-streams.map.toml`.
   The C# level table is the source: 02 is *The Sump*, 03 is *The Pods*.
 
 ### State (the words in `.claude/skills/driving-iterations`)
 - The maps, the specs and the tools are **`checked`** (cloud): `pytest wardens/tools`,
   `mapsmith check --level 02`, `mapsmith levels --verify` and `check_cutscenes.py` all clean.
+- The free bar is **`checked`** (cloud, 2026-09-11): `pytest wardens/tools` with the new `test_validate.py`,
+  `check_cutscenes.py`, and `gen_tutorial.py` regenerated the stages from its table.
 - Everything under `wardens/src/*.cs` is **`written`** — this was authored where there is no .NET SDK
   and no game DLLs, so no compiler has seen it. Not `built`, not `tested`, not `verified`.
 - Nothing here has been loaded in Timberborn. The level-transition code reaches every unverified game

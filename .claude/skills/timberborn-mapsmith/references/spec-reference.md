@@ -72,6 +72,7 @@ to a named mask) and most take `name` (register an anchor point).
 | `crater` | `at`, `radius`, `depth` — sinks relative to the ground already there. |
 | `channel` | `start`, `direction` (`north`/`south`/`east`/`west`), `length`, `drop` (tiles per level climbed), `offset`. |
 | `pad` | `at` (lower-left corner), `size`, `height`, `name`, `reserve` (keep-out ring for scatter). |
+| `terrace` | `box` (`[x1, y1, x2, y2]`, inclusive), `steps` (`[[width, height], …]` bands laid from `side`), `side` (`west`/`east`/`north`/`south`), `avoid`, `name`, `tag` — a shore reached with one Stairs per band instead of a cliff (level 01's Sump: `[[2, 7], [3, 6]]` down from a pad at 8, two Stairs). |
 | `smooth` | `passes`, `strength` — box blur. |
 | `clamp` | `min`, `max` — round to integer levels. Run last; the voxel writer needs integers. |
 
@@ -115,7 +116,8 @@ rather than under-filling, because a map that quietly lost half its scrap wastes
 | `margin` | Keep this far from the map border. |
 | `height_range` | `[min, max]` ground level the entity may stand on. |
 | `away_from` | `{ name = distance }`. Names may be masks (`badwater`) or anchors (`start`). |
-| `reachable_from` | An anchor or `[x, y]`. Only place where a beaver walking from there could stand beside the entity — i.e. inside that walkable component. This is how you keep a cluster on the colony's own bank: a river splits the map in two and `around` + `radius` is a disc that knows nothing about it, so without this you hand-pick centres and radii until the annulus geometrically cannot cross the water. Pairs with `[checks] reachable_scatter`. |
+| `reachable_from` | An anchor or `[x, y]`. Only place where a beaver coming from there could stand beside the entity, Stairs allowed (one level per Stairs, water blocks). This is how you keep a cluster on the colony's own bank: a river splits the map in two and `around` + `radius` is a disc that knows nothing about it, so without this you hand-pick centres and radii until the annulus geometrically cannot cross the water. Pairs with `[checks] reachable_scatter`. |
+| `on_foot_from` | An anchor or `[x, y]`. Stricter: only tiles on that point's level and joined to it by flat ground, the entity's own tile included. Wardens walk on one level, and a Scavenger Flag counts a ruin only when the ruin's own tile is in its walking range, so this is "no Stairs needed". Use it for the scrap the colony opens with. Pairs with `[checks] on_foot_scatter`. |
 | `attempts` | Sampling budget. Default `max(400, count * 60)`. |
 | `growth` | `[min, max]` `Growable.GrowthProgress` — plants. |
 | `variants` | `RuinModels.VariantId` pool — ruins. |
@@ -138,6 +140,28 @@ moisture      = { from = "clean",    offset = 0.0, reach = 7.0, peak = 0.8 }
 caps it. `{ value = 0.3 }` sets a flat field instead. The game recomputes contamination from the
 actual badwater, so this is a starting estimate, not a simulation.
 
+## `[water]`
+
+Water the map holds at tick 0. Without this section every column is dry and the sources fill their
+beds during the first day.
+
+```toml
+[water]
+fill = [
+  { tag = "badwater", level = 4.2, contamination = 1.0 },   # an absolute surface height
+  { tag = "clean",    depth = 0.3 },                         # or a depth above each cell's floor
+]
+```
+
+Each entry fills the cells of a water mask (`tag`, from a `river`, `basin`, `channel` or `crater`
+op) with exactly one of `level` or `depth`; a cell whose floor is at or above `level` stays dry.
+`contamination` is 0 (clean) to 1 (badwater), default 0. Later entries win on shared cells.
+
+Take the levels from the game, not from a guess: build without `[water]`, play a day or three,
+and read the surface (`floor + depth`) off the autosave's `WaterMapNew.WaterColumns`. Water
+filled to the level the simulation settles at loads without a flood wave. The encoding is the
+game's own serializer: `timber-format.md`, "Water".
+
 ## `[checks]`
 
 What `mapsmith check` must be able to prove. Errors fail the build's exit code; warnings do not
@@ -147,13 +171,14 @@ unless `--strict`.
 |---|---|
 | `require` | Templates that must appear at least once. |
 | `require_at_least` | `{ Template = n }`. |
-| `min_reachable` | Minimum tiles walkable on foot from the starting location (one level of climb, water blocks). |
-| `reachable_scatter` | **Usually the one you want.** Names of `[[scatter]]`/`[[place]]` rules whose entities must all be reachable on foot from the start. Clusters left off the list may be cut off on purpose. Needs the spec — a `.timber` does not carry rule names. |
-| `reachable` | Template prefixes that must have at least one instance reachable on foot. Blunt when several rules share templates, which is the normal case for ruins. |
+| `min_reachable` | Minimum tiles reachable from the starting location with Stairs (one level per Stairs, water blocks). |
+| `reachable_scatter` | **Usually the one you want.** Names of `[[scatter]]`/`[[place]]` rules whose entities must all be reachable from the start, Stairs allowed. Clusters left off the list may be cut off on purpose. Needs the spec — a `.timber` does not carry rule names. |
+| `on_foot_scatter` | Names of rules whose entities must stand on the start's level, joined to it by flat ground: reachable before the colony builds a single Stairs. The game joins a tile only to neighbours of the same height (`TerrainNavMeshUpdater`); level 01 softlocked when its opening scrap sat one level below the pad. |
+| `reachable` | Template prefixes that must have at least one instance reachable (Stairs allowed). Blunt when several rules share templates, which is the normal case for ruins. |
 | `reachable_fraction` | Warn below this fraction of a prefix's instances being reachable. Default 0.2. A proxy you have to hand-compute against how many clusters are cut off by design; prefer `reachable_scatter`. |
-| `buried_ok` | Templates allowed to sit inside terrain. Default `["UndergroundRuins"]`. |
+| `buried_ok` | Templates allowed to sit inside terrain. Default none: `UndergroundRuins` is a 5x5 surface object and the game deletes it when buried. |
 | `start_pad` / `start_anchor` / `headroom` | Pad geometry the checker assumes. Defaults 8 / 2 / 3. |
-| `max_step` | Levels a beaver climbs unaided, for the walkability flood fill. Default 1. |
+| `max_step` | Levels crossed per step by the "with Stairs" flood fill (`min_reachable`, `reachable_scatter`, `reachable`). Default 1: one Stairs spans one level. On foot is always 0. |
 
 ### Checking a spec vs. checking a `.timber`
 
@@ -225,7 +250,7 @@ import sys; sys.path.insert(0, "wardens/tools")
 from pathlib import Path
 from mapsmith import load, build, ascii_map, write_timber, check_file
 
-spec = load(Path("wardens/maps/wardens-wasteland.map.toml"))
+spec = load(Path("wardens/maps/wardens-01-first-light.map.toml"))
 for seed in (1, 2, 3):
     m = build({**spec, "seed": seed})
     print(f"--- seed {seed} ---")
@@ -242,7 +267,8 @@ a waste of your time:
 | `b.masks["badwater"]` | a `Mask`: `.at(x, y)`, `.count()`, `.points()`, `.grow(r)`, `.union(m)` |
 | `b.anchors`, `b.paths` | named points, and river centrelines by name |
 | `b.entities` | `Entity(template, x, y, z, components, orientation, rule)` — `rule` is the `name` of the block that placed it |
-| `b.walkable_from((x, y))` | `Mask` of ground reachable on foot (one level of climb, water blocks) |
+| `b.walkable_from((x, y), max_step)` | `Mask` of ground reachable from a point: `WITH_STAIRS` (default, one level per step) or `ON_FOOT` (one level only); water blocks |
+| `b.stairs_from((x, y))` | `{(x, y): (stairs, steps)}` — the fewest Stairs to each tile, then the shortest walk |
 | `b.walk_distances((x, y))` | `{(x, y): steps}` — 4-neighbour, so a lower bound on the real path |
 | `b.water_cells()` | every tile any water mask covers |
 | `b.distance_to("badwater")` | a `Grid` of distance to the nearest cell of a mask |

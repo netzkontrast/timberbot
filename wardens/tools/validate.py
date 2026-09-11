@@ -9,9 +9,9 @@ against the faction's template collections (ours + the vanilla Blueprints.zip) a
 and prints what would throw. Exit code 1 when there are problems.
 
 Also cross-checks the chapter table in src/WardensChapters.cs against the blueprints: every
-template shipped with the chapter padlock (ScienceCost == CHAPTER_LOCK) must belong to a chapter,
-every chapter template must exist and be padlocked, the gating tutorial must exist, and each
-chapter needs its Title/Unlocked loc rows.
+building a chapter is about must exist, the opening tutorial must exist, each chapter needs its
+Title/Unlocked loc rows, and no building in the faction's own collections may carry a science cost:
+the whole bar is open from the first frame of every level (the chapters are story beats, not gates).
 
 And the campaign table in src/WardensCampaign.cs against the shipped maps: every level marked shipped
 has its .timber in Maps/, every .timber is claimed by a level, `next` points at a level that exists,
@@ -32,13 +32,13 @@ from pathlib import Path
 
 import bot_workforce
 from check_cutscenes import check as check_cutscenes, read_chapters, read_levels
+from check_level_tasks import check_level_tasks, levels_with_tasks
 
 GAME = Path("F:/Steam/steamapps/common/Timberborn/Timberborn_Data/StreamingAssets/Modding")
 DEFAULT_MOD = Path.home() / "Documents/Timberborn/Mods/Wardens"
 FACTION = "Wardens"
 CHAPTERS_CS = Path(__file__).resolve().parents[1] / "src" / "WardensChapters.cs"
 CAMPAIGN_CS = Path(__file__).resolve().parents[1] / "src" / "WardensCampaign.cs"
-CHAPTER_LOCK = 999999   # WardensChapterService.LockedCost
 # Trigger ids that vanilla or WardensTriggers.cs finish through ITutorialTriggers.AddTrigger.
 TRIGGER_IDS = {"StairsUnlockedTrigger", "SurvivedFirstDroughtTrigger", "SurvivedFirstBadtideTrigger",
                "Wardens.MissingDamTrigger", "Wardens.PlatformBuiltTrigger", "Wardens.IdleWardensTrigger"}
@@ -58,6 +58,46 @@ STEP_FIELDS = {
     "ChangePausedStateStepSpec": {"templates": "TemplateName"},
     "GoodStockStepSpec": {"goods": "GoodId"},
 }
+
+
+def chapter_problems(chapters: list[tuple[str, str, list[str]]], templates: set[str], tutorials: set[str],
+                     loc: set[str]) -> list[str]:
+    """The chapter table (src/WardensChapters.cs) against the names it uses: the opening tutorial (or
+    trigger) exists, the Title/Unlocked loc rows exist, every building a chapter is about exists, and
+    no building is listed by two chapters."""
+    out: list[str] = []
+    listed: dict[str, str] = {}
+    for cid, tutorial, names in chapters:
+        if tutorial not in tutorials:
+            out.append(f"chapter {cid}: opening tutorial unknown: {tutorial}")
+        for key in (f"Wardens.Chapter.{cid}.Title", f"Wardens.Chapter.{cid}.Unlocked"):
+            if key not in loc:
+                out.append(f"chapter {cid}: loc key missing: {key}")
+        for n in names:
+            if n in listed:
+                out.append(f"chapter {cid}: {n} already listed by chapter {listed[n]}")
+            listed[n] = cid
+            if n not in templates:
+                out.append(f"chapter {cid}: template unknown: {n}")
+    return out
+
+
+def free_bar_problems(templates: dict[str, dict], origin: dict[str, str], collections: set[str]) -> list[str]:
+    """Every building in the faction's own collections ships with ScienceCost 0: the bar is open from
+    the first frame of every level (src/WardensChapters.cs). A padlock or a science price here is a
+    generator that forgot (tools/gen_buildings.py) or a collection wired in without the rule."""
+    out: list[str] = []
+    for name in sorted(templates):
+        if origin.get(name) not in collections:
+            continue
+        spec = templates[name].get("BuildingSpec")
+        if not isinstance(spec, dict):
+            continue
+        cost = spec.get("ScienceCost", 0)
+        if cost:
+            out.append(f"{name}: ScienceCost {cost} ({origin[name]}); every Wardens building is available "
+                       "from the start, so it must be 0")
+    return out
 
 
 def load_json(raw: bytes) -> dict:
@@ -109,6 +149,7 @@ def main() -> int:
         problems.append(f"template collection not found: {c}")
 
     templates: dict[str, dict] = {}
+    origin: dict[str, str] = {}     # template name -> the collection that listed it
     aliases: set[str] = set()
     for c in active:
         for path in collections[c]:
@@ -123,6 +164,7 @@ def main() -> int:
             if name in templates:
                 problems.append(f"duplicate template name {name} ({c})")
             templates[name] = d
+            origin[name] = c
             aliases.update(t.get("BackwardCompatibleTemplateNames", []))
 
     # planters: exactly one PlanterBuildingSpec per plantable ResourceGroup the faction can see
@@ -234,27 +276,15 @@ def main() -> int:
                 if lk:
                     check_loc(spec.get(lk, ""), where)
 
-    # chapters (src/WardensChapters.cs) vs. the padlocked blueprints and the tutorial line
+    # chapters (src/WardensChapters.cs): story beats over the tutorial line, and a bar with nothing
+    # locked on it (every building the faction lists at ScienceCost 0)
     chapters = read_chapters(CHAPTERS_CS) if CHAPTERS_CS.exists() else []
     if not chapters:
         problems.append(f"no chapters parsed from {CHAPTERS_CS}")
-    padlocked = {n for n, d in templates.items() if d.get("BuildingSpec", {}).get("ScienceCost", 0) >= CHAPTER_LOCK}
-    listed: dict[str, str] = {}
-    for cid, tutorial, names in chapters:
-        if tutorial not in tutorials and tutorial not in TRIGGER_IDS:
-            problems.append(f"chapter {cid}: gating tutorial unknown: {tutorial}")
-        for key in (f"Wardens.Chapter.{cid}.Title", f"Wardens.Chapter.{cid}.Unlocked"):
-            check_loc(key, f"chapter {cid}")
-        for n in names:
-            if n in listed:
-                problems.append(f"chapter {cid}: {n} already unlocked by chapter {listed[n]}")
-            listed[n] = cid
-            if n not in templates:
-                problems.append(f"chapter {cid}: template unknown: {n}")
-            elif n not in padlocked:
-                problems.append(f"chapter {cid}: {n} is not padlocked (BuildingSpec.ScienceCost != {CHAPTER_LOCK})")
-    for n in sorted(padlocked - set(listed)):
-        problems.append(f"{n}: padlocked (ScienceCost {CHAPTER_LOCK}) but no chapter in WardensChapters.cs unlocks it")
+    problems += chapter_problems(chapters, set(templates), set(tutorials) | TRIGGER_IDS, loc)
+    priced = free_bar_problems(templates, origin, wanted)
+    problems += priced
+    bar = sum(1 for n, d in templates.items() if origin.get(n) in wanted and isinstance(d.get("BuildingSpec"), dict))
 
     # the campaign (src/WardensCampaign.cs) vs. the shipped maps and the tutorial line.
     # A level is a map plus the chapter line on it, and the table is keyed by map name, so a
@@ -265,6 +295,8 @@ def main() -> int:
     if not levels:
         problems.append(f"no levels parsed from {CAMPAIGN_CS}")
     maps = {p.stem for p in (mod / "Maps").glob("*.timber")} if (mod / "Maps").is_dir() else set()
+    with_tasks = levels_with_tasks(mod)
+    shipped_ids = {lid for lid, _, _, _, _, s in levels if s}
     ids: set[str] = set()
     for lid, map_name, title, ends, nxt, shipped in levels:
         if lid in ids:
@@ -278,13 +310,26 @@ def main() -> int:
             problems.append(f"level {lid}: {map_name}.timber exists but the table says shipped=false")
         if ends and ends not in tutorials:
             problems.append(f"level {lid}: ending tutorial unknown: {ends}")
-        if shipped and not ends:
-            problems.append(f"level {lid}: shipped without an ending tutorial, so it can never complete")
+        # A level ends by its tasks (Levels/<id>.tasks.json, any tutorial setting) or its ending
+        # tutorial. The last playable level may have neither: there is nothing to continue to.
+        if shipped and not ends and lid not in with_tasks and nxt in shipped_ids:
+            problems.append(f"level {lid}: shipped without tasks or an ending tutorial, so it can never "
+                            f"complete and level {nxt} can never be reached")
     for lid, _, _, _, nxt, _ in levels:
         if nxt and nxt not in ids:
             problems.append(f"level {lid}: next level {nxt!r} is not in the table")
     for name in sorted(maps - {m for _, m, _, _, _, _ in levels}):
         problems.append(f"{name}.timber ships but no level in WardensCampaign.cs claims it")
+
+    # level tasks (Levels/<id>.tasks.json): how a level ends with the tutorial off; check_level_tasks.py
+    goods = set()
+    for src in (ours, vanilla):
+        for key in src:
+            if "/good." in "/" + key.rsplit("/", 1)[-1] or key.rsplit("/", 1)[-1].startswith("good."):
+                d = blueprint(key)
+                if d and "GoodSpec" in d:
+                    goods.add(d["GoodSpec"].get("Id"))
+    problems += check_level_tasks(mod, templates, goods, loc, ids)
 
     # cutscenes (Cutscenes/*.json): captions, triggers, anchors; see check_cutscenes.py
     cutscene_files = sorted((mod / "Cutscenes").glob("*.json")) if (mod / "Cutscenes").is_dir() else []
@@ -299,7 +344,7 @@ def main() -> int:
 
     print(f"mod: {mod}")
     print(f"collections: {', '.join(active)}")
-    print(f"chapters: {len(chapters)}, padlocked templates: {len(padlocked)}")
+    print(f"chapters: {len(chapters)}, buildings on the bar: {bar}, science-priced: {len(priced)} (must be 0)")
     print(f"campaign levels: {len(levels)} ({sum(1 for l in levels if l[5])} with a map), maps: {len(maps)}")
     print(f"templates: {len(templates)} (+{len(aliases)} aliases), goods: {len(goods)}, planters: "
           + ", ".join(f"{g}: {len(planters.get(g, []))}" for g in sorted(groups)))

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import math
 
-from .build import Entity, MapBuild, SpecError, polar_sample
+from .build import ON_FOOT, Entity, MapBuild, SpecError, cells_of, polar_sample
 from .grid import Mask
 
 
@@ -87,6 +87,9 @@ def place(b: MapBuild, rule: dict) -> list[Entity]:
                 mask = b.masks.get(mask_name)
                 if mask is not None and not mask.at(x, y):
                     continue
+                if any(b.occupied.at(cx, cy) for cx, cy in cells_of(template, x, y)
+                       if b.height.inside(cx, cy)):
+                    continue                     # a 3x3 source beside another one loses to it in the game
                 seen.add((x, y))
                 e = _entity(b, template, x, y, rule)
                 b.add(e, _footprint(rule))
@@ -146,6 +149,17 @@ def scatter(b: MapBuild, rule: dict) -> list[Entity]:
             raise SpecError(f"scatter {rule.get('name', templates[0])!r}: reachable_from "
                             f"{rule['reachable_from']!r} stands on water or off the map, so nothing "
                             f"is reachable from it")
+    # Stricter: the entity's own tile on the same level as the point, joined by flat ground. A
+    # Scavenger Flag's range is the terrain it can walk to without Stairs, and a ruin counts only
+    # when its own tile lies in that range, so this is what "the first scrap needs no Stairs" means.
+    on_foot: Mask | None = None
+    if "on_foot_from" in rule:
+        origin = b.resolve_point(rule["on_foot_from"])
+        on_foot = b.walkable_cached((int(round(origin[0])), int(round(origin[1]))), ON_FOOT)
+        if not on_foot.any():
+            raise SpecError(f"scatter {rule.get('name', templates[0])!r}: on_foot_from "
+                            f"{rule['on_foot_from']!r} stands on water or off the map, so nothing "
+                            f"is reachable from it")
 
     placed: list[Entity] = []
     for _try in range(attempts):
@@ -163,6 +177,8 @@ def scatter(b: MapBuild, rule: dict) -> list[Entity]:
             continue
         if walk is not None and not _beside(walk, x, y, b.size):
             continue
+        if on_foot is not None and not on_foot.at(x, y):
+            continue
         i = _weighted_index(b, weights)
         e = _entity(b, templates[i], x, y, rule, level=int(levels[i]))
         b.add(e, _footprint(rule))
@@ -175,7 +191,10 @@ def scatter(b: MapBuild, rule: dict) -> list[Entity]:
             f"or lower `count`/`min_count`."
             + (f" `reachable_from` is on, so candidates outside the walkable component of "
                f"{rule['reachable_from']!r} were also skipped — the annulus may sit across water."
-               if walk is not None else ""))
+               if walk is not None else "")
+            + (f" `on_foot_from` is on, so only tiles at the height of {rule['on_foot_from']!r} "
+               f"and joined to it by flat ground were candidates."
+               if on_foot is not None else ""))
     return placed
 
 

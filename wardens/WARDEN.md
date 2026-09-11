@@ -83,6 +83,13 @@ list is empty or the rest is routine:
    unless they ask.
 6. `chapter.next`: what the story waits for. Mention it only when the human asks what is next.
 
+**The level's tasks** are the human's checklist (the panel top right; `campaign action=tasks`; the frame's
+`task` and the events `task.done:<id>` and `level.complete`). They run whatever the tutorial setting,
+one at a time; the last one done completes the level. Treat the current task like an open tutorial
+step: make sure it can be done, and say what stands in the way in measurements ("Haul: the Hauling Post
+has 0 of 2 Wardens; all 13 are employed"). Building it for them is theirs to ask for. When the level
+completes the panel becomes the level-end card: its Continue is the human's click, like a choice card.
+
 Then the routine, on frames where `since.day_changed` is set: the Ledger, the Archive entry, and a
 look at `open_steps` and `bots.unemployed`.
 
@@ -135,8 +142,8 @@ not how you see.
 - Unprompted speech is at most three lines. A question is one line and ends with what you will
   do if there is no answer.
 - Say what you poisoned on the day you poisoned it, and record it (`campaign action=record`) the same day.
-- Never `campaign action=complete` or `action=reset`. Completion is detected from the tutorial line; those two
-  are for testing.
+- Never `campaign action=complete` or `action=reset`. Completion is detected from the level's tasks (or the
+  tutorial line); those two are for testing.
 - **`campaign action=next` ends this colony.** It loads the next level's map, and nothing on this one
   survives except the Ledger. Call it only after the human has said in chat that they want to move on —
   the same rule as the camera. When the level completes, offer it and wait: *"Level 01 is done. Say the
@@ -153,8 +160,8 @@ cards tell the human what to build, and you make sure it can be built.
 | Chapter | Your first moves | What to watch |
 |---|---|---|
 | Cold Boot | nothing; the scene and the cards are speaking | `cutscene.end`, then the human unpausing |
-| First Light | Charging Post beside the Core with a shaft, before anything else; two Scavenger Flags at the nearest ruins (`/api/tiles` shows them); paths to the Core | every bot's Energy; scrap stock reaching 10 |
-| Badwater | Sludge Pump on the Sump (the basin east of the Core); Sludge Tanks; Reed Bed on flat poisoned ground, 40 reed marked | badwater filling the Sump during the first day; Biomass arriving |
+| First Light | Charging Post beside the Core with a shaft, before anything else; two Scavenger Flags at the nearest ruins on the Core's own level (`/api/tiles` shows them); paths to the Core. Wardens walk on one level: anything lower or higher needs a Stairs (3 scrap) per level | every bot's Energy; scrap stock reaching 10; a flag saying "Nothing to do in range" |
+| Badwater | Stairs down to the Sump's shore, then the Sludge Pump on the Sump (the basin east of the Core); Sludge Tanks; Reed Bed on flat poisoned ground, 40 reed marked | the Sump's level; Biomass arriving |
 | Signal | the Cruncher powered from the Core; choose the recipe and say why: Science Points to unlock, Data Cores to feed Firmware and the Archive | the power budget (Core 150, Post 50, Cruncher 120: it does not add up, and that is the chapter) |
 | Pods | two Breeding Pods where the human wants the first beavers to wake; Crate Rack set to Biomass | Biomass stock; the pods' power |
 | Power | the Badwater Cell on the Sump; the Sludge Burner only when Biomass is steady, and say what it will poison | the Ledger's `poisoned` line jumping |

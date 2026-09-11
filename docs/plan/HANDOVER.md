@@ -11,6 +11,244 @@ is and how each part works), `wardens/CHANGELOG.md` (what each version added), `
 
 ---
 
+## 2026-09-11: level tasks and the level-end card that starts level 02 (game machine)
+
+**Plan:** the author asked for clear tasks whose completion loads level 02, scouted over MCP; they chose
+eight tasks to the first beaver and a card whose Continue loads the next level. **Status:** `built`
+(0.4.22) and `verified` end to end on the author's colony: all 8 tasks, the level-end card, and its
+Continue loading level 02 as a new Wardens game with no loading problem (addendum, 16:54: the first
+beaver woke, `tasks: level 01 complete`, `transition: starting level 02 (The Sump) … as a new Wardens game`,
+`campaign: level 02 … completed=[01]`, 0 `Can't validate` / exception lines).
+
+### What I did
+
+`Levels/01.tasks.json`, `WardensLevelTasks.cs` (checks, save, completion, next level),
+`WardensTaskPanel.cs` (list and card), `check_level_tasks.py` with tests, MCP `campaign action=tasks`
+and frame fields, level 02 marked shipped, the save auto-loader fixed for `ExperimentalSaves`.
+
+| Command | Result line |
+|---|---|
+| `pytest wardens/tools .claude/skills` | `173 passed` |
+| `validate.py wardens/src` | `problems: none` |
+| `dotnet build … -c Release` (0.4.22) | `0 Warnung(en)`, `0 Fehler` |
+| Player.log, autoload | `[Timberbot] auto-loading: First Light - 2026-09-11 16h27m, Day 2-14.autosave` |
+| Player.log, tasks | `tasks: level 01, 8 task(s), 0 done` … `Reeds done (5/8)` … `Haul done (6/8)`, `Power done (7/8)` |
+
+### What you should do, in this order
+
+**Done:** the card and the transition (addendum above). **Next package:** level 02 has no tasks, no
+opening and no ending; write `Levels/02.tasks.json` from its design (`wardens-campaign-map-set.md` §2, the
+one dam decision) after a scouting pass over MCP. **Game machine:** close the game and build once (0.4.23: the panel under the goods bar, two task texts with the game's
+building names). Still open from the entry below: a fresh level 01 with no `Can't validate` line, Skip.
+
+### Open questions I could not answer
+
+The colony went from 13 to 19 Wardens while the tasks ran, with no pod-born beaver; the source is not read.
+
+---
+
+## 2026-09-11: Claude played level 01 — Wardens walk on one level, and the map lost entities on load (game machine)
+
+**Plan:** the author asked Claude to connect over MCP and playtest level 01 itself; the fixes follow the
+author's choice "ruins on the pad". **Status:** mapsmith and the maps `checked`; 0.4.18 `built` and
+`verified` for the walk fix, the tiles read, the speed tool and `at.grid`; the footprint fix `checked`,
+not yet built (the game was running).
+
+### What I did
+
+Played the scripted opening from the end of the cutscene: two Charging Posts for the 10 starting scrap,
+two Scavenger Flags, paths. Both flags said "Nothing to do in range" for two days; the colony sat at 0
+scrap with 11 of 13 Wardens at 0 Energy. Read why (the nav mesh joins a tile only to same-height
+neighbours), recovered with one Stairs, then fixed mapsmith's walk model and moved the opening's ruins
+onto the pad. Deployed 0.4.18, started fresh: the new flags worked with no Stairs. That start showed a
+Loading issues dialog: the game deletes two of the three river-head sources and all six UndergroundRuins
+on every load, since the remake. Read why (3x3 and 5x5 footprints) and fixed mapsmith and the specs.
+
+| Command | Result line |
+|---|---|
+| `pytest wardens/tools .claude/skills` | `158 passed` (6 new: on foot vs Stairs, `on_foot_scatter`, `on_foot_from`, the pad ruins, source spacing, footprint checks) |
+| `mapsmith check` on all three specs | `problems: none` each; level 01 walk: `first light … on foot`, `near ruins … 1-2 Stairs` |
+| `check_cutscenes.py wardens/src` | `problems: none` |
+| `dotnet build … -c Release` (0.4.18, game closed) | `0 Warnung(en)`, `0 Fehler` |
+| 0.4.18 start, `/api/tiles` Sump | `badwater: 1` (read 0 before) |
+| 0.4.18 start, `speed value=1` | `{"was":0,"speed":1,"applied":true}` |
+| 0.4.18 start, frame | `"at":{"x":19,"y":6,"z":59,"grid":{"x":19,"y":59,"z":6}}` |
+| 0.4.18 start, flags at 17,49 and 18,49 | no alert; ruin 16,48 gone and 16,46 H2 → H1 by day 1 at 87 % |
+| Player.log, 0.4.18 start | `Can't validate loaded BlockObject BadwaterSource(Clone) at (34, 1, 4) … Deleting it.` (and 35,1 and six UndergroundRuins) |
+
+### Publish check
+
+Branch `feat/first-light-opening`; `git ls-remote` after this entry's push is in the PR #22 head.
+
+### What I found
+
+The eight findings are in `wardens/playtest/PLAYTEST.md`, "Level 01 played by Claude over MCP". The two
+that change how maps are made: Wardens walk on one level (a Stairs per level; mapsmith assumed one level
+of climb), and big entities are validated block by block on load (a `BadwaterSource` is 3x3,
+`UndergroundRuins` a 5x5 surface object). Open: idle Wardens at 0 Energy by day 2.8, Wardens at 0 Energy
+still walking (the story says they stop), and `placement/find` missing the pump shelf.
+
+### What you should do, in this order
+
+Disposition of the previous entry: the Sump caption **done** (seen); Skip mid-opening **still open**
+(the author pressed Continue both times); the director's zoom pass **done** (the scale is 1.3^zoom * 32,
+no clamp; the Warden shot now looks at the Core's door, not yet judged). **Game machine:** close the game,
+build once (0.4.19 deploys the footprint fix and the Head caption), start a fresh level 01, and read
+Player.log for `Can't validate`: there must be none, and no Loading issues dialog. Then screenshot the
+Ruins and Warden shots. **Balance pass:** decide what 0 Energy means before tuning Posts.
+
+### How you know it is done
+
+A fresh level 01 opens with no dialog, the first flags work without Stairs, and Player.log has no
+`Can't validate` line.
+
+### Open questions I could not answer
+
+What the game does with a Warden at 0 Energy (the need specs and bot behaviours are not read).
+
+### What I deliberately did not do
+
+I did not restore the three river-head sources: one is what every playtest and the water fill ran on.
+I did not place UndergroundRuins on flat ground for a later act; that needs a flat-5x5 rule.
+
+---
+
+## 2026-09-11: level 01 ships with its water (game machine)
+
+**Plan:** package 10 of `docs/plan/first-light-opening.md`; the author chose "pre-fill the map" for the
+dry river. **Status: `verified` (0.4.13).**
+
+### What I did
+
+Decoded the 1.1.2.4 water format from the decompile (`WaterColumnPackedListSerializer`,
+`ColumnOutflowsPackedListSerializer`, `WaterMapLoader`, `WaterSimulationMigrator`) and checked it against
+two autosaves: day 15 of the first land and day 3 of the remade one. Added `[water] fill` to mapsmith, and
+a checker that rejects a column token the game's reader would misparse. Filled level 01 to the surface the
+day-3 autosave settled at (4.17 → 4.2; spring 12.02 → 12.25). Deployed with the game closed, started a fresh
+level 01, and read the result through the MCP server and DPI-aware screenshots.
+
+| Command | Result line |
+|---|---|
+| `pytest wardens/tools/test_mapsmith.py` | `100 passed` (9 new: fill by level and by depth, refusals, five bad tokens) |
+| `mapsmith build --level 01` | `problems: none`; 554 wet columns; Sump `1.2:1:0:3:1.2`, spring `0.25:0:0:12:0.25` |
+| `dotnet build … -c Release` (0.4.13) | `0 Warnung(en)`, `0 Fehler`; the deployed map `cmp`-identical to the repo's |
+| `/api/tiles` y 48, tick 1, paused | `water 1.2` on x 36–47 (the Sump and the channel) |
+| Player.log | no exception; `cutscene FirstLight: start (trigger, 12 shots, 99 s)` … `finished at shot 12/12` |
+
+### Publish check
+
+Branch `feat/first-light-opening`; the `git ls-remote` line is in the commit that follows this entry's
+push (see PR #22's head).
+
+### What I found
+
+1. **Every mapsmith map has its source strengths halved on load** (read). `WaterSimulationMigrator` migrates
+   any file without its key and multiplies `SpecifiedStrength` by 0.5. The playtested strengths are the
+   halved ones, so mapsmith deliberately does not write the key. Recorded in `timber-format.md`.
+2. **The water arrives and settles flat** (seen). The game's own equilibrium on day 3 was one surface across
+   the river, the channel and the Sump. A pre-fill at that level loads without a flood wave.
+3. The caption args fix (0.4.11) is seen working: "The Core. 13 Wardens online, charged to full."
+
+### What you should do, in this order
+
+Disposition of the previous entry: "if 0.4.11 did not deploy" **done** (deployed as 0.4.12, the Core
+caption seen); the Skip check **still open**; the director's second pass **still open**; the dry river
+**done** (this entry). **Game machine:** close the game and build once more, so the new Sump caption
+("badwater, 1.2 deep") deploys; press Skip mid-opening once. **Anyone designing levels 03, 04 or 08:**
+`wardens-campaign-map-set.md` §5 is unblocked; take fill levels from an autosave, never guess them.
+
+### How you know it is done
+
+The Sump shot's caption matches the full basin; Skip leaves the game paused and unlocked.
+
+### Open questions I could not answer
+
+None new.
+
+### What I deliberately did not do
+
+I did not write `WaterSimulationMigrator` into maps (it would double every source against what was played).
+I did not copy a save's water into the map: the fill is computed from the spec, so a terrain edit keeps working.
+
+---
+
+## 2026-09-11: the remade level 01 in the game, and its opening cutscene (game machine)
+
+**Plan:** `docs/plan/first-light-opening.md` (the author's goal: the new map starts with an extensive
+cutscene), after the level-01 remake of PR #21. **Status: the opening `verified` (0.4.10); two fixes from
+its first run `built` (0.4.11), deployed when the game next closes. The remade land `verified` for its
+boot and its day-1 Sump.**
+
+### What I did
+
+Game machine, Timberborn 1.1.2.4 at `F:\Steam`, two fresh level-01 starts by the handoff, the author's
+tutorial setting off. Read through the Wardens MCP server (`wardens_status`, `/api/tiles`, `cutscene
+status`, `frame`) and the log; screenshots of the opening every 4 s.
+
+| Command | Result line |
+|---|---|
+| `dotnet build … -c Release` (0.4.10, deployed with the game closed) | `0 Warnung(en)`, `0 Fehler` |
+| the same with `-p:ModDir=<scratch>` (0.4.11, the game running) | `0 Warnung(en)`, `0 Fehler` |
+| `uv run --project python --extra dev pytest wardens/tools .claude/skills -q` | `139 passed in 8.20s` |
+| `python wardens/tools/check_cutscenes.py wardens/src` | `cutscenes: 9 (…, FirstLight, …)`, `problems: none` |
+| `python wardens/tools/validate.py wardens/src` | only the known `level 02 … shipped=false` |
+| `python wardens/tools/gen_tutorial.py`, then `git diff enUS.csv` | only the 12 new rows and the Wake line |
+| Player.log, 0.4.10 start | `level triggers=True (… tutorial=False)`, `cutscene FirstLight: queued by level:01`, `start (trigger, 12 shots, 99 s)`, `finished at shot 12/12` |
+
+### Publish check
+
+Branch `feat/first-light-opening`, stacked on `feat/level-01-remake` (PR #21);
+`git ls-remote origin feat/first-light-opening` -> `4943574345af67b1e84846369fee58a6112c859d` (code and
+docs; this entry is the next commit on it).
+
+### What I found
+
+The six findings, each with symptom, source, consequence and remedy, are in `PLAYTEST.md`, "The remade
+level 01 and its opening". In short: captions with `args` printed `System.Object[]` in every scene that
+has them (fixed, 0.4.11); the river is dry while the opening shows it (the author's decision, below);
+`cutscene_played` ignored a level opening (fixed, 0.4.11); the badtide replays finish vanilla's
+first-badtide tutorial on day 1 (deferred, predates this work); the Warden close-up does not get closer
+(deferred to the next director pass); the speed once would not leave 0 (not found). Verified along the
+way: the 0.4.9 boot line (13 charged, 10 scrap), the land's heights against the spec, and the Sump at
+0.5 on every tile by day 1, 41 %.
+
+### Where the mod stands
+
+| Fact | Source |
+|---|---|
+| A new game on level 01 plays `FirstLight` instead of the Cold Boot, tutorial on or off | the log lines above |
+| `level:<Id>` is a trigger; the Cold Boot still plays on every other map | `WardensCutscenes.OnNewGameInitialized` |
+| `.claude/agents/cutscene-director.md` tunes scenes live over the MCP server | the file; the todo |
+| 0.4.11 is staged, not deployed; a watcher deploys it when Timberborn exits | this session |
+
+### What you should do, in this order
+
+Disposition of the previous entry's items: the in-game `campaign next` run **done** in the earlier Gate
+session (PLAYTEST.md); WP4, the level-01 proof run, **still open**; "five bots or thirteen" **moot** for the
+Wake card (it no longer states a count) and still open for the design.
+
+**Game machine:** if 0.4.11 did not deploy, close the game and run the build. Then start level 01 by the
+handoff and check the Core shot reads "The Core. 13 Wardens online, charged to full.", and press Skip once
+mid-scene: the game must stay paused and unlocked. Run the `cutscene-director` agent for its second pass
+(the Warden close-up's zoom limit), and settle the dry river as the author decides.
+
+### How you know it is done
+
+The Core caption shows the number; `wardens_status.cutscene_played` is true after the opening; the
+todo's state column has no open row but package 10.
+
+### Open questions I could not answer
+
+The dry river (package 10 of the todo), put to the author.
+
+### What I deliberately did not do
+
+I did not turn the author's tutorial setting on for campaign starts; it is theirs. I did not press
+Continue on the directive card or touch the game while the author played. I did not deploy 0.4.11 under
+the running game.
+
+---
+
 ## 2026-09-11: the level loader, compiled and seen in the game (game machine)
 
 **Plan:** the previous entry's game-machine list (build, run the transition, answer
@@ -104,6 +342,160 @@ None new. The level-02 question of the previous entry stands.
 I did not run `campaign next` in the game the human had just started (it ends that colony). I did not
 flip level 02 to `shipped: true`. I did not keep the reflection strategies as a fallback: the API they
 guessed at is now read, and a second path that cannot work is noise in every log.
+
+---
+
+## 2026-09-11: every building on the bar from the first frame of every level (out of plan order)
+
+**Plan:** none — the author asked directly: "include all buildings for all levels right from the start".
+That retires the chapter gate of `wardens-chapter-1-plan.md` §4 (the padlocks), taken ahead of WP1/WP2.
+**Goal:** on every map the Wardens play, the whole building bar is buildable from the first frame, and the
+story (chapters, toasts, cutscenes) still advances with the tutorial line.
+
+**Status: the data, the generators and the checks are `checked` (cloud). The C# is `written` — this
+container has no .NET SDK and no game DLLs, so nothing in `wardens/src` has been compiled.**
+
+### What I did
+
+Cloud container: Linux, Python 3.11, `uv`, no `dotnet`, no game DLLs, no Timberborn. Read `AGENTS.md`,
+`wardens/README.md`, `wardens/CHANGELOG.md`, the two newest entries here, the iteration-04 plan,
+`design/wardens-chapter-1-plan.md`, `design/wardens-campaign-design.md`, `design/leafcoats-port-plan.md`,
+`wardens/playtest/PLAYTEST.md`, the five documents of the agent contract, and the sources
+`WardensChapters.cs`, `WardensFrames.cs`, `WardensCutscenes.cs`, `WardensMcpTools.cs`, `WardensMcpServer.cs`,
+`WardensCampaign.cs`, `gen_buildings.py`, `gen_tutorial.py`, `gen_port.py`, `validate.py`, `check_cutscenes.py`.
+
+Decisions taken without the author (the session was autonomous), each recorded in the changelog:
+
+1. **The data is the gate, and there is no gate.** Every building in `Buildings.Wardens` ships with
+   `ScienceCost: 0`: the nine chapter padlocks (999999) and the science prices of Planter Rig (60),
+   Stairs (70) and Platform (100). Mirrored in `gen_buildings.py` (`CHAPTER_LOCK` is gone).
+2. **Chapters stay as story beats.** `WardensChapters.cs` still announces a chapter when its tutorial
+   finishes (toast, Uplink line, `ChapterOpened` for the cutscene) but unlocks nothing; `Opened()` reads
+   the finished-tutorial set, which also settles the playtest finding "every chapter complete on a fresh
+   save". One safety net at load unlocks anything still carrying a cost and logs it (`unlocked_at_load`).
+   `chapterGating` is retired (a leftover key logs one line).
+3. **The tutorial line follows.** Reforestation goes straight to `build(Planter)` (stage
+   `Wardens.Reforestation.BuildPlanter`), the Science card stops promising unlocks, Vertical architecture
+   requires `Wardens.Wellbeing` alone (stairs are free, so `StairsUnlockedTrigger` has nothing to see; the
+   `Stairs.Folktails` alias stays because the vanilla singleton still resolves the name at load).
+4. **The Leaf Coats port stays out.** All 44 `Buildings.WardensPort` blueprints reference the local-only
+   bundle (`*.LeafCoats.Model`), so wiring the collection into the faction would crash a shipped mod at
+   load. Its science costs are untouched; `gen_port.py`'s docstring says what wiring it in now requires.
+5. **`validate.py` enforces the rule** (no science cost in any collection the faction lists; the chapter
+   table through two pure helpers), and `test_validate.py` runs the same rules against the source tree
+   without the game's files, so CI guards it.
+
+Changed, one branch, one pull request: 12 blueprints, `gen_buildings.py`, `gen_tutorial.py` (and its
+regenerated stages and loc rows: the csv now carries the generator's row order), `enUS.csv`,
+`settings.json`, `manifest.json`, `WardensChapters.cs` (rewritten), `WardensMcpServer.cs`,
+`WardensFrames.cs`, `WardensMcpTools.cs`, `WardensConfigurator.cs`, `validate.py`, `test_validate.py`
+(new), `gen_port.py` (docstring), `README.md` (root and wardens), `AGENTS.md`, `CHANGELOG.md`,
+`PLAYTEST.md`, dated status notes in five design documents and two passages of the iteration-04 plan.
+
+### Evidence
+
+| Command | Result line |
+|---|---|
+| `uv run --project python --extra dev pytest -q wardens/tools .claude/skills/driving-iterations/scripts` | `121 passed in 3.57s` |
+| `python wardens/tools/check_cutscenes.py wardens/src` | `problems: none` |
+| `python wardens/tools/mapsmith check wardens/maps/wardens-wasteland.map.toml` | `problems: none` |
+| `python wardens/tools/mapsmith check --level 02` | `problems: none` |
+| `python wardens/tools/mapsmith levels --verify` | `levels: consistent with WardensCampaign.cs` |
+| `python .claude/skills/driving-iterations/scripts/check_doc_drift.py --root . wardens/WARDEN.md .claude/skills/warden-play/SKILL.md design/wardens-play.md` | three `UNMARKED`, `problems: none` (the five documents did not change) |
+| `python wardens/tools/gen_tutorial.py` (twice) | `tutorials: 18, stages: 40, loc rows: 63 replaced 63`; the second run changed nothing |
+| `ruff check --config python/pyproject.toml wardens/tools/validate.py wardens/tools/test_validate.py` | no findings (the 16 in the two generators predate this entry) |
+| `python wardens/tools/validate.py wardens/src` | **not run here** — needs the game's `Blueprints.zip` |
+| `dotnet build wardens/src/Wardens.csproj -c Release` | **not run here** — no .NET SDK in this container |
+
+### Publish check
+
+Branch `claude/mod-building-all-levels-2q3noz`, PR #16 open against main.
+`git ls-remote origin claude/mod-building-all-levels-2q3noz` -> `33989315566cd2efc51412c985ad20c7723284e5`
+(the change itself; the commit carrying this entry follows it on the same branch).
+
+### What I found
+
+1. **`chapter status` listed every chapter complete on a fresh save because the check read the unlock
+   state** (read: `WardensChapters.cs` before this change, `IsComplete` was true when every template was
+   unlocked, and `_unlockAll` unlocked everything when the tutorial was off or `chapterGating` false).
+   *Symptom:* PLAYTEST.md's finding of 2026-09-10. *Source:* read, not reproduced. *Consequence:* the agent's
+   `chapter.next` attention item was empty on such a save. *Remedy:* `Opened()` reads the finished-tutorial
+   set; the frames and `wardens_status` use it. WP6 item 2 of the iteration-04 plan is marked settled.
+2. **Three tutorial-line steps assumed a lock** (read, `gen_tutorial.py`): `AccumulateScienceForBuildingStepSpec`
+   and `UnlockBuildingTutorialStepSpec` for the Planter Rig, and `StairsUnlockedTrigger` as a requirement of
+   Vertical architecture. *Consequence:* with the rig free the two steps would auto-complete at best; with
+   stairs free the trigger never fires if it listens for an unlock event, and the tutorial never starts.
+   *Remedy:* the steps are gone and the requirement is `Wardens.Wellbeing` alone. Whether the vanilla trigger
+   also checks the initial state was not read (no decompile here); the remedy does not depend on it.
+3. **The port cannot be included** (read): all 44 blueprints reference `*.LeafCoats.Model` assets from the
+   git-ignored bundle. *Consequence:* a load crash if wired in without the local copies. *Remedy:* left out,
+   recorded in the changelog and the README; `gen_port.py`'s docstring names the extra step (ScienceCost 0)
+   for whoever wires it in locally.
+4. **`enUS.csv` was not in the generator's row order** (reproduced: `gen_tutorial.py` moved 34 rows). The
+   chapter and cutscene rows had been appended after the tutorial rows by a later `gen_buildings.py` run.
+   *Consequence:* a larger diff than the edit, nothing else. *Remedy:* none needed; the file now matches
+   what the generator writes.
+
+### Where the mod stands
+
+| Fact | Source |
+|---|---|
+| No building in `Buildings.Wardens` carries a science cost; the bar is open from the first frame | the 20 blueprints; `test_validate.py::test_shipped_bar_is_free_from_the_start` |
+| The chapters announce on tutorial completion and unlock nothing; `complete` means the tutorial finished | `WardensChapters.cs` |
+| `chapterGating` no longer exists; `settings.json` ships without it | `WardensMcpServer.cs`, `wardens/src/settings.json` |
+| The Leaf Coats port is still not in the faction and cannot ship | `Faction.Wardens.blueprint.json`, `gen_port.py` docstring |
+| No C# in this entry is past `written` | no .NET SDK here |
+| Everything in the previous entry still stands (level 02's row unfinished, the transition unverified) | that entry |
+
+### What you should do, in this order
+
+Disposition of the previous entry's items: WP1, WP2, WP5, WP8 (cloud) **deferred** — the author asked for
+the open bar instead, and they are unchanged and still small; WP3, WP4, WP6 (game) **blocked** on the game
+machine as before, with WP4 step 6 and WP6 item 2 rewritten for the open bar; "five bots or thirteen"
+**still open**; stamping the mirrors **deferred** to WP5 as before; the level-02 chapter-table question
+**still open**, and smaller now: a chapter table for level 02 is a list of story beats, not a gate.
+
+**If you are at the game machine:** read this entry, then run
+`dotnet build wardens/src/Wardens.csproj -c Release` (the rewritten `WardensChapters.cs` uses only calls the
+old file or the Timberbot copy used: `UnlockIgnoringCost`, `UnlockInternal`, `_finishedTutorials`,
+`ToolButtons`, `BuildingSpec.ScienceCost`), then `python wardens/tools/validate.py` (expect
+`science-priced: 0 (must be 0)` and `problems: none`). Start a new game on `Wardens 01 First Light`, tutorial
+on, and check: no padlock on the bar; `chapter status` shows `complete: []`, `next: Badwater`,
+`unlocked_at_load: []`; finish the Scrap tutorial (`tutorial next` is fine) and see the "Chapter 2:
+Badwater." toast within a second; grep `Player.log` for `[Wardens] chapters:` and paste the `bar checked`
+line into `wardens/playtest/PLAYTEST.md`. Then continue with WP3 and WP4 as the previous entry says.
+
+**If you are in a cloud container:** WP1 and WP2 from the iteration-04 plan, untouched and still small, each
+its own branch and PR in the state words.
+
+### How you know it is done
+
+The `dotnet build` result line and the `[Wardens] chapters: bar checked, N tool buttons, 0 unlocked at load`
+log line are in a HANDOVER entry; PLAYTEST.md's chapter bullet has been walked once; `AGENTS.md`'s state
+section rewrites the 2026-09-11 update from evidence.
+
+### Open questions I could not answer
+
+**Should Science still exist as a currency?** With nothing to unlock, the Cruncher's Science Points recipe
+is a score, not a resource, and the Signal chapter's line "Science, or Data Cores for the Archive" is a
+choice between a number and a good.
+
+| Option | Cost | Risk | |
+|---|---|---|---|
+| Leave it: Science is a measure, Data Cores are the economy (what this entry ships) | none | the Signal card's choice feels empty to a player who reads it | **recommended until the proof run** |
+| Drop the Science recipe from the Cruncher and reword Signal | an hour: `gen_buildings.py`, the Signal captions, the act list in the `warden-play` skill | the Cruncher's power tension (Core 150 vs. 120) loses its "think about what" framing | |
+| Give Science a use again (a late-game wonder, the Ark) | a design pass | out of scope for Act I | |
+
+What settles it: the author's reading of the Signal chapter on the proof run (WP4).
+
+### What I deliberately did not do
+
+I did not wire `Buildings.WardensPort` into the faction (finding 3). I did not rename the
+`Wardens.Chapter.<Id>.Unlocked` loc rows: the key is historical, the text is new, and a rename touches the
+generator, the C#, the validator and the csv for no behaviour. I did not touch the five documents of the
+agent contract: none of their claims changed (the act list still says a chapter "opens" when its tutorial
+finishes, which is still true). I did not change any cutscene caption. I did not edit older HANDOVER
+entries, and the plan only where it described the padlocks.
 
 ---
 

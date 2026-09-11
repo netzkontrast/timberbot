@@ -1214,7 +1214,9 @@ namespace Timberbot
                         if (col.Ceiling >= terrainHeight)
                         {
                             waterDepth = col.WaterDepth;
-                            waterContamination = _waterMap.ColumnContamination(new Vector3Int(x, y, col.Ceiling));
+                            // ColumnContamination(coords) returns 0 unless Floor + depth > coords.z, so asking
+                            // at the column's Ceiling always read 0; the column carries its own value.
+                            waterContamination = col.WaterDepth > 0f ? col.Contamination : 0f;
                             break;
                         }
                     }

@@ -1,6 +1,7 @@
 """The build state every op writes into: a heightfield, named masks, named anchors, entities."""
 from __future__ import annotations
 
+import heapq
 import math
 import random
 import uuid
@@ -10,6 +11,32 @@ from .grid import Grid, Mask, Point
 
 LAYERS = 23  # Z 0..22; the top layer must stay air (the game's convention, see design/wardens-wasteland.md)
 NAMESPACE = uuid.UUID("6f1c2d3e-7a1b-4c5d-9e8f-0a1b2c3d4e5f")
+
+# How many levels a colony crosses between neighbouring tiles. On foot: none. The game's terrain nav
+# mesh joins a tile only to neighbours of the same height (decompiled
+# TerrainNavMeshUpdater.TilesAreOrthogonallyConnected), and level 01 showed it on 2026-09-11: Scavenger
+# Flags on the Core's pad (height 8) found no ruin one level down until a Stairs was built. With Stairs:
+# one level per Stairs (3 scrap), which is the ground the colony reaches by building.
+ON_FOOT = 0
+WITH_STAIRS = 1
+
+# Templates whose block is bigger than one tile, as (x, y) from their Coordinates (the blueprints'
+# BlockObjectSpec.Size). Every block needs ground directly below it (MatterBelow "Ground"), so the
+# footprint has to be flat at the entity's Z and must not overlap another entity; otherwise the game
+# logs "Can't validate loaded BlockObject ... Deleting it" and shows a Loading issues dialog. Level 01
+# lost two of its three adjacent river-head sources and every UndergroundRuins that way (PLAYTEST.md,
+# 2026-09-11). UndergroundRuins is a surface object despite its name: its blocks say Underground false.
+SIZES: dict[str, tuple[int, int]] = {
+    "BadwaterSource": (3, 3),
+    "UndergroundRuins": (5, 5),
+    "StartingLocation": (3, 3),
+}
+
+
+def cells_of(template: str, x: int, y: int) -> list[tuple[int, int]]:
+    """The tiles an entity's blocks cover, from its Coordinates (the footprint's lower corner)."""
+    sx, sy = SIZES.get(template, (1, 1))
+    return [(x + dx, y + dy) for dy in range(sy) for dx in range(sx)]
 
 
 @dataclass
@@ -52,7 +79,7 @@ class MapBuild:
         self.occupied = Mask(size)      # cells an entity already claims
         self.reserved = Mask(size)      # cells placement must keep clear (the starting pad, mainly)
         self._distance_cache: dict[str, Grid] = {}
-        self._walk_cache: dict[tuple[int, int], Mask] = {}
+        self._walk_cache: dict[tuple[int, int, int], Mask] = {}
 
     # -- terrain reads ---------------------------------------------------------------------------
 
@@ -108,11 +135,11 @@ class MapBuild:
     def add(self, entity: Entity, footprint: int = 1) -> None:
         self.entities.append(entity)
         r = footprint - 1
-        for dy in range(-r, r + 1):
-            for dx in range(-r, r + 1):
-                x, y = entity.x + dx, entity.y + dy
-                if 0 <= x < self.size and 0 <= y < self.size:
-                    self.occupied.set(x, y)
+        cells = {(entity.x + dx, entity.y + dy) for dy in range(-r, r + 1) for dx in range(-r, r + 1)}
+        cells.update(cells_of(entity.template, entity.x, entity.y))
+        for x, y in cells:
+            if 0 <= x < self.size and 0 <= y < self.size:
+                self.occupied.set(x, y)
 
     def reserve(self, x0: int, y0: int, x1: int, y1: int) -> None:
         for y in range(max(0, y0), min(self.size, y1 + 1)):
@@ -133,11 +160,12 @@ class MapBuild:
 
     # -- walkability -----------------------------------------------------------------------------
 
-    def walkable_from(self, start: tuple[int, int], max_step: int = 1) -> Mask:
+    def walkable_from(self, start: tuple[int, int], max_step: int = WITH_STAIRS) -> Mask:
         """Flood fill over the surface, stepping at most `max_step` levels between neighbours.
 
-        Beavers climb one block without stairs, so this is the ground a colony can reach on foot
-        before it builds anything. Water cells are walls.
+        The default, `WITH_STAIRS`, is the ground a colony can reach by building a Stairs for every
+        level it changes; `ON_FOOT` is what it reaches before it builds anything (the same height
+        only). Water cells are walls.
         """
         reached = Mask(self.size)
         water = self.masks.get("water")
@@ -164,8 +192,8 @@ class MapBuild:
                 stack.append((nx, ny))
         return reached
 
-    def walk_distances(self, start: tuple[int, int], max_step: int = 1) -> dict[tuple[int, int], int]:
-        """Steps from `start` to every walkable tile — how far a beaver actually walks, not how far
+    def walk_distances(self, start: tuple[int, int], max_step: int = WITH_STAIRS) -> dict[tuple[int, int], int]:
+        """Steps from `start` to every reachable tile — how far a beaver actually walks, not how far
         it looks on a heightmap. Diagonals are excluded, so treat these as a lower bound."""
         water = [self.masks[m] for m in ("water", "badwater", "clean") if m in self.masks]
 
@@ -192,10 +220,38 @@ class MapBuild:
                 queue.append((nx, ny))
         return dist
 
-    def walkable_cached(self, start: tuple[int, int]) -> Mask:
-        if start not in self._walk_cache:
-            self._walk_cache[start] = self.walkable_from(start)
-        return self._walk_cache[start]
+    def walkable_cached(self, start: tuple[int, int], max_step: int = WITH_STAIRS) -> Mask:
+        key = (start[0], start[1], max_step)
+        if key not in self._walk_cache:
+            self._walk_cache[key] = self.walkable_from(start, max_step)
+        return self._walk_cache[key]
+
+    def stairs_from(self, start: tuple[int, int]) -> dict[tuple[int, int], tuple[int, int]]:
+        """`(stairs, steps)` from `start` to every tile the colony can reach by building Stairs: the
+        fewest level changes first (each one is a Stairs, 3 scrap), then the shortest walk. Water
+        cells are walls, and a neighbour more than one level away is a cliff."""
+        water = [self.masks[m] for m in ("water", "badwater", "clean") if m in self.masks]
+        if any(m.at(*start) for m in water):
+            return {}
+        best = {start: (0, 0)}
+        queue = [(0, 0, start)]
+        while queue:
+            stairs, steps, (x, y) = heapq.heappop(queue)
+            if best[(x, y)] < (stairs, steps):
+                continue
+            h0 = self.h(x, y)
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx, ny = x + dx, y + dy
+                if not (0 <= nx < self.size and 0 <= ny < self.size) or any(m.at(nx, ny) for m in water):
+                    continue
+                climb = abs(self.h(nx, ny) - h0)
+                if climb > WITH_STAIRS:
+                    continue
+                cost = (stairs + climb, steps + 1)
+                if cost < best.get((nx, ny), (1 << 30, 0)):
+                    best[(nx, ny)] = cost
+                    heapq.heappush(queue, (cost[0], cost[1], (nx, ny)))
+        return best
 
     def water_cells(self) -> set[tuple[int, int]]:
         """Every tile any water mask covers — what the checker needs to agree with `walkable_from`."""

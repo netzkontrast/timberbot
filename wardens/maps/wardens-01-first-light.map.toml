@@ -1,0 +1,305 @@
+# Level 01, First Light: the Wardens' wasteland.
+#
+#   python wardens/tools/mapsmith preview --level 01 --step 2
+#   python wardens/tools/mapsmith build   --level 01
+#
+# The land the Chapter 1 plan needs (design/wardens-wasteland.md): badwater from the north, ruins for
+# scrap within scavenging range of the Core, one clean spring in the north-east and nothing else green,
+# an ash plateau ringed by hills.
+#
+# Remade 2026-09-11 from what level 01 did in the game (wardens/playtest/PLAYTEST.md, "Level 01 played
+# through the MCP server"). The old land put the Sump under a four-level cliff against the Core (one pump
+# site, in the Core's own building room), filled it by day 5 instead of day 1, and left the spring grove
+# unreachable. What changed, and the contract that now holds each change:
+#
+#   the Sump        a basin a tile deeper (bed 3), fed by a seep of its own so it fills on day 1 and by
+#                   the river so it never runs dry; the river moved east so it no longer hugs the pad
+#   its shore       a terrace: pad 8 -> 7 -> a shelf at 6 along the water, two Stairs down, room for
+#                   pumps (contract `shore`)
+#   first scrap     three small ruins on the pad's own level, so the first flags work them before a
+#                   single Stairs (`on_foot_scatter`). Wardens walk on one level; the first remake put
+#                   these one level down and the opening softlocked at 0 scrap (PLAYTEST.md, 0.4.14)
+#   the spring      still across the badwater river, and now one short bridge away: the Green
+#                   chapter's reward, neither impossible nor free (contract `crossing`)
+#
+# The seed and size are the old ones; everything the old spec placed that still worked stays.
+name = "Wardens 01 First Light"
+size = 96
+seed = 3000
+game_version = "0.7.10.0"          # the layout verified in design/wardens-wasteland.md; the game migrates it
+description = "Level 01 of the Wardens campaign: First Light. An ash plateau, a Sump of badwater below the Core, ruins for scrap, and one clean spring across the river. Bots only."
+
+# --- the land ------------------------------------------------------------------------------------
+
+[[terrain]]
+op = "base"
+height = 6
+
+[[terrain]]                        # rolling ash, Z 6..9
+op = "noise"
+amplitude = 3.4
+contrast = 1.9
+octaves = [8, 16, 32]
+weights = [1.0, 0.5, 0.25]
+
+[[terrain]]                        # a rim of hills, so the interior reads as a basin
+op = "rim"
+width = 10
+height = 5
+exponent = 2.0
+
+[[terrain]]                        # the clean spring's hill in the north-east
+op = "hill"
+at = [82, 14]
+radius = 13
+height = 6
+floor = 8
+name = "spring"
+
+[[terrain]]                        # the badwater river: enters north, meanders, leaves south; it passes the
+op = "river"                       # Sump 20 tiles east of the Core instead of curling up against the pad
+points = [[34, -2], [36, 14], [52, 26], [49, 37], [46, 47], [48, 58], [62, 66], [56, 82], [48, 98]]
+bed = 4
+width = 1.7
+valley = [[4.5, 7], [3.0, 6]]
+tag = "badwater"
+name = "river"
+
+[[terrain]]                        # the Sump's shore: pad 8 -> 7 -> a shelf at 6 along the water, so the
+op = "terrace"                     # colony walks down to the Sump and a row of pumps fits on its edge
+box = [28, 38, 32, 58]
+steps = [[2, 7], [3, 6]]
+side = "west"
+name = "shore"
+
+[[terrain]]                        # the Sump: badwater below the Core, deep enough to carry a drought
+op = "basin"
+at = [38, 48]
+radii = [5, 7]
+bed = 3
+shore = 6
+shore_width = 1
+tag = "badwater"
+name = "sump"
+
+[[terrain]]                        # the Sump drinks from the river: a notch east so the two are one water
+op = "channel"
+start = "sump"
+direction = "east"
+length = 9
+drop = 30
+tag = "badwater"
+
+[[terrain]]                        # the spring pool, in a crater on the hilltop
+op = "crater"
+at = "spring"
+radius = 2.6
+depth = 2
+tag = "clean"
+
+[[terrain]]                        # its overflow runs north off the map
+op = "channel"
+start = "spring"
+direction = "north"
+length = 40
+drop = 6
+offset = 3
+tag = "clean"
+
+[[terrain]]                        # the Core's flat pad, above the Sump's shore
+op = "pad"
+at = [20, 46]
+size = 8
+height = 8
+name = "start"
+reserve = 3
+
+[[terrain]]
+op = "clamp"
+min = 3
+max = 19
+
+# --- water ---------------------------------------------------------------------------------------
+
+[[place]]                          # the head of the river, at the north edge. One source: a BadwaterSource
+template = "BadwaterSource"        # is 3x3, and the three this spec used to place side by side overlapped,
+along = "badwater"                 # so the game kept one and deleted two on every load. One is what every
+segment = [0.0, 0.04]              # playtest ran on, and what the water fill below is measured from.
+count = 1
+strength = 4.0
+orientation = "Cw0"
+
+[[place]]                          # the Sump's own seep: full on day 1, before the river's water arrives
+template = "BadwaterSource"
+at = "sump"
+dx = 2
+strength = 1.5
+orientation = "Cw0"
+
+[[place]]
+template = "WaterSource"
+at = "spring"
+strength = 1.5
+orientation = "Cw0"
+
+# --- the colony ------------------------------------------------------------------------------------
+
+[[place]]
+template = "StartingLocation"
+at = "start"
+dx = -2
+dy = -2
+orientation = "Cw0"
+
+# --- ruins: scrap is the only building material ------------------------------------------------------
+
+[[scatter]]
+name = "first light"               # the first scrap: small columns on the pad's own level, so the first
+templates = ["RuinColumnH1", "RuinColumnH2"]   # flags reach them without Stairs (on_foot_from)
+weights = [3, 2]
+levels = [1, 2]
+around = "start"
+radius = [6.5, 10]
+count = 3
+spacing = 2
+height_range = [7, 9]
+away_from = { sump = 10.0, badwater = 4.0 }
+on_foot_from = "start"
+variants = ["A", "B", "C"]
+orientation = "Cw0"
+yield = { good = "ScrapMetal", amount_per_level = 15 }
+
+[[scatter]]
+name = "near ruins"                # chapter 1 scrap, 8-13 tiles from the Core
+templates = ["RuinColumnH1", "RuinColumnH2", "RuinColumnH3"]
+weights = [3, 3, 1]
+levels = [1, 2, 3]
+around = [15, 40]
+radius = 5.0
+count = 7
+spacing = 2
+height_range = [6, 10]
+variants = ["A", "B", "C"]
+orientation = "Cw0"
+yield = { good = "ScrapMetal", amount_per_level = 15 }
+
+[[scatter]]
+name = "south of the pad"          # moved off the shore: ruins there would block the pumps' shelf
+templates = ["RuinColumnH1", "RuinColumnH2", "RuinColumnH3"]
+weights = [2, 3, 2]
+levels = [1, 2, 3]
+around = [22, 61]
+radius = 4.5
+count = 6
+spacing = 2
+height_range = [6, 10]
+away_from = { sump = 10.0 }
+variants = ["A", "B", "C"]
+orientation = "Cw0"
+yield = { good = "ScrapMetal", amount_per_level = 15 }
+
+[[scatter]]
+name = "across the river"          # a reason to build the first bridge, on the way to the spring
+templates = ["RuinColumnH2", "RuinColumnH3", "RuinColumnH5"]
+weights = [2, 3, 2]
+levels = [2, 3, 5]
+around = [66, 36]
+radius = 6.0
+count = 9
+spacing = 2
+height_range = [6, 12]
+variants = ["A", "B", "C"]
+orientation = "Cw0"
+yield = { good = "ScrapMetal", amount_per_level = 15 }
+
+[[scatter]]
+name = "the south field"           # tall and rich, a mid-game expedition
+templates = ["RuinColumnH3", "RuinColumnH5"]
+weights = [1, 1]
+levels = [3, 5]
+around = [24, 78]
+radius = 6.0
+count = 9
+spacing = 2
+height_range = [6, 12]
+variants = ["A", "B", "C"]
+orientation = "Cw0"
+yield = { good = "ScrapMetal", amount_per_level = 15 }
+
+[[scatter]]
+name = "the far corner"
+templates = ["RuinColumnH2", "RuinColumnH3", "RuinColumnH5"]
+weights = [2, 2, 1]
+levels = [2, 3, 5]
+around = [74, 78]
+radius = 5.0
+count = 6
+spacing = 2
+height_range = [6, 12]
+variants = ["A", "B", "C"]
+orientation = "Cw0"
+yield = { good = "ScrapMetal", amount_per_level = 15 }
+
+# --- the only green ----------------------------------------------------------------------------------
+
+[[scatter]]
+name = "spring grove"
+templates = ["Pine", "Birch", "BlueberryBush"]
+weights = [45, 40, 15]
+around = "spring"
+radius = [3.5, 11.5]
+count = 120
+spacing = 1
+growth = [0.7, 1.0]
+margin = 2
+
+[[scatter]]
+name = "lone birches"              # "there is not much"
+templates = ["Birch", "Pine"]
+weights = [7, 3]
+around = [48, 48]
+radius = [20, 44]
+count = 40
+spacing = 3
+margin = 4
+growth = [0.7, 1.0]
+away_from = { badwater = 9.0, clean = 6.0, start = 16.0, spring = 16.0, sump = 12.0 }
+
+# --- water at tick 0 -------------------------------------------------------------------------------
+# Pre-filled, so the land holds the water the level opens on (the opening cutscene flies over it while
+# the game is paused). The levels are the game's own: a day-3 autosave of this map (2026-09-11, 0.4.10)
+# had one surface at 4.17 over the river, the channel and the Sump (0.17 deep in the bed, 1.17 in the
+# Sump) and 12.02 in the spring's crater. Filling to that equilibrium means no flood wave at load.
+
+[water]
+fill = [
+  { tag = "badwater", level = 4.2, contamination = 1.0 },
+  { tag = "clean",    level = 12.25, contamination = 0.0 },
+]
+
+# --- soil ----------------------------------------------------------------------------------------
+
+[soil]
+contamination = { from = "badwater", offset = 2.5, reach = 6.0 }
+
+# --- what the checker must be able to prove ---------------------------------------------------------
+
+[checks]
+require = ["StartingLocation", "BadwaterSource", "WaterSource"]
+require_at_least = { RuinColumnH1 = 3, BadwaterSource = 2 }
+min_reachable = 1500
+# Chapter 1 has to be playable with Stairs; the fields across the river are meant to need a bridge,
+# so they are deliberately absent from this list.
+reachable_scatter = ["first light", "near ruins", "south of the pad"]
+# The opening has to be playable before a single Stairs: the 10 starting scrap buy two Charging Posts,
+# and the first flags work these. Wardens walk only on one level (PLAYTEST.md, 2026-09-11, 0.4.14).
+on_foot_scatter = ["first light"]
+
+# --- the level design, as geometry ------------------------------------------------------------------
+
+[contract]
+# The Sump can be worked: a walkable shelf along its water. A Sludge Pump facing the water takes 2
+# tiles of shore, so a straight run of 4 is two pumps side by side.
+shore = { at = "sump", radius = 9, min_tiles = 16, min_run = 4 }
+# The spring is the Green chapter's reward: one short bridge away, and not reachable on foot.
+crossing = { to = "spring", radius = 8, max_water = 5 }

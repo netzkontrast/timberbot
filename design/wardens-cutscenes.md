@@ -149,22 +149,32 @@ Skip.
 
 A pose field that is neither absolute nor relative keeps the value from the scene's start, so a
 keyframe with only `dh` orbits without changing the tilt or the zoom. The units are the director's:
-world space for the target, degrees, `ZoomLevel`; the zoom scale is the one number nobody has
-measured yet (§12), which is why the prototype uses small relative `dzoom` values that are harmless
-whatever the scale turns out to be.
+world space for the target, degrees, `ZoomLevel`. The zoom is exponential: the camera stands
+`1.3^ZoomLevel * 32` tiles from its target (`CameraService.blueprint.json`), so 3 shows most of a 96
+map, 0 is 32 tiles, -5 is 8.6 and fills the frame with one bot. The player's scroll range is -8 to 6;
+the director sets `ZoomLevel` directly and nothing clamps it (§12, settled).
 
 ### 3.4 Triggers
 
 | `on` entry | Fires when | Once? |
 |---|---|---|
 | `new_game` | `NewGameInitializedEvent` (a new game; loaded saves never post it) | by construction |
+| `level:<Id>` | the same event, on a map the campaign table (`WardensCampaign.cs`) knows as level `<Id>`; the checker resolves the id against that table | by construction |
 | `chapter:<Id>` | `WardensChapterService` announces the chapter (its `ChapterOpened` event: a real opening or a forced one through `chapter unlock`, never the silent reconcile after a load) | once per chapter per game |
 | `tutorial:<TutorialId>` | the id appears in `TutorialService`'s finished set, polled twice a second; the first poll after a load is silent | once per tutorial per save |
 
 Policy for every trigger, the same one the Cold Boot had: the active faction is the Wardens, the
 tutorial is on (the story is the tutorial), and `"cutscenes": true` in `settings.json` (the default;
-`false` keeps the triggers off for playtest scripts that do not want a 22 s scene, the way
-`chapterGating` works). The MCP `play` action ignores the policy: it is the tuning loop.
+`false` keeps the triggers off for playtest scripts that do not want a 22 s scene). The MCP
+`play` action ignores the policy: it is the tuning loop.
+
+`level:<Id>` is the exception (added 2026-09-11, 0.4.10). A level's opening is the level, not a
+tutorial, so it needs the Wardens and the setting but not the tutorial: `DisableTutorial` is the
+player's global game setting, and a player who turned the vanilla tutorial off must still see how
+the level begins. When a `level:` scene fires, the `new_game` scenes do not: on level 01 the
+opening (`FirstLight.json`, 12 shots over the land, about 100 s) replaces the Cold Boot, which
+still plays on every other map. The log line on load reads `triggers=<policy>, level triggers=<Wardens
+and setting>`. The todo that introduced it is [`docs/plan/first-light-opening.md`](../docs/plan/first-light-opening.md).
 
 No save state. A trigger fires on an event, events happen once, and a loaded save re-fires none of
 them: a chapter already open at load is reconciled silently, a finished tutorial is in the set
@@ -252,8 +262,9 @@ stopped there. A choice card has no key: the buttons are the answer.
 ### 4.4 `WardensChapterService` (one event)
 
 `public event Action<WardensChapter> ChapterOpened;`, raised in `Open()` under the same condition as
-the toast (announced, and at least one building newly unlocked). Frames keep their own detection;
-nothing else changes.
+the toast (announced: a real opening or a forced one, never the silent reconcile after a load; since
+2026-09-11 nothing is unlocked, the chapters are story beats over an open bar). Frames keep their own
+detection; nothing else changes.
 
 ### 4.5 `WardensFrames` (two events, one field)
 
@@ -360,7 +371,7 @@ is read once before it is compared.
 
 ## 8. Extensions (not in v1)
 
-- **Level triggers** (`level:<Id>` start and end) and the level-05 question as a choice card, with
+- **Level end triggers** (the start trigger `level:<Id>` shipped in 0.4.10, §3.4) and the level-05 question as a choice card, with
   the campaign service reading `story.json`; the readings for levels 05 and 10 are then scene files
   with `args` from the Ledger's history.
 - **Hide the UI** once the service that does it is verified; **material swaps** (the Core's light
@@ -429,8 +440,9 @@ was deliberately avoided because `TextAnchor` lives in a Unity module no csproj 
 
 ## 12. Open questions (the smoke run answers them)
 
-- The zoom scale: what `ZoomLevel` range the game uses, and therefore what `dzoom` values a "high
-  shot" and a "push in" need. The prototype's ±0.15 is a placeholder that cannot hurt.
+- ~~The zoom scale.~~ Settled (§3, the keyframe fields): `1.3^ZoomLevel * 32` tiles, player range -8 to 6, unclamped for
+  the director. Each -1 brings the camera 23 % closer; the Cold Boot's `dzoom` ±0.15 moves
+  the camera 4 %, so it reads as a held shot.
 - Whether the letterbox and the tutorial panel collide on screen, and whether the Wake and Directive
   text should move into the scene (the Cold Boot tutorial would keep one empty stage so the Basics
   chain still starts from it).
