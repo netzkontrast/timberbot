@@ -157,6 +157,48 @@ Design and open questions: `design/wardens-cutscenes.md` (§9 is this list, §12
   the letterbox collides with the tutorial panel, and whether the caption is centered (the game's
   `text--centered` class) or needs a fixed width.
 
+## Level 01 played through the MCP server (2026-09-11, 0.4.5–0.4.6, game machine)
+
+Claude Code played First Light over the `wardens` MCP tools, with the human building alongside, to day 5.
+Findings, each with the four slots:
+
+1. **Scavenger Flags never got a worker** (reproduced). *Symptom:* both flags finished, "No available
+   workers in district", 11 bots idle. *Source:* the flag is vanilla `ScavengerFlag.IronTeeth`, which
+   prices bots at 500 Science; `bot_workforce.py` only rewrites `.Wardens` blueprints. *Consequence:*
+   level 01 can never get scrap (softlock). *Remedy:* fixed in 0.4.6, every priced workplace template is
+   unlocked for bots on load (`WardensBotWorkforceMigration`); seen: flags 1/1, scrap arriving.
+2. **Idle Wardens drain to 0% while working ones hold the posts** (seen). *Symptom:* six unemployed bots
+   at 0%, stopped, on day 2; they recovered overnight. *Source:* the Charging Post is an attraction with
+   capacity 1 (+0.6/h), used in off-hours. *Consequence:* a morning of stopped Wardens every day with few
+   posts. *Remedy:* open. Ending shifts at 14:00 lifted the day's lowest charge from 25% to 33%; more
+   capacity per post, or idle bots charging first, belongs in the level's balance pass.
+3. **Badwater does not keep one Cell fed** (measured). *Symptom:* the second Cell stays cold, the first
+   empties. *Source:* one Sludge Pump makes ~4.3 Badwater/day (the district sampler's own reading); a
+   Badwater Cell burns 0.4/h = 9.6/day. *Consequence:* the Power chapter's supply is ~half of what the
+   bar implies; a colony that builds six posts and a Cruncher runs at 60%. *Remedy:* open, balance pass
+   (cell burn or pump rate).
+4. **The second pump site needs Stairs** (seen). *Symptom:* a pump at 29,42 (z 6) "isn't connected to
+   any district center by paths". *Source:* the Sump's west rim below the Core is a 2-level step; Stairs
+   cost 70 Science. *Consequence:* the second pump waits for the Cruncher. *Remedy:* decide whether level
+   01 means that (the Signal chapter pays for it) or needs a ramp in the map.
+5. **`/api/placement/find` misses rim pumps** (seen). *Symptom:* only dry far-rim spots returned while a
+   hand-placed pump at 26,47 works. *Source:* not read yet: the finder's water-input check for rotated
+   intakes. *Consequence:* the agent cannot place pumps on its own. *Remedy:* open, Timberbot placement.
+6. **The Gate's sampler over-reported the starting stock** (seen). *Symptom:* Berries 43–129/day of
+   "surplus" with a flat 130 in stock, and a killed First Light game's reading kept beside the new one.
+   *Remedy:* fixed in 0.4.7 (warm-up before the first sample, one settlement's readings replace its old
+   ones, ISO timestamps kept). Not yet run.
+7. **This install saves to `ExperimentalSaves/`** (seen: `Saving game to bot - …` wrote
+   `ExperimentalSaves/bot/…`). `SaveLevelStarter` and `TimberbotAutoLoad` hard-code `Saves/`. *Remedy:*
+   open; harmless until a level ships a save.
+8. **`/api/tiles` reports `badwater: 0` everywhere**, at the Badwater sources too (seen on Lakes and on
+   level 01). *Remedy:* open; do not trust the field until it is read against the game.
+
+Verified on the way: the in-game `campaign action=next level_id=01 force=true` from a Lakes game
+(`started: true, strategy: new game`, exit save written), the Sludge Reed with 42 marked tiles and no
+exception (Cattail fix), bots as default workers, and a district reading in `campaign.json`
+(`ScrapMetal 26.2/day, Badwater 4.3/day`).
+
 ## Checks for the Gate (0.4.5)
 
 Two maps are needed: one to leave, one to link it from.
