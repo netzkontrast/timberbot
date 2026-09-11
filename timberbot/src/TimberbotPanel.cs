@@ -219,7 +219,7 @@ namespace Timberbot
             _layout.AddAbsoluteItem(_modalOverlay);
             _layout.AddAbsoluteItem(_consoleRoot);
 
-            _widget.ToggleDisplayStyle(true);
+            _widget.ToggleDisplayStyle(!_hiddenByHost);
             _modalOverlay.ToggleDisplayStyle(false);
             UpdateConsoleVisibility();
             
@@ -842,6 +842,24 @@ namespace Timberbot
                 HideModal();
             }
         }
+
+        // ---- host mods ------------------------------------------------------------------------
+        //
+        // A mod that compiles this panel in and shows its own window (the Wardens' console) hides the
+        // widget and the action console here; the HTTP/WS servers, the ready gate and the settings
+        // modal are unaffected, and OpenSettings() still reaches the modal. Main thread, idempotent.
+        private bool _hiddenByHost;
+
+        public bool HiddenByHost => _hiddenByHost;
+
+        public void HideForHost()
+        {
+            _hiddenByHost = true;
+            _widget?.ToggleDisplayStyle(false);
+            _consoleRoot?.ToggleDisplayStyle(false);
+        }
+
+        public void OpenSettings() => ShowModal();
 
         private void ShowModal()
         {
@@ -1484,7 +1502,7 @@ namespace Timberbot
         {
             if (_consoleRoot != null)
             {
-                _consoleRoot.ToggleDisplayStyle(_service.ActionLoggingEnabled);
+                _consoleRoot.ToggleDisplayStyle(!_hiddenByHost && _service.ActionLoggingEnabled);
             }
         }
 

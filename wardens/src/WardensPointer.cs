@@ -2,9 +2,9 @@
 //
 // The game already has everything a pointer needs, it just never exposes it to mods as one
 // thing: Highlighter (SelectionSystem) tints an entity's model, MarkerDrawerFactory (Rendering)
-// hands out immediate-mode mesh drawers for tiles and arrows, QuickNotificationService shows a
-// toast, CameraService can pan. A pointer = highlight the object on the tile + a bobbing arrow
-// above it + optional toast + optional camera pan, for N seconds (unscaled, so paused games
+// hands out immediate-mode mesh drawers for tiles and arrows, CameraService can pan. A pointer =
+// highlight the object on the tile + a bobbing arrow above it + an optional line in the Wardens'
+// window (not a toast: only events toast) + optional camera pan, for N seconds (unscaled, so paused games
 // still show it); a cutscene highlight is the same thing without the arrow (arrow: false).
 // Pointers are re-drawn every frame from UpdateSingleton (Graphics.DrawMesh
 // is per-frame), which is why this is an IUpdatableSingleton and not a one-shot call.
@@ -16,7 +16,6 @@ using Timberborn.BlockSystem;
 using Timberborn.CameraSystem;
 using Timberborn.Coordinates;
 using Timberborn.EntitySystem;
-using Timberborn.QuickNotificationSystem;
 using Timberborn.Rendering;
 using Timberborn.SelectionSystem;
 using Timberborn.SingletonSystem;
@@ -41,7 +40,7 @@ namespace Wardens
         private readonly Highlighter _highlighter;
         private readonly MarkerDrawerFactory _markerDrawerFactory;
         private readonly CameraService _cameraService;
-        private readonly QuickNotificationService _quickNotifications;
+        private readonly WardensChat _chat;
         private readonly List<Pointer> _pointers = new List<Pointer>();
         private MeshDrawer _tileDrawer;
         private MeshDrawer _arrowDrawer;
@@ -50,13 +49,13 @@ namespace Wardens
 
         public WardensPointer(BlockService blockService, Highlighter highlighter,
             MarkerDrawerFactory markerDrawerFactory, CameraService cameraService,
-            QuickNotificationService quickNotifications)
+            WardensChat chat)
         {
             _blockService = blockService;
             _highlighter = highlighter;
             _markerDrawerFactory = markerDrawerFactory;
             _cameraService = cameraService;
-            _quickNotifications = quickNotifications;
+            _chat = chat;
         }
 
         public void Load()
@@ -93,7 +92,8 @@ namespace Wardens
             });
 
             if (focus) _cameraService.MoveTargetTo(CoordinateSystem.GridToWorldCentered(coords));
-            if (!string.IsNullOrEmpty(message)) _quickNotifications.SendNotification(message);
+            // A pointer's message goes to the Wardens' window, not a toast: only events toast (2026-09-11).
+            if (!string.IsNullOrEmpty(message)) _chat.SystemSays(message);
 
             return new JObject
             {

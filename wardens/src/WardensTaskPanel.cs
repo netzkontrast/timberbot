@@ -1,7 +1,7 @@
 // WardensTaskPanel.cs. The level's tasks on screen, and the level-end card.
 //
-// A small UI Toolkit panel (top-left, under the goods bar), built like WARDENS UPLINK (WardensChat.cs):
-// VisualElementInitializer applies the game's styles, UILayout.AddAbsoluteItem places it. It lists
+// It renders into the Wardens' one window (WardensChat.TaskSlot, above the log) and sets that window's
+// header to the level and its progress; the window's collapse folds it with the log. It lists
 // every task of the level (WardensLevelTasks): done ones ticked, the live ones (at most two; a task
 // goes live when the tasks it waits for are done) with their instruction and a progress line per
 // check, the rest dimmed. When the last task is done it becomes the level-end
@@ -13,7 +13,6 @@ using System.Text;
 using Timberborn.CoreUI;
 using Timberborn.Localization;
 using Timberborn.SingletonSystem;
-using Timberborn.UILayoutSystem;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -22,24 +21,18 @@ namespace Wardens
     public class WardensTaskPanel : ILoadableSingleton, IUpdatableSingleton
     {
         private const float RefreshSeconds = 0.5f;
-        private readonly UILayout _layout;
-        private readonly VisualElementInitializer _veInit;
+        private readonly WardensChat _window;
         private readonly WardensLevelTasks _tasks;
         private readonly ILoc _loc;
 
-        private VisualElement _root;
-        private Label _title;
-        private Label _count;
-        private NineSliceButton _toggle;
         private VisualElement _body;
-        private bool _collapsed;
+        private bool _collapsed;       // the end card folded by Stay
         private string _shown = "";
         private float _nextRefresh;
 
-        public WardensTaskPanel(UILayout layout, VisualElementInitializer veInit, WardensLevelTasks tasks, ILoc loc)
+        public WardensTaskPanel(WardensChat window, WardensLevelTasks tasks, ILoc loc)
         {
-            _layout = layout;
-            _veInit = veInit;
+            _window = window;
             _tasks = tasks;
             _loc = loc;
         }
@@ -47,61 +40,17 @@ namespace Wardens
         public void Load()
         {
             if (!_tasks.Active) return;
-            Build();
-            _veInit.InitializeVisualElement(_root);
-            _layout.AddAbsoluteItem(_root);
-            _tasks.LevelComplete += () => { _collapsed = false; _shown = ""; Refresh(); };
+            _body = _window.TaskSlot;
+            _tasks.LevelComplete += () => { _collapsed = false; _shown = ""; _window.Expand(); Refresh(); };
             Refresh();
         }
 
         public void UpdateSingleton()
         {
-            if (_root == null || Time.unscaledTime < _nextRefresh) return;
+            if (_body == null || Time.unscaledTime < _nextRefresh) return;
             _nextRefresh = Time.unscaledTime + RefreshSeconds;
             try { Refresh(); }
             catch (Exception ex) { Debug.LogWarning("[Wardens] task panel: " + ex.Message); }
-        }
-
-        private void Build()
-        {
-            _root = new VisualElement { name = "WardensTasks" };
-            // Under the goods bar, right of the settlement box: the right side is where the game opens
-            // a selected building's panel, and it covered the list there (seen 2026-09-11).
-            _root.style.position = Position.Absolute;
-            _root.style.left = 290;
-            _root.style.top = 84;
-            _root.style.width = 360;
-            _root.style.backgroundColor = new Color(0.19f, 0.14f, 0.22f, 0.85f);
-            _root.style.paddingLeft = 8;
-            _root.style.paddingRight = 6;
-            _root.style.paddingTop = 4;
-            _root.style.paddingBottom = 6;
-
-            var header = new VisualElement();
-            header.style.flexDirection = FlexDirection.Row;
-            header.style.justifyContent = Justify.SpaceBetween;
-            header.style.alignItems = Align.Center;
-            _title = new Label();
-            _title.AddToClassList("game-text-normal");
-            _title.AddToClassList("text--yellow");
-            _title.style.flexGrow = 1;
-            header.Add(_title);
-            _count = new Label();
-            _count.AddToClassList("game-text-normal");
-            _count.style.marginRight = 6;
-            header.Add(_count);
-            _toggle = new NineSliceButton { text = "-" };
-            _toggle.AddToClassList("button-game");
-            _toggle.AddToClassList("game-text-normal");
-            _toggle.style.width = 22;
-            _toggle.style.height = 22;
-            _toggle.clicked += () => { _collapsed = !_collapsed; _shown = ""; Refresh(); };
-            header.Add(_toggle);
-            _root.Add(header);
-
-            _body = new VisualElement();
-            _body.style.marginTop = 4;
-            _root.Add(_body);
         }
 
         private void Refresh()
@@ -121,18 +70,16 @@ namespace Wardens
             if (sig.ToString() == _shown) return;
             _shown = sig.ToString();
 
-            _title.text = _tasks.Complete
+            _window.SetHeader(_tasks.Complete
                 ? _loc.T("Wardens.Tasks.Complete", level.Id, level.Title)
-                : _loc.T("Wardens.Tasks.Header", level.Id, level.Title);
-            _count.text = $"{_tasks.DoneCount}/{_tasks.Tasks.Count}";
-            _toggle.text = _collapsed ? "+" : "-";
+                : _loc.T("Wardens.Tasks.Header", level.Id, level.Title),
+                $"{_tasks.DoneCount}/{_tasks.Tasks.Count}");
             _body.Clear();
-            _body.style.display = _collapsed ? DisplayStyle.None : DisplayStyle.Flex;
-            if (_collapsed) return;
 
             if (_tasks.Complete)
             {
-                BuildCard(level);
+                if (_collapsed) BuildFolded();
+                else BuildCard(level);
                 return;
             }
             foreach (var task in _tasks.Tasks)
@@ -187,6 +134,18 @@ namespace Wardens
             stay.clicked += () => { _collapsed = true; _shown = ""; Refresh(); };
             row.Add(stay);
             _body.Add(row);
+        }
+
+        // Stay folded the card: one button brings it back (the header already says the level is complete).
+        private void BuildFolded()
+        {
+            var show = new NineSliceButton { text = "+" };
+            show.AddToClassList("button-game");
+            show.AddToClassList("game-text-normal");
+            show.style.width = 22;
+            show.style.height = 22;
+            show.clicked += () => { _collapsed = false; _shown = ""; Refresh(); };
+            _body.Add(show);
         }
 
         private static Label Text(string s)

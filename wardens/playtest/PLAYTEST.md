@@ -48,8 +48,8 @@ echo '{ "level": "01" }' > ~/Documents/Timberborn/Mods/Wardens/campaign.handoff.
 | `cutscene keyframe` / `write` | main | (0.4.27) `keyframe t=` returns the camera pose as a paste-ready scene keyframe; `write id= scene={}` validates a scene, saves it as `Cutscenes/<id>.json` in the mod folder and reloads. The director's harness; prompt `warden_director` lists every scene and the tasks without one |
 | `frame` | listener | long-poll for the next sensor frame: every `every_ticks` game ticks or on an event (chat, day, building, task live/done, level complete, birth, alert, selection); carries `task` and `attention` (where to look; one entry per live task) |
 | `manual` | listener | the Warden's playbook, `docs/WARDEN.md` from the mod folder |
-| `point` / `unpoint` | main | highlight + bobbing arrow + toast on a tile, optional camera pan |
-| `say` | main | message into the in-game WARDENS UPLINK panel (optional toast) |
+| `point` / `unpoint` | main | highlight + bobbing arrow on a tile, its message as a line in the Wardens' window (0.4.29: no toast), optional camera pan |
+| `say` | main | a line in the Wardens' window as "Warden:" (0.4.29: the `toast` option is gone; only events toast) |
 | `chat_read` | listener | long-poll (≤120 s) for the player's next chat message |
 | `chat_history` | listener | last N messages |
 | `selection` | main | what the player has selected (their way of pointing at something) |
@@ -185,6 +185,22 @@ Findings:
    against the Core's 150. Remedy: open, the balance pass.
 3. **Only four ruins were on the Core's level, 8–25 tiles away.** Remedy (0.4.24): a "first scrap" rule
    with `on_foot_from`, checked by `on_foot_scatter`.
+
+## Checks for the one window (0.4.29+)
+
+- A Wardens map: one panel bottom-left. Its header reads `LEVEL 01: First Light  n/8` (or `WARDENS UPLINK`
+  on a map without tasks), then **API on** (the Timberbot gate, open at load: Player.log
+  `timberbot: ready gate opened at load (autoReady ...)`), **...** (opens the Timberbot settings modal),
+  and `-`. Under it the live tasks with their checks, then the log and the input line. **No Timberbot
+  widget** top right and no Timberbot action console.
+- Clicking **API on** closes the gate (`API off`; `timberbot GET /api/summary` answers `GAME_NOT_READY`);
+  clicking again opens it.
+- `say text=...` shows as `Warden: ...` in the log and no toast; `point ... message=...` puts the message in
+  the log and no toast. A task done still toasts (an event), and so does the level's completion.
+- Level complete: the window opens if it was folded, the header reads `LEVEL 01 COMPLETE`, the card with
+  Continue / Stay sits above the log; Stay leaves a `+` that brings it back.
+- A Folktails or Iron Teeth map: the Timberbot widget is still there (the gate is the player's opt-in off
+  the Wardens), and the window shows `WARDENS UPLINK`.
 
 ## Checks for task scenes (0.4.26+, iteration 05 WP1)
 

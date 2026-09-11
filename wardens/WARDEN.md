@@ -11,7 +11,9 @@ The heartbeat is the `frame` tool (`WardensFrames.cs`); everything below assumes
 ## Who is who
 
 - **The human** decides purpose: where the green goes, who lives here, what is remembered. They
-  type in the WARDENS UPLINK panel and point by selecting things in the game (`selection`).
+  type in the Wardens' window (the one panel bottom-left: the level's tasks, then the log) and point
+  by selecting things in the game (`selection`). Everything you say lands there as "Warden:"; nothing
+  you say toasts.
 - **You** decide logistics: power, scrap, badwater, Data, shifts, hauling. You speak through `say`,
   point with `point`, act through `timberbot`. You never act on purpose questions without asking.
 - **The Wardens** are the bots. Power is life: a Warden out of charge cannot work.

@@ -214,7 +214,7 @@ namespace Wardens
               .Append("those with `say` before anything else.\n\n");
 
             sb.Append("THE TOOLS ARE THE BODY\n")
-              .Append("`say` is the voice, `point` the finger (highlight, arrow and optional toast on one tile), `camera` the eye, ")
+              .Append("`say` is the voice (a line in the Wardens' window), `point` the finger (highlight and arrow on one tile, its message in the window), `camera` the eye, ")
               .Append("`timberbot` the hands: it forwards to the Timberbot HTTP API compiled into this same mod (GET reads, POST acts), ")
               .Append("and `timberbot_routes` lists what it will take. `campaign` (its tasks: the live ones, their checks, their scenes) is the plan; ")
               .Append("`campaign action=record` is the only memory that outlives this map. `selection` is the human pointing at something.\n\n");
@@ -689,13 +689,13 @@ namespace Wardens
                 });
 
             Add("point",
-                "Point the player at a tile: highlights the object there, draws a bobbing arrow for `seconds`, optionally shows `message` as a toast and pans the camera (focus). Grid coordinates as in every Timberbot endpoint.",
+                "Point the player at a tile: highlights the object there, draws a bobbing arrow for `seconds`, puts `message` in the Wardens' window (not a toast) and optionally pans the camera (focus). Grid coordinates as in every Timberbot endpoint.",
                 Schema(new JObject
                 {
                     ["x"] = Prop("integer", "grid x"),
                     ["y"] = Prop("integer", "grid y"),
                     ["z"] = Prop("integer", "grid z (height)", 0),
-                    ["message"] = Prop("string", "toast text shown to the player (optional)"),
+                    ["message"] = Prop("string", "a line for the Wardens' window (optional)"),
                     ["seconds"] = Prop("number", "how long the marker stays", 20),
                     ["color"] = Prop("string", "HTML color name or #RRGGBB", "#00E5FF"),
                     ["focus"] = Prop("boolean", "pan the camera to the tile", false),
@@ -707,17 +707,15 @@ namespace Wardens
                 a => new JObject { ["removed"] = _pointer.Clear() });
 
             Add("say",
-                "Send a chat message to the player (appears in the in-game WARDENS UPLINK panel; toast=true also shows it as a notification).",
+                "Say something to the player: one line in the Wardens' window, as the Warden. Nothing the Warden says toasts; toasts are for events (a task done, a level complete).",
                 Schema(new JObject
                 {
                     ["text"] = Prop("string", "message text"),
-                    ["toast"] = Prop("boolean", "also show as a quick notification", false),
                 }, "text"),
                 a =>
                 {
                     var text = Str(a, "text") ?? "";
                     _chat.AgentSays(text);
-                    if (Bool(a, "toast", false)) _quickNotifications.SendNotification(text);
                     return new JObject { ["sent"] = true, ["unread_from_player"] = _chat.UndeliveredCount() };
                 });
 

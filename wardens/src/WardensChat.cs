@@ -1,4 +1,11 @@
-// WardensChat.cs. In-game chat between the player and the agent.
+// WardensChat.cs. The Wardens' one window: the level's tasks, and the chat between the player and the Warden.
+//
+// Everything the Warden AI and the mod say lands here and nowhere else (the author's call, 2026-09-11:
+// one window, and only events toast). Top to bottom: a header (the level and its progress when it has
+// tasks, the Timberbot API gate as an on/off button, a button to the Timberbot settings, collapse), the
+// task slot WardensTaskPanel renders into (the live tasks, the level-end card), the log, one input line.
+// On a Wardens map the Timberbot widget and its action console are hidden (TimberbotPanel.HideForHost):
+// this window carries the gate and the settings, so the widget was a second panel saying less.
 //
 // A small UI Toolkit panel (bottom-left): message log, one input line, Send. The player's
 // messages go into a thread-safe store that the MCP server reads from its listener thread:
@@ -15,15 +22,18 @@ using System.Collections.Generic;
 using System.Threading;
 using Newtonsoft.Json.Linq;
 using Timberborn.CoreUI;
+using Timberborn.GameFactionSystem;
 using Timberborn.SingletonSystem;
+using Timberbot;
 using Timberborn.UILayoutSystem;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Wardens
 {
-    public class WardensChat : ILoadableSingleton
+    public class WardensChat : ILoadableSingleton, IUpdatableSingleton
     {
+        private const string DefaultTitle = "WARDENS UPLINK";
         public class Message
         {
             public long Seq;
@@ -44,21 +54,55 @@ namespace Wardens
         private const int MaxMessages = 400;
         private readonly UILayout _layout;
         private readonly VisualElementInitializer _veInit;
+        private readonly TimberbotService _timberbot;
+        private readonly TimberbotPanel _timberbotPanel;
+        private readonly FactionService _factionService;
         private readonly object _lock = new object();
         private readonly List<Message> _messages = new List<Message>();
         private long _seq;
 
         private VisualElement _root;
         private VisualElement _body;
+        private VisualElement _taskSlot;
         private ScrollView _log;
         private NineSliceTextField _input;
         private NineSliceButton _toggle;
+        private NineSliceButton _gate;
+        private Label _title;
+        private Label _count;
         private bool _collapsed;
+        private bool _gateShown;
+        private float _nextGateRefresh;
 
-        public WardensChat(UILayout layout, VisualElementInitializer veInit)
+        public WardensChat(UILayout layout, VisualElementInitializer veInit, TimberbotService timberbot,
+            TimberbotPanel timberbotPanel, FactionService factionService)
         {
             _layout = layout;
             _veInit = veInit;
+            _timberbot = timberbot;
+            _timberbotPanel = timberbotPanel;
+            _factionService = factionService;
+        }
+
+        /// Where WardensTaskPanel renders the level's tasks and its end card: above the log.
+        public VisualElement TaskSlot
+        {
+            get { EnsureBuilt(); return _taskSlot; }
+        }
+
+        /// The header line: the level and its progress, or the default title.
+        public void SetHeader(string title, string count)
+        {
+            EnsureBuilt();
+            _title.text = string.IsNullOrEmpty(title) ? DefaultTitle : title;
+            _count.text = count ?? "";
+        }
+
+        /// Opens the window if the player folded it (a level completes, the Warden speaks).
+        public void Expand()
+        {
+            EnsureBuilt();
+            if (_collapsed) SetCollapsed(false);
         }
 
         // ---- store (any thread) -------------------------------------------------------
@@ -166,9 +210,47 @@ namespace Wardens
 
         public void Load()
         {
-            BuildPanel();
+            EnsureBuilt();
             _veInit.InitializeVisualElement(_root);
             _layout.AddAbsoluteItem(_root);
+            if (_factionService.Current?.Id == WardensStartingPopulation.FactionId)
+            {
+                try { _timberbotPanel.HideForHost(); }
+                catch (Exception ex) { Debug.LogWarning("[Wardens] window: hiding the Timberbot widget: " + ex.Message); }
+            }
+            RefreshGate();
+        }
+
+        public void UpdateSingleton()
+        {
+            if (_gate == null || Time.unscaledTime < _nextGateRefresh) return;
+            _nextGateRefresh = Time.unscaledTime + 0.5f;
+            RefreshGate();
+        }
+
+        private void RefreshGate()
+        {
+            bool ready;
+            try { ready = _timberbot.AgentState.Ready; } catch { return; }
+            if (ready == _gateShown && _gate.text.Length > 0) return;
+            _gateShown = ready;
+            _gate.text = ready ? "API on" : "API off";
+            _gate.style.opacity = ready ? 1f : 0.6f;
+        }
+
+        private void ToggleGate()
+        {
+            try
+            {
+                _timberbot.AgentState.SetReady(!_timberbot.AgentState.Ready);
+                RefreshGate();
+            }
+            catch (Exception ex) { Debug.LogWarning("[Wardens] window: gate: " + ex.Message); }
+        }
+
+        private void EnsureBuilt()
+        {
+            if (_root == null) BuildPanel();
         }
 
         private void BuildPanel()
@@ -188,10 +270,35 @@ namespace Wardens
             header.style.flexDirection = FlexDirection.Row;
             header.style.justifyContent = Justify.SpaceBetween;
             header.style.alignItems = Align.Center;
-            var title = new Label("WARDENS UPLINK");
-            title.AddToClassList("game-text-normal");
-            title.AddToClassList("text--yellow");
-            header.Add(title);
+            _title = new Label(DefaultTitle);
+            _title.AddToClassList("game-text-normal");
+            _title.AddToClassList("text--yellow");
+            _title.style.flexGrow = 1;
+            header.Add(_title);
+            _count = new Label("");
+            _count.AddToClassList("game-text-normal");
+            _count.style.marginRight = 6;
+            header.Add(_count);
+            // The Timberbot API gate (the widget's Launch/Stop), and its settings (ports, auth).
+            _gate = new NineSliceButton { text = "" };
+            _gate.AddToClassList("button-game");
+            _gate.AddToClassList("game-text-normal");
+            _gate.style.height = 22;
+            _gate.style.marginRight = 4;
+            _gate.clicked += ToggleGate;
+            header.Add(_gate);
+            var settings = new NineSliceButton { text = "..." };
+            settings.AddToClassList("button-game");
+            settings.AddToClassList("game-text-normal");
+            settings.style.width = 26;
+            settings.style.height = 22;
+            settings.style.marginRight = 4;
+            settings.clicked += () =>
+            {
+                try { _timberbotPanel.OpenSettings(); }
+                catch (Exception ex) { Debug.LogWarning("[Wardens] window: settings: " + ex.Message); }
+            };
+            header.Add(settings);
             _toggle = new NineSliceButton { text = "-" };
             _toggle.AddToClassList("button-game");
             _toggle.AddToClassList("game-text-normal");
@@ -202,6 +309,9 @@ namespace Wardens
             _root.Add(header);
 
             _body = new VisualElement();
+            _taskSlot = new VisualElement { name = "WardensTaskSlot" };
+            _taskSlot.style.marginTop = 4;
+            _body.Add(_taskSlot);
             _log = new ScrollView(ScrollViewMode.Vertical);
             _log.style.height = 150;
             _log.style.marginTop = 4;
@@ -226,7 +336,7 @@ namespace Wardens
             _body.Add(row);
             _root.Add(_body);
 
-            var hint = new Label("Type to talk to the agent. Enter sends.");
+            var hint = new Label("Type to talk to the Warden. Enter sends.");
             hint.AddToClassList("game-text-normal");
             hint.style.opacity = 0.6f;
             hint.style.fontSize = 10;
@@ -261,7 +371,7 @@ namespace Wardens
         private void AppendLine(Message m)
         {
             if (_log == null) return;
-            string prefix = m.From == "player" ? "You" : m.From == "agent" ? "Agent" : "*";
+            string prefix = m.From == "player" ? "You" : m.From == "agent" ? "Warden" : "*";
             var label = new Label($"{prefix}: {m.Text}");
             label.AddToClassList("game-text-normal");
             if (m.From == "player") label.AddToClassList("text--yellow");

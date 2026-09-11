@@ -531,6 +531,27 @@ start to end early; 05 and 09 carry the readings and the wonder. The full ten-le
   a read against `WARDEN.md`; the checker added to the global constraints.
 - [ ] A HANDOVER entry; `package.py` writes `dist/Wardens-v0.5.0.zip` with the start saves in it.
 
+## 1b. Decisions taken during the session (2026-09-11, the author)
+
+- **Level 02 is a new Wardens colony on level 01's land, extended north-east toward the clean spring,
+  and it opens with the Iron Teeth building set.** Level 01 ends on the first beaver, so WP2's `beavers`
+  phase is open from level 02's first frame; the colony is new (a new game), the story continuous (the
+  same basin, moving toward clean water). The map is level 01's spec grown east/north-east, so every
+  level-01 coordinate stays valid (`mapsmith`: a wider map, level 01's ops unchanged, new ops past
+  x 96). This replaces *The Sump* as level 02. *The Sump* keeps its map, tasks and scenes; where it goes
+  in the campaign (a later level, or retired) is **open**, to be asked when level 03 is designed. It
+  reorders WP8: the extended level 02 comes before level 03, and WP2 and WP7 (the carried beaver) are
+  its prerequisites.
+- **One window for everything the Warden AI and the mod say (WP6), and only events toast**: a task
+  done, a level complete, a building set opening. The Uplink lines, the task lines and the Warden's
+  `say` go into the window and nowhere else.
+- **The Timberbot ready gate opens by itself on a Wardens map** (`autoReady`, built 0.4.28). The MCP
+  server already started by itself (`mcpEnabled`).
+- **The instructions list every MCP tool** (generated) and the story as it stands; a **director**
+  role develops scenes and camera paths in the running game (`warden_director`, `cutscene
+  keyframe | write`), and the `wardens-level-workshop` skill carries the level-by-level loop and the
+  repo's working knowledge.
+
 ## 2. Out of scope
 
 The full arc's levels 04, 06, 07, 08; custom 3D art (the Ark reuses the vanilla wonder); the Leaf

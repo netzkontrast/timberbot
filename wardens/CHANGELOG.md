@@ -34,6 +34,30 @@ verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first 
 State: `checked` and `built` (0.4.26 compiled, 0 warnings, 0 errors; pytest 198 passed; both checkers and
 `validate.py` clean). Not yet seen in the game.
 
+## Unreleased (0.4.27–0.4.29): one window, the gate opens itself, a director's harness
+
+- **One window for the Warden AI** (the author's call). The Uplink panel is the Wardens' window: its
+  header shows the level and its progress, an **API on/off** button (the Timberbot ready gate) and a
+  button to the Timberbot settings; the level's tasks and the level-end card render inside it, above the
+  log. On a Wardens map the Timberbot widget and its action console are hidden
+  (`TimberbotPanel.HideForHost`, the same hunk in `timberbot/src` and the Wardens copy). The Warden's
+  lines read "Warden:".
+- **Only events toast**: a task done, a level complete, a toast a scene asks for. `say` lost its `toast`
+  option; `point`'s message goes to the window.
+- **The gate opens itself** on a Wardens map (`"autoReady": true` in settings.json, the default): no
+  Launch click, no `timberbot_ready` call before the Warden can read the map.
+- **The instructions carry every tool and the story.** The `initialize` instructions list every tool
+  (generated from the server's own table, so they cannot drift) and THE STORY NOW: the live tasks, the
+  check each misses, the scene each plays, what waits behind them.
+- **A director's harness**: the `warden_director` prompt (the scene loop, every loaded scene, the tasks
+  without a scene, the camera as a keyframe), `cutscene action=keyframe` (the camera pose as a
+  paste-ready keyframe) and `cutscene action=write` (validate and save a scene into the running game).
+- **The `wardens-level-workshop` skill**: play every level to its end and develop it alongside, with the
+  repo's working knowledge, `level_status.py` and a foreground-checked `shot.ps1`.
+
+State: `built` (0.4.29 into a scratch folder, 0 warnings, 0 errors; upstream Timberbot also compiles).
+Not yet seen in the game.
+
 ## 0.4.25: level 02 starts with water, and its first task is reachable
 
 - **Level 02 is pre-filled** (`[water] fill` in its spec). The river starts at surface 6.3 and the creek at
