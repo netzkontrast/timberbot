@@ -24,7 +24,7 @@
   "WorkplaceSpec": {
     "MaxWorkers": 1,
     "DefaultWorkers": 1,
-    "DefaultWorkerType": "Beaver",
+    "DefaultWorkerType": "Bot",
     "DisallowOtherWorkerTypes": false,
     "WorkerTypeUnlockCosts": []
   },

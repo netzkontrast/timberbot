@@ -30,6 +30,7 @@ import sys
 import zipfile
 from pathlib import Path
 
+import bot_workforce
 from check_cutscenes import check as check_cutscenes, read_chapters, read_levels
 
 GAME = Path("F:/Steam/steamapps/common/Timberborn/Timberborn_Data/StreamingAssets/Modding")
@@ -289,6 +290,12 @@ def main() -> int:
     cutscene_files = sorted((mod / "Cutscenes").glob("*.json")) if (mod / "Cutscenes").is_dir() else []
     problems += check_cutscenes(mod, loc=loc, tutorials=set(tutorials), chapters={cid for cid, _, _ in chapters},
                                 chapters_cs=CHAPTERS_CS)
+
+    # the workforce rule (bot_workforce.py): bots by default, no bot science, bot-default districts.
+    # Every Wardens blueprint on disk, wired or not: a ported building must be right the day it is wired in.
+    for key, p in sorted(ours.items()):
+        for v in bot_workforce.violations(load_json(p.read_bytes())):
+            problems.append(f"{p.relative_to(mod).as_posix()}: {v} (run tools/bot_workforce.py)")
 
     print(f"mod: {mod}")
     print(f"collections: {', '.join(active)}")

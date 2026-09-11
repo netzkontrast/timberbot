@@ -24,14 +24,9 @@
   "WorkplaceSpec": {
     "MaxWorkers": 2,
     "DefaultWorkers": 2,
-    "DefaultWorkerType": "Beaver",
+    "DefaultWorkerType": "Bot",
     "DisallowOtherWorkerTypes": false,
-    "WorkerTypeUnlockCosts": [
-      {
-        "WorkerType": "Bot",
-        "ScienceCost": 2500
-      }
-    ]
+    "WorkerTypeUnlockCosts": []
   },
   "ManufactorySpec": {
     "ProductionRecipeIds": [

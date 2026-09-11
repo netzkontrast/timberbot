@@ -24,7 +24,8 @@
       "Materials/Beavers/Wardens/Adult/BeaverAdult5.Wardens"
     ],
     "MaterialCollectionIds": [
-      "IronTeeth"
+      "IronTeeth",
+      "Folktails"
     ],
     "TemplateCollectionIds": [
       "Buildings.Wardens",

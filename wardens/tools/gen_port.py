@@ -255,3 +255,8 @@ with open(loc, "w", encoding="utf-8", newline="") as fh:
             w.writerow(r)
             added += 1
 print(f"buildings ported: {len(buildings)}, loc rows added: {added}")
+
+# The workforce rule (tools/bot_workforce.py): Leaf Coats prices bots per building; the Wardens do not.
+import bot_workforce  # noqa: E402
+for p in bot_workforce.apply_tree(SRC):
+    print("botified", p.relative_to(SRC).as_posix())

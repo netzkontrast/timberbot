@@ -437,7 +437,7 @@
   "WorkplaceSpec": {
     "MaxWorkers": 4,
     "DefaultWorkers": 2,
-    "DefaultWorkerType": "Beaver",
+    "DefaultWorkerType": "Bot",
     "DisallowOtherWorkerTypes": false,
     "WorkerTypeUnlockCosts": []
   },
@@ -672,5 +672,6 @@
   "MechanicalNodeIlluminatorSpec": {},
   "DefaultIlluminatorColorSpec": {
     "ColorId": "WardensCyan"
-  }
+  },
+  "WardensBotWorkforceSpec": {}
 }
