@@ -201,6 +201,18 @@ Wardens.Chapter.Green.Unlocked,"The first beaver is awake. Now the Advanced Bree
 Wardens.Cutscene.ColdBoot.Orbit,"Nothing has grown here in 3,000 days.",Cold Boot cutscene caption (Cutscenes/ColdBoot.json)
 Wardens.Cutscene.ColdBoot.Core,We were not built to live here. We were built so that others could.,Cold Boot cutscene caption
 Wardens.Cutscene.ColdBoot.Settle,Chapter 1: First Light. Keep the machines charged. Find metal.,Cold Boot cutscene caption
+Wardens.Cutscene.FirstLight.Restart,"SYSTEM RESTART. The uptime counter overflowed 3,000 days ago.",Level 01 opening caption (Cutscenes/FirstLight.json)
+Wardens.Cutscene.FirstLight.Archive,"Three badtides in the archive. The sensors logged every one, and nothing answered.",Level 01 opening caption (Cutscenes/FirstLight.json)
+Wardens.Cutscene.FirstLight.Head,Badwater rises at the north edge from three sources. It has not stopped.,Level 01 opening caption (Cutscenes/FirstLight.json)
+Wardens.Cutscene.FirstLight.River,It crosses the whole plateau and leaves at the south edge. The soil along it is poisoned.,Level 01 opening caption (Cutscenes/FirstLight.json)
+Wardens.Cutscene.FirstLight.Sump,"Below the Core, the Sump. A seep fills it on the first day; the river keeps it full.",Level 01 opening caption (Cutscenes/FirstLight.json)
+Wardens.Cutscene.FirstLight.Shore,Its west shore steps down from the Core in terraces. Room for a row of Sludge Pumps.,Level 01 opening caption (Cutscenes/FirstLight.json)
+Wardens.Cutscene.FirstLight.Ruins,Ruins within 14 steps of the Core. Scrap Metal is the only thing left to build with.,Level 01 opening caption (Cutscenes/FirstLight.json)
+Wardens.Cutscene.FirstLight.Spring,"One clean spring, on the hill in the north-east. Almost everything green on this map grows around it.",Level 01 opening caption (Cutscenes/FirstLight.json)
+Wardens.Cutscene.FirstLight.Crossing,The river lies between the spring and the Core. A bridge of five tiles crosses it.,Level 01 opening caption (Cutscenes/FirstLight.json)
+Wardens.Cutscene.FirstLight.Core,"The Core. {0} Wardens online, charged to full. Power: the Core, and nothing else.",Level 01 opening caption (Cutscenes/FirstLight.json)
+Wardens.Cutscene.FirstLight.Warden,A Warden out of charge stops where it stands. The first Charging Post goes up before anything else.,Level 01 opening caption (Cutscenes/FirstLight.json)
+Wardens.Cutscene.FirstLight.Directive,Chapter 1: First Light. Keep the machines charged. Find metal.,Level 01 opening caption (Cutscenes/FirstLight.json)
 Wardens.Cutscene.Badwater.Scrap,Scrap: {0}. The first thing this ground gave us.,Chapter 2 scene (Cutscenes/Badwater.json); {0} scrap in stock
 Wardens.Cutscene.Badwater.Sump,"The Sump holds badwater now, and the river keeps it full. Pump it, and keep every Warden above half charge.",Chapter 2 scene
 Wardens.Cutscene.Signal.Shifts,The shifts are set. The Wardens do not tire. That is not the same as being fine.,Chapter 3 scene (Cutscenes/Signal.json)
@@ -237,7 +249,7 @@ Tutorial.Wardens.ColdBoot.Wake,"SYSTEM RESTART.
 
 The uptime counter overflowed 3,000 days ago. Sensors report no growth, no water worth drinking, no beavers.
 
-Five Wardens online. Power: the Core, and nothing else.",
+Every Warden online. Power: the Core, and nothing else.",
 Tutorial.Wardens.ColdBoot.Badtides,"The archive kept working after everything else stopped.
 
 Three badtides are logged from before this boot. Nobody was awake to live through them; the sensors recorded them anyway.

@@ -23,6 +23,14 @@ public static readonly WardensChapter[] Chapters =
 };
 '''
 
+CAMPAIGN_CS = '''
+public static readonly WardensLevel[] Levels =
+{
+    new WardensLevel("01", "Wardens 01 First Light", "First Light", "Wardens.MoreBeavers", "02", true),
+    new WardensLevel("02", "Wardens 02 The Sump", "The Sump", "", null, false),   // "quoted" comment
+};
+'''
+
 LOC = [
     ("ID", "Text", "Comment"),
     ("Wardens.Cutscene.Scene.One", "One, with a comma.", "caption"),
@@ -33,7 +41,7 @@ LOC = [
 
 GOOD = {
     "id": "Scene",
-    "on": ["new_game", "chapter:Badwater", "tutorial:Wardens.Scrap"],
+    "on": ["new_game", "level:01", "chapter:Badwater", "tutorial:Wardens.Scrap"],
     "pause": True,
     "leave_paused": False,
     "restore_camera": True,
@@ -89,6 +97,7 @@ def mod(tmp_path: Path) -> Path:
     (tmp_path / "Tutorials" / "Tutorials.Wardens.Scrap.blueprint.json").write_text(
         json.dumps({"TutorialSpec": {"Id": "Wardens.Scrap", "Stages": []}}), encoding="utf-8")
     (tmp_path / "WardensChapters.cs").write_text(CHAPTERS_CS, encoding="utf-8")
+    (tmp_path / "WardensCampaign.cs").write_text(CAMPAIGN_CS, encoding="utf-8")
     return tmp_path
 
 
@@ -97,7 +106,7 @@ def write(mod: Path, name: str, scene) -> None:
 
 
 def run(mod: Path) -> list[str]:
-    return cc.check(mod, chapters_cs=mod / "WardensChapters.cs")
+    return cc.check(mod, chapters_cs=mod / "WardensChapters.cs", campaign_cs=mod / "WardensCampaign.cs")
 
 
 def test_read_chapters_parses_the_table(mod: Path) -> None:
@@ -170,8 +179,10 @@ def test_id_is_required(mod: Path) -> None:
 @pytest.mark.parametrize("trigger, expected", [
     ("chapter:Nope", "chapter unknown: 'Nope'"),
     ("tutorial:Wardens.Nope", "tutorial unknown: 'Wardens.Nope'"),
-    ("level:01", "'level:01' (new_game | chapter:<Id> | tutorial:<Id>)"),
-    ("chapter:", "'chapter:' (new_game | chapter:<Id> | tutorial:<Id>)"),
+    ("level:99", "level unknown: '99' (WardensCampaign.cs has 01, 02)"),
+    ("level:", "'level:' (new_game | level:<Id> | chapter:<Id> | tutorial:<Id>)"),
+    ("chapter:", "'chapter:' (new_game | level:<Id> | chapter:<Id> | tutorial:<Id>)"),
+    ("start", "'start' (new_game | level:<Id> | chapter:<Id> | tutorial:<Id>)"),
 ])
 def test_unknown_triggers(mod: Path, trigger: str, expected: str) -> None:
     scene = copy.deepcopy(GOOD)
@@ -179,6 +190,15 @@ def test_unknown_triggers(mod: Path, trigger: str, expected: str) -> None:
     write(mod, "Scene", scene)
     problems = run(mod)
     assert len(problems) == 1 and expected in problems[0], problems
+
+
+def test_level_trigger_names_a_level_of_the_campaign_table(mod: Path) -> None:
+    """level:<Id> is checked against WardensCampaign.cs, the table the runner resolves it with."""
+    for lid in ("01", "02"):
+        scene = copy.deepcopy(GOOD)
+        scene["on"] = [f"level:{lid}"]
+        write(mod, "Scene", scene)
+        assert run(mod) == [], lid
 
 
 def test_scene_field_types(mod: Path) -> None:

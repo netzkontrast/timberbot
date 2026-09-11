@@ -140,6 +140,13 @@ Design and open questions: `design/wardens-cutscenes.md` (§9 is this list, §12
   `Documents/Timberborn/Mods/Wardens/Cutscenes/ColdBoot.json`, `cutscene reload`, `play`: the change shows.
   A broken edit lands in `errors` and the other scenes still load.
 - Tutorial off, or `"cutscenes": false` in `settings.json`: nothing plays on a new game; `play` still works.
+- **Level 01's opening (0.4.10).** A new game on `Wardens 01 First Light`, tutorial on or off (the handoff
+  `{"level":"01"}` is the quick way): `FirstLight` plays instead of the Cold Boot. The log has
+  `level triggers=True`, `cutscene FirstLight: queued by level:01` and `start (trigger, 12 shots, 99 s)`,
+  and no `ColdBoot` line. The camera visits, in order, the whole plateau, the river's head at the north
+  edge, the river, the Sump with its seep lit, the terraced shore, a ruin near the Core, the spring, the
+  crossing, the Core, a Warden; the last card waits for Continue and the game stays paused. With
+  `"cutscenes": false` nothing plays.
 - `chapter unlock chapter_id=Badwater` opens the chapter and plays `Badwater`: two shots around the Core,
   the first caption with the scrap count filled in ("Scrap: 10. ..."), the second with a Continue button
   (Return or Space also continues); the camera flies back to where it was. Signal, Pods (three stock
@@ -156,6 +163,44 @@ Design and open questions: `design/wardens-cutscenes.md` (§9 is this list, §12
 - What to tune first: the zoom scale (`dzoom` ±0.15 is a placeholder), the tilt (`v` 60 and 35), whether
   the letterbox collides with the tutorial panel, and whether the caption is centered (the game's
   `text--centered` class) or needs a fixed width.
+
+## The remade level 01 and its opening (2026-09-11, 0.4.9–0.4.10, game machine)
+
+Two fresh starts by the main-menu handoff (`{"level":"01"}`), the author's tutorial setting off, read
+through the Wardens MCP server and the log.
+
+| Check | Result |
+|---|---|
+| Boot (0.4.9) | `replaced 13 starting beavers with bots, 13 charged to full, 10 Scrap Metal in the Core`; `bots unlocked for free in 1 workplace template(s)`; no exception in either session |
+| The land | `/api/tiles` heights match the spec: terrace 8 → 7 → shelf 6 at x 26–33, Sump bed 3 at x 34–42, the 3×3 seep at 40–42, 48–50 |
+| The Sump fills on day 1 | at day 1, 41 %: water 0.5 on every Sump tile and along the channel to x 47 (y 47–48) |
+| The opening (0.4.10) | `level triggers=True` with `tutorial=False`; `cutscene FirstLight: queued by level:01`, `start (trigger, 12 shots, 99 s)`, `finished at shot 12/12`; no Cold Boot line. Screenshots: river, Sump (seep lit), shore (Core above the terraces), ruins (one lit beside the Core), spring (lit, grove around it), crossing, Core (lit), a Warden, the directive; each frames what its caption names |
+
+Findings:
+
+1. **Captions with args print `System.Object[]`.** Symptom: the Core shot read "The Core. System.Object[]
+   Wardens online, charged to full." Source (read): `WardensCutscenes.CaptionText` passed the args array to
+   `ILoc.T`, which has only `T(key)` and generic `T<T1..T3>` overloads (decompiled `ILoc`), so the array
+   bound as one parameter. Consequence: every caption with `args` was wrong: this one, and the Badwater,
+   Pods, Green and Archive scenes. Remedy: `Localize()` calls the overload for the count (0.4.11,
+   built; deploys when the game closes).
+2. **The river is dry while the opening shows it.** Symptom: the river and Sump shots show empty beds.
+   Source: maps ship dry (the pre-filled water encoding is undocumented, `design/wardens-wasteland.md`),
+   and the scene plays at tick 0. Consequence: the captions describe water the picture does not have.
+   Remedy: the author's decision, see HANDOVER.
+3. **`cutscene_played` stayed false after the opening.** Source (read): the flag tracked the Cold Boot
+   only. Consequence: the Warden's boot check could read a played opening as not played. Remedy:
+   `OpeningPlayed` counts a `level:` scene too (0.4.11).
+4. **The badtide replays finish vanilla's first-badtide tutorial on day 1.** Symptom: `finished:
+   ["SurvivedFirstBadtideTrigger"]` and the `Wardens.Badtides` card ("The settlement has weathered its
+   first badtide") open right after the opening. Source: `WardensArchivedBadtides` posts the vanilla
+   weather events, as designed for the Cold Boot. Consequence: a card about a badtide the colony never
+   lived through. Remedy: deferred; it predates the opening (the Cold Boot replays the same three).
+5. **The Warden close-up is no closer than the Core shot** (zoom 0.25 against 0.6). Source: not read;
+   likely the default zoom limit clamps. Remedy: deferred to the next `cutscene-director` pass, which
+   measures the limit with `camera action=set`.
+6. **The speed would not leave 0** in the 0.4.9 session (`speed value=3` answered `speed: 0`, no scene
+   playing, the author placing Stairs). Source: not found. Remedy: deferred, watch for it.
 
 ## Level 01 played through the MCP server (2026-09-11, 0.4.5–0.4.6, game machine)
 

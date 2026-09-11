@@ -158,6 +158,7 @@ whatever the scale turns out to be.
 | `on` entry | Fires when | Once? |
 |---|---|---|
 | `new_game` | `NewGameInitializedEvent` (a new game; loaded saves never post it) | by construction |
+| `level:<Id>` | the same event, on a map the campaign table (`WardensCampaign.cs`) knows as level `<Id>`; the checker resolves the id against that table | by construction |
 | `chapter:<Id>` | `WardensChapterService` announces the chapter (its `ChapterOpened` event: a real opening or a forced one through `chapter unlock`, never the silent reconcile after a load) | once per chapter per game |
 | `tutorial:<TutorialId>` | the id appears in `TutorialService`'s finished set, polled twice a second; the first poll after a load is silent | once per tutorial per save |
 
@@ -165,6 +166,14 @@ Policy for every trigger, the same one the Cold Boot had: the active faction is 
 tutorial is on (the story is the tutorial), and `"cutscenes": true` in `settings.json` (the default;
 `false` keeps the triggers off for playtest scripts that do not want a 22 s scene). The MCP
 `play` action ignores the policy: it is the tuning loop.
+
+`level:<Id>` is the exception (added 2026-09-11, 0.4.10). A level's opening is the level, not a
+tutorial, so it needs the Wardens and the setting but not the tutorial: `DisableTutorial` is the
+player's global game setting, and a player who turned the vanilla tutorial off must still see how
+the level begins. When a `level:` scene fires, the `new_game` scenes do not: on level 01 the
+opening (`FirstLight.json`, 12 shots over the land, about 100 s) replaces the Cold Boot, which
+still plays on every other map. The log line on load reads `triggers=<policy>, level triggers=<Wardens
+and setting>`. The todo that introduced it is [`docs/plan/first-light-opening.md`](../docs/plan/first-light-opening.md).
 
 No save state. A trigger fires on an event, events happen once, and a loaded save re-fires none of
 them: a chapter already open at load is reconciled silently, a finished tutorial is in the set
@@ -361,7 +370,7 @@ is read once before it is compared.
 
 ## 8. Extensions (not in v1)
 
-- **Level triggers** (`level:<Id>` start and end) and the level-05 question as a choice card, with
+- **Level end triggers** (the start trigger `level:<Id>` shipped in 0.4.10, §3.4) and the level-05 question as a choice card, with
   the campaign service reading `story.json`; the readings for levels 05 and 10 are then scene files
   with `args` from the Ledger's history.
 - **Hide the UI** once the service that does it is verified; **material swaps** (the Core's light

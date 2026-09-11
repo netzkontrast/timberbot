@@ -5,8 +5,8 @@
 
 The rules are WardensCutsceneScript.Parse's (design/wardens-cutscenes.md §3) plus the names only the
 mod knows: caption loc keys against Localizations/enUS*.csv (and their {0}.. placeholders against the
-shot's `args`), chapter triggers against the table in src/WardensChapters.cs, tutorial triggers
-against Tutorials/*.blueprint.json, `when` conditions against the choice keys some shot defines, and
+shot's `args`), chapter triggers against the table in src/WardensChapters.cs, level triggers against
+the level table in src/WardensCampaign.cs, tutorial triggers against Tutorials/*.blueprint.json, `when` conditions against the choice keys some shot defines, and
 unknown fields (the parser ignores them; a typo such as "captoin" would otherwise play as a shot
 without text). Needs no game files, so it runs in any checkout; validate.py calls check() and merges
 the problems. Exit code 1 when there are problems.
@@ -39,6 +39,8 @@ WHEN_FIELDS = {"choice", "is", "is_not"}
 TRIGGER_NEW_GAME = "new_game"
 TRIGGER_CHAPTER = "chapter:"
 TRIGGER_TUTORIAL = "tutorial:"
+TRIGGER_LEVEL = "level:"
+CAMPAIGN_CS = CHAPTERS_CS.parent / "WardensCampaign.cs"
 PLACEHOLDER = re.compile(r"\{(\d+)\}")
 
 
@@ -264,9 +266,11 @@ def choice_keys_of(d, stem: str) -> set[str]:
 
 
 def check_scene(d, stem: str, loc: set[str], chapters: set[str], tutorials: set[str],
-                texts: dict[str, str] | None = None, choice_keys: set[str] | None = None) -> list[str]:
+                texts: dict[str, str] | None = None, choice_keys: set[str] | None = None,
+                levels: set[str] | None = None) -> list[str]:
     """Problems in one parsed scene file; `stem` is the file name without .json. `texts` (loc key ->
-    text) enables the placeholder count check; `choice_keys` (from every scene) the `when` check."""
+    text) enables the placeholder count check; `choice_keys` (from every scene) the `when` check;
+    `levels` (the campaign's level ids) the `level:<Id>` check."""
     out: list[str] = []
     where = f"{stem}.json"
     texts = texts or {}
@@ -294,8 +298,11 @@ def check_scene(d, stem: str, loc: set[str], chapters: set[str], tutorials: set[
             elif t.startswith(TRIGGER_TUTORIAL) and len(t) > len(TRIGGER_TUTORIAL):
                 if t[len(TRIGGER_TUTORIAL):] not in tutorials:
                     out.append(f"{where}: on[{i}]: tutorial unknown: {t[len(TRIGGER_TUTORIAL):]!r}")
+            elif t.startswith(TRIGGER_LEVEL) and len(t) > len(TRIGGER_LEVEL):
+                if levels is not None and t[len(TRIGGER_LEVEL):] not in levels:
+                    out.append(f"{where}: on[{i}]: level unknown: {t[len(TRIGGER_LEVEL):]!r} (WardensCampaign.cs has {', '.join(sorted(levels)) or 'none'})")
             else:
-                out.append(f"{where}: on[{i}]: {t!r} (new_game | chapter:<Id> | tutorial:<Id>)")
+                out.append(f"{where}: on[{i}]: {t!r} (new_game | level:<Id> | chapter:<Id> | tutorial:<Id>)")
     for f in SCENE_BOOLS:
         if f in d and not isinstance(d[f], bool):
             out.append(f"{where}: {f}: not a boolean")
@@ -311,9 +318,10 @@ def check_scene(d, stem: str, loc: set[str], chapters: set[str], tutorials: set[
 
 
 def check(mod: Path, loc: set[str] | None = None, tutorials: set[str] | None = None,
-          chapters: set[str] | None = None, chapters_cs: Path = CHAPTERS_CS) -> list[str]:
+          chapters: set[str] | None = None, chapters_cs: Path = CHAPTERS_CS,
+          levels: set[str] | None = None, campaign_cs: Path = CAMPAIGN_CS) -> list[str]:
     """Problems across every Cutscenes/*.json in `mod`. The name tables are read from the mod
-    (and the C# chapter table) when the caller does not pass them."""
+    (and the C# chapter and level tables) when the caller does not pass them."""
     texts = read_loc_texts(mod)
     if loc is None:
         loc = set(texts)
@@ -321,6 +329,8 @@ def check(mod: Path, loc: set[str] | None = None, tutorials: set[str] | None = N
         tutorials = read_tutorial_ids(mod)
     if chapters is None:
         chapters = {cid for cid, _, _ in read_chapters(chapters_cs)} if chapters_cs.exists() else set()
+    if levels is None:
+        levels = {lid for lid, *_ in read_levels(campaign_cs)} if campaign_cs.exists() else set()
     folder = mod / FOLDER
     if not folder.is_dir():
         return [f"{FOLDER}/: folder missing in {mod}"]
@@ -337,7 +347,7 @@ def check(mod: Path, loc: set[str] | None = None, tutorials: set[str] | None = N
         choice_keys |= choice_keys_of(d, stem)
     seen_ids: dict[str, str] = {}
     for p, stem, d in parsed:
-        problems += check_scene(d, stem, loc, chapters, tutorials, texts, choice_keys)
+        problems += check_scene(d, stem, loc, chapters, tutorials, texts, choice_keys, levels)
         sid = d.get("id") if isinstance(d, dict) else None
         if isinstance(sid, str) and sid:
             if sid in seen_ids:

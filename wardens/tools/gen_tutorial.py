@@ -127,7 +127,7 @@ BOT = "Bot.IronTeeth"
 TUTORIALS = [
     ("ColdBoot", "Cold Boot", [], "", 0, True, [
         ("Wake",
-         "SYSTEM RESTART.\n\nThe uptime counter overflowed 3,000 days ago. Sensors report no growth, no water worth drinking, no beavers.\n\nFive Wardens online. Power: the Core, and nothing else.",
+         "SYSTEM RESTART.\n\nThe uptime counter overflowed 3,000 days ago. Sensors report no growth, no water worth drinking, no beavers.\n\nEvery Warden online. Power: the Core, and nothing else.",
          []),
         ("Badtides",
          "The archive kept working after everything else stopped.\n\nThree badtides are logged from before this boot. Nobody was awake to live through them; the sensors recorded them anyway.\n\nThe uplink log is about to read them out.",
