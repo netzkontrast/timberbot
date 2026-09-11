@@ -1,7 +1,7 @@
 """`mapsmith` — build, inspect and check Timberborn maps from a spec file.
 
-    python wardens/tools/mapsmith build wardens/maps/wardens-wasteland.map.toml
-    python wardens/tools/mapsmith preview wardens/maps/wardens-wasteland.map.toml
+    python wardens/tools/mapsmith build wardens/maps/wardens-01-first-light.map.toml
+    python wardens/tools/mapsmith preview wardens/maps/wardens-01-first-light.map.toml
     python wardens/tools/mapsmith check "wardens/src/Maps/Wardens Wasteland.timber"
     python wardens/tools/mapsmith new wardens/maps/level-02.map.toml --size 96 --seed 7
     python wardens/tools/mapsmith ops

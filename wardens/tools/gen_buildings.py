@@ -156,7 +156,9 @@ rename(cell, "BadwaterCell.Wardens")
 labeled(cell, "BadwaterCell")
 cost(cell, ("ScrapMetal", 8))   # chapter Power
 cell["MechanicalNodeSpec"] = {"PowerOutput": 100, "PowerInput": 0, "IsShaft": False}
-cell["GoodConsumingBuildingSpec"] = {"FullInventoryWorkHours": 40, "ConsumedGoods": [{"GoodId": "Badwater", "GoodPerHour": 0.4}]}
+# 0.18/h is ~4.3 Badwater a day: what one Sludge Pump makes (measured in play, 2026-09-11), so one
+# pump feeds one Cell. At 0.4/h a Cell burned 9.6 a day and the second Cell never lit (PLAYTEST.md).
+cell["GoodConsumingBuildingSpec"] = {"FullInventoryWorkHours": 40, "ConsumedGoods": [{"GoodId": "Badwater", "GoodPerHour": 0.18}]}
 cell["PollutingBuildingSpec"] = {"Radius": 1, "Strength": 0.3}
 cell["DefaultIlluminatorColorSpec"] = {"ColorId": "WardensCyan"}
 cell["PlaceableBlockObjectSpec"]["ToolOrder"] = 30

@@ -4,6 +4,26 @@ The patch number moves with every local build (`tools/bump_version.py`, run by t
 version marks a milestone (`bump_version.py --minor`) and gets an entry here. Nothing below has been
 verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first run must answer.
 
+## 0.4.9: level 01 remade from its playtest
+
+- **New land for `Wardens 01 First Light`** (same name, seed and size; saves on the first land keep it).
+  mapsmith builds it now, from `wardens/maps/wardens-01-first-light.map.toml`:
+  - the river runs 20 tiles east of the Core instead of curling against the pad;
+  - the Sump is deeper (bed 3), has a Badwater seep of its own (full on day 1, not day 5) and a channel to
+    the river so it never runs dry;
+  - its shore is a terrace, pad 8 → 7 → a shelf at 6, with 32 walkable tiles of waterside off the pad for
+    pumps (the first land: 11, all on or under a cliff);
+  - three small ruins sit 7–14 steps from the start, and "south of the pad" moved off the shore;
+  - the spring is one bridge of at most 5 tiles away (Platforms are free since the open bar).
+- **Two new map contracts** (`shore`, `crossing`) and a `terrace` op in mapsmith, each with tests that
+  build the good land and the old one. The first land fails `shore`; that is the finding it encodes.
+- **Opening balance:** the Wardens boot fully charged and the Core starts with 10 Scrap Metal
+  (`WardensStartingPopulation.cs`); the Badwater Cell burns 0.18 Badwater/h, what one Sludge Pump makes.
+- The Badwater chapter's caption no longer says the Sump is dry.
+
+State: `built` (0.4.9, 0 warnings, 0 errors); `pytest` 136 passed; `mapsmith check --level 01` clean with
+both contracts; `validate.py wardens/src` only the known level-02 note. In-game run: see PLAYTEST.md.
+
 ## 0.4.5: the Gate
 
 - **A new building, the Gate** (`MapGate.Wardens`, District Management, 30 Scrap Metal, no science).

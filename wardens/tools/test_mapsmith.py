@@ -32,7 +32,7 @@ from mapsmith.build import SpecError
 from mapsmith.spec import deep_merge
 
 REPO = Path(__file__).resolve().parents[2]
-WASTELAND = REPO / "wardens" / "maps" / "wardens-wasteland.map.toml"
+FIRST_LIGHT = REPO / "wardens" / "maps" / "wardens-01-first-light.map.toml"
 NAMES = {"world.json", "map_metadata.json", "version.txt", "map_thumbnail.jpg"}
 
 MINIMAL = """
@@ -572,8 +572,8 @@ def test_walk_report_names_a_cluster_the_colony_cannot_reach(minimal):
 
 
 @pytest.mark.parametrize("argv", [
-    ["--strict", "check", str(WASTELAND)],
-    ["check", str(WASTELAND), "--strict"],
+    ["--strict", "check", str(FIRST_LIGHT)],
+    ["check", str(FIRST_LIGHT), "--strict"],
 ])
 def test_strict_is_accepted_on_either_side_of_the_subcommand(argv, capsys):
     """Putting a flag after the spec is the natural guess; an argparse error there wastes a run."""
@@ -616,7 +616,7 @@ def test_no_ground_renders_as_blank(minimal):
 def test_entity_marks_survive_sampling(step):
     """At --step 2 a StartingLocation on an odd tile used to vanish with no warning — while the
     skill tells you to look for exactly that mark."""
-    spec = load(WASTELAND)
+    spec = load(FIRST_LIGHT)
     rows = [line for line in ascii_map(build(spec), step=step).splitlines()
             if line and not line.startswith(("96x96", "north", "legend"))]
     assert any("A" in row for row in rows), f"the starting location vanished at step {step}"
@@ -794,11 +794,87 @@ def test_every_shipped_spec_builds_and_passes_its_own_checks(spec_path):
     assert report.ok, f"{spec_path.name}: {report.summary()}"
 
 
-def test_wasteland_spec_builds_and_passes_its_own_checks():
-    spec = load(WASTELAND)
+def test_first_light_spec_builds_and_passes_its_own_checks():
+    spec = load(FIRST_LIGHT)
     b = build(spec)
     report = report_for(spec, b)
     assert report.ok, report.summary()
     templates = {e.template for e in b.entities}
     assert {"StartingLocation", "BadwaterSource", "WaterSource", "UndergroundRuins"} <= templates
     assert sum(1 for e in b.entities if e.template.startswith("RuinColumn")) >= 30
+
+
+# --- terrace, shore and crossing: level 01's shore and its spring ------------------------------------
+#
+# Level 01's first land put the Sump under a four-level cliff (one pump site) and the spring out of
+# reach entirely (PLAYTEST.md, 2026-09-11). These build the good version of each, then the old one.
+
+def test_terrace_lays_its_bands_from_the_side_it_names(minimal):
+    spec = deep_merge(minimal, {"terrain": [
+        {"op": "base", "height": 8},
+        {"op": "terrace", "box": [4, 4, 8, 10], "steps": [[2, 7], [3, 6]], "side": "west"},
+        {"op": "pad", "at": [14, 14], "size": 8, "height": 8, "name": "start", "reserve": 2},
+        {"op": "clamp", "min": 3, "max": 19}]})
+    b = build(spec)
+    assert [b.h(x, 6) for x in range(3, 10)] == [8, 7, 7, 6, 6, 6, 8]
+
+
+def test_terrace_rejects_an_unknown_side(minimal):
+    spec = deep_merge(minimal, {"terrain": [{"op": "base", "height": 8},
+                                            {"op": "terrace", "box": [1, 1, 4, 4], "steps": [[2, 7]], "side": "up"}]})
+    with pytest.raises(SpecError, match="unknown side"):
+        build(spec)
+
+
+SUMP_LAND = [{"op": "base", "height": 5},
+             {"op": "pad", "at": [4, 18], "size": 8, "height": 8, "name": "start", "reserve": 2}]
+SUMP = {"op": "basin", "at": [23, 22], "radii": [4, 7], "bed": 3, "tag": "badwater", "name": "sump"}
+TERRACE = {"op": "terrace", "box": [12, 12, 19, 32], "steps": [[2, 7], [6, 6]], "side": "west"}
+CLAMP = {"op": "clamp", "min": 3, "max": 19}
+SHORE = {"shore": {"at": "sump", "radius": 9, "min_tiles": 8, "min_run": 4}}
+
+
+def test_shore_passes_on_a_terraced_sump(minimal):
+    spec = gorge_spec(minimal, SUMP_LAND + [TERRACE, SUMP, CLAMP], SHORE)
+    report = spec_mod.check(spec, build(spec))
+    assert report.ok, report.summary()
+    assert any("walkable shore tiles" in str(n) for n in report.notes), report.summary()
+
+
+def test_shore_fails_on_the_old_cliff(minimal):
+    """The first level 01: the Sump against the pad, the rest of its rim below a cliff. The colony
+    reaches the water only from its own pad, which is not room for pumps."""
+    against_the_pad = dict(SUMP, at=[15, 22], radii=[3, 5])
+    spec = gorge_spec(minimal, SUMP_LAND + [against_the_pad, CLAMP], SHORE)
+    report = spec_mod.check(spec, build(spec))
+    assert any("walkable shore tiles" in str(e) for e in report.errors), report.summary()
+
+
+RIVER_LAND = [{"op": "base", "height": 6},
+              {"op": "pad", "at": [4, 18], "size": 8, "height": 6, "name": "start", "reserve": 2},
+              {"op": "river", "points": [[24, -3], [24, 20], [24, 51]], "bed": 4, "width": 1.2,
+               "tag": "badwater", "name": "the river"},
+              {"op": "hill", "at": [38, 22], "radius": 6, "height": 3, "floor": 6, "name": "spring"}]
+
+
+def test_crossing_passes_when_one_short_bridge_reaches_it(minimal):
+    spec = gorge_spec(minimal, RIVER_LAND + [CLAMP], {"crossing": {"to": "spring", "radius": 4, "max_water": 4}})
+    report = spec_mod.check(spec, build(spec))
+    assert report.ok, report.summary()
+
+
+def test_crossing_fails_when_the_river_is_wider_than_a_short_bridge(minimal):
+    wide = [dict(t) for t in RIVER_LAND]
+    wide[2]["width"] = 4.5
+    spec = gorge_spec(minimal, wide + [CLAMP], {"crossing": {"to": "spring", "radius": 4, "max_water": 4}})
+    report = spec_mod.check(spec, build(spec))
+    assert any("cannot be reached" in str(e) for e in report.errors), report.summary()
+
+
+def test_crossing_fails_when_the_place_can_be_walked_to(minimal):
+    """A reward reachable on foot is no reward: the river here stops short of the map's south edge."""
+    dry = [dict(t) for t in RIVER_LAND]
+    dry[2]["points"] = [[24, -3], [24, 10], [24, 14]]
+    spec = gorge_spec(minimal, dry + [CLAMP], {"crossing": {"to": "spring", "radius": 4, "max_water": 4}})
+    report = spec_mod.check(spec, build(spec))
+    assert any("walked to without a bridge" in str(e) for e in report.errors), report.summary()

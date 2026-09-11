@@ -2,7 +2,7 @@
 
     from mapsmith import load, build, write_timber, check_file, ascii_map
 
-    spec = load(Path("wardens/maps/wardens-wasteland.map.toml"))
+    spec = load(Path("wardens/maps/wardens-01-first-light.map.toml"))
     m = build(spec)
     print(ascii_map(m))
     write_timber(m, spec, Path("out.timber"))

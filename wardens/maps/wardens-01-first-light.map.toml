@@ -1,17 +1,32 @@
-# The Wardens' wasteland, as a mapsmith spec.
+# Level 01, First Light: the Wardens' wasteland.
 #
-#   python wardens/tools/mapsmith preview wardens/maps/wardens-wasteland.map.toml
-#   python wardens/tools/mapsmith build   wardens/maps/wardens-wasteland.map.toml
+#   python wardens/tools/mapsmith preview --level 01 --step 2
+#   python wardens/tools/mapsmith build   --level 01
 #
-# The land the Chapter 1 plan needs (design/wardens-wasteland.md): badwater from the north, ruins
-# for scrap within scavenging range of the Core, one clean spring in the north-east and nothing
-# else green, an ash plateau ringed by hills. `wardens/tools/gen_map.py` wrote the currently
-# shipped `.timber` from hand-written numpy; this spec is the same design expressed as data.
-name = "Wardens Wasteland"
+# The land the Chapter 1 plan needs (design/wardens-wasteland.md): badwater from the north, ruins for
+# scrap within scavenging range of the Core, one clean spring in the north-east and nothing else green,
+# an ash plateau ringed by hills.
+#
+# Remade 2026-09-11 from what level 01 did in the game (wardens/playtest/PLAYTEST.md, "Level 01 played
+# through the MCP server"). The old land put the Sump under a four-level cliff against the Core (one pump
+# site, in the Core's own building room), filled it by day 5 instead of day 1, and left the spring grove
+# unreachable. What changed, and the contract that now holds each change:
+#
+#   the Sump        a basin a tile deeper (bed 3), fed by a seep of its own so it fills on day 1 and by
+#                   the river so it never runs dry; the river moved east so it no longer hugs the pad
+#   its shore       a terrace: pad 8 -> 7 -> a shelf at 6 along the water, walkable, room for pumps
+#                   (contract `shore`)
+#   first scrap     three small ruins just off the pad, so the first Charging Post goes up in hours
+#                   (`reachable_scatter`)
+#   the spring      still across the badwater river, and now one short bridge away: the Green
+#                   chapter's reward, neither impossible nor free (contract `crossing`)
+#
+# The seed and size are the old ones; everything the old spec placed that still worked stays.
+name = "Wardens 01 First Light"
 size = 96
 seed = 3000
 game_version = "0.7.10.0"          # the layout verified in design/wardens-wasteland.md; the game migrates it
-description = "The Wardens' wasteland. Badwater from the north, ruins for scrap, one clean spring in the north-east. Bots only."
+description = "Level 01 of the Wardens campaign: First Light. An ash plateau, a Sump of badwater below the Core, ruins for scrap, and one clean spring across the river. Bots only."
 
 # --- the land ------------------------------------------------------------------------------------
 
@@ -40,23 +55,39 @@ height = 6
 floor = 8
 name = "spring"
 
-[[terrain]]                        # the badwater river: enters north, meanders, leaves south
-op = "river"
-points = [[34, -2], [36, 14], [52, 26], [38, 42], [30, 47], [40, 58], [62, 66], [56, 82], [48, 98]]
+[[terrain]]                        # the badwater river: enters north, meanders, leaves south; it passes the
+op = "river"                       # Sump 20 tiles east of the Core instead of curling up against the pad
+points = [[34, -2], [36, 14], [52, 26], [49, 37], [46, 47], [48, 58], [62, 66], [56, 82], [48, 98]]
 bed = 4
 width = 1.7
 valley = [[4.5, 7], [3.0, 6]]
 tag = "badwater"
 name = "river"
 
-[[terrain]]                        # the Sump beside the start — the Sludge Pump goes here
+[[terrain]]                        # the Sump's shore: pad 8 -> 7 -> a shelf at 6 along the water, so the
+op = "terrace"                     # colony walks down to the Sump and a row of pumps fits on its edge
+box = [28, 38, 32, 58]
+steps = [[2, 7], [3, 6]]
+side = "west"
+name = "shore"
+
+[[terrain]]                        # the Sump: badwater below the Core, deep enough to carry a drought
 op = "basin"
-at = [31, 46]
-radii = [5, 4]
-bed = 4
+at = [38, 48]
+radii = [5, 7]
+bed = 3
 shore = 6
+shore_width = 1
 tag = "badwater"
 name = "sump"
+
+[[terrain]]                        # the Sump drinks from the river: a notch east so the two are one water
+op = "channel"
+start = "sump"
+direction = "east"
+length = 9
+drop = 30
+tag = "badwater"
 
 [[terrain]]                        # the spring pool, in a crater on the hilltop
 op = "crater"
@@ -74,7 +105,7 @@ drop = 6
 offset = 3
 tag = "clean"
 
-[[terrain]]                        # the Core's flat pad, above the Sump
+[[terrain]]                        # the Core's flat pad, above the Sump's shore
 op = "pad"
 at = [20, 46]
 size = 8
@@ -97,6 +128,13 @@ count = 3
 strength = 4.0
 orientation = "Cw0"
 
+[[place]]                          # the Sump's own seep: full on day 1, before the river's water arrives
+template = "BadwaterSource"
+at = "sump"
+dx = 2
+strength = 1.5
+orientation = "Cw0"
+
 [[place]]
 template = "WaterSource"
 at = "spring"
@@ -115,6 +153,22 @@ orientation = "Cw0"
 # --- ruins: scrap is the only building material ------------------------------------------------------
 
 [[scatter]]
+name = "first light"               # the first scrap: small columns just off the pad, west of the shore
+templates = ["RuinColumnH1", "RuinColumnH2"]
+weights = [3, 2]
+levels = [1, 2]
+around = "start"
+radius = [6.5, 10]
+count = 3
+spacing = 2
+height_range = [7, 9]
+away_from = { sump = 10.0, badwater = 4.0 }
+reachable_from = "start"
+variants = ["A", "B", "C"]
+orientation = "Cw0"
+yield = { good = "ScrapMetal", amount_per_level = 15 }
+
+[[scatter]]
 name = "near ruins"                # chapter 1 scrap, 8-13 tiles from the Core
 templates = ["RuinColumnH1", "RuinColumnH2", "RuinColumnH3"]
 weights = [3, 3, 1]
@@ -129,21 +183,22 @@ orientation = "Cw0"
 yield = { good = "ScrapMetal", amount_per_level = 15 }
 
 [[scatter]]
-name = "south of the pad"
+name = "south of the pad"          # moved off the shore: ruins there would block the pumps' shelf
 templates = ["RuinColumnH1", "RuinColumnH2", "RuinColumnH3"]
 weights = [2, 3, 2]
 levels = [1, 2, 3]
-around = [26, 55]
+around = [22, 61]
 radius = 4.5
 count = 6
 spacing = 2
 height_range = [6, 10]
+away_from = { sump = 10.0 }
 variants = ["A", "B", "C"]
 orientation = "Cw0"
 yield = { good = "ScrapMetal", amount_per_level = 15 }
 
 [[scatter]]
-name = "across the river"          # a reason to build the first bridge
+name = "across the river"          # a reason to build the first bridge, on the way to the spring
 templates = ["RuinColumnH2", "RuinColumnH3", "RuinColumnH5"]
 weights = [2, 3, 2]
 levels = [2, 3, 5]
@@ -194,6 +249,7 @@ spacing = 3
 height_range = [7, 12]
 buried = 3
 margin = 4
+away_from = { shore = 5.0 }
 orientation = "Cw0"
 
 # --- the only green ----------------------------------------------------------------------------------
@@ -219,7 +275,7 @@ count = 40
 spacing = 3
 margin = 4
 growth = [0.7, 1.0]
-away_from = { badwater = 9.0, clean = 6.0, start = 16.0, spring = 16.0 }
+away_from = { badwater = 9.0, clean = 6.0, start = 16.0, spring = 16.0, sump = 12.0 }
 
 # --- soil ----------------------------------------------------------------------------------------
 
@@ -230,9 +286,17 @@ contamination = { from = "badwater", offset = 2.5, reach = 6.0 }
 
 [checks]
 require = ["StartingLocation", "BadwaterSource", "WaterSource"]
-require_at_least = { RuinColumnH1 = 3 }
+require_at_least = { RuinColumnH1 = 3, BadwaterSource = 4 }
 min_reachable = 1500
 # Chapter 1 has to be playable on foot; the fields across the river are meant to need a bridge,
-# so they are deliberately absent from this list. `reachable = ["RuinColumn"]` cannot say that —
-# all five clusters use the same templates.
-reachable_scatter = ["near ruins", "south of the pad"]
+# so they are deliberately absent from this list.
+reachable_scatter = ["first light", "near ruins", "south of the pad"]
+
+# --- the level design, as geometry ------------------------------------------------------------------
+
+[contract]
+# The Sump can be worked: a walkable shelf along its water. A Sludge Pump facing the water takes 2
+# tiles of shore, so a straight run of 4 is two pumps side by side.
+shore = { at = "sump", radius = 9, min_tiles = 16, min_run = 4 }
+# The spring is the Green chapter's reward: one short bridge away, and not reachable on foot.
+crossing = { to = "spring", radius = 8, max_water = 5 }
