@@ -148,6 +148,12 @@ given, are appended under this list):
 | WP8 level 03 | the story's next beat; a session of Python before anything is seen | |
 | WP2 buildings | the day-31 save is a ready test bed | |
 
+**Answered by the author, 2026-09-11, end of the session:** all four recommended rows — WP1 cuts the
+openings, gives each task its scene and retires the chapter table; WP2 padlocks the new buildings from
+the start and opens them on the first beaver; WP4 is the C# strategy runner with Claude steering (the
+in-game API client stays WP4c, unasked); the next session opens with WP1 after the 0.4.25 check. The
+plan stands as written; no package needs reshaping.
+
 ### What I deliberately did not do
 
 I did not start the game or build: a planning session with the state of the tree unknown until the
