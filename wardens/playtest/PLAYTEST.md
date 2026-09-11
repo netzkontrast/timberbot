@@ -123,6 +123,27 @@ wakes it every 60 game ticks or when something happens, and tells it where to lo
 - Power budget to verify: Core 150 hp; Charging Post 50; Cruncher 120; Badwater Cell +100 (needs a Sludge
   Pump on badwater and a bot working it); Sludge Burner +200 once Reed Beds deliver Biomass.
 
+## Level 02 played by Claude over MCP, the first map (2026-09-11, 0.4.22, game machine)
+
+The Continue of level 01's card started level 02 as a new game; Claude opened it (two Charging Posts, two
+Scavenger Flags by the only four ruins on the Core's level, paths) and watched the water for three days.
+
+Findings:
+
+1. **The badwater river never reached the gorge** (critical). Symptom: by day 2.7 the river stood 0.7 deep
+   from x 0 to x 38 (surface 5.7) and the bed east of x 41 was dry the whole way through the gorge; the
+   west third was badwater and the rest of the lake clean creek water. Source (read, mapsmith): the creek
+   (bed 6) was carved after the river (bed 5) and `op_river` set its bed unconditionally, so the creek
+   raised the river's bed to 6 at the confluence (x 39–41): a one-level sill. And the river's first point
+   was x −3: its source spilled much of its water off the west edge. Consequence: the level's one decision
+   (the gorge dam) never comes up; the map is a lake. Remedy (0.4.24): a later watercourse only lowers an
+   earlier one's bed; the river starts at its source; `check_watercourses` fails a bed raised above the
+   height it was carved to and warns about a watercourse that starts off the map with a source on it.
+2. **The Wardens drain to 10 % by day 2.7 with four Posts** (reproduced from level 01). Posts demand 200
+   against the Core's 150. Remedy: open, the balance pass.
+3. **Only four ruins were on the Core's level, 8–25 tiles away.** Remedy (0.4.24): a "first scrap" rule
+   with `on_foot_from`, checked by `on_foot_scatter`.
+
 ## Checks for level tasks (0.4.20+)
 
 - A campaign level shows its tasks in a panel under the goods bar (`LEVEL 01: First Light  n/8`), with the

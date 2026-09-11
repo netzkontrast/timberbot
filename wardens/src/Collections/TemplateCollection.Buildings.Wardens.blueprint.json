@@ -22,6 +22,12 @@
       "Buildings/DistrictManagement/HaulingPost/HaulingPost.Wardens.blueprint",
       "Buildings/Wellbeing/Deck/Deck.Wardens.blueprint",
       "Buildings/DistrictManagement/MapGate/MapGate.Wardens.blueprint",
+      "Buildings/Landscaping/Levee/Levee.Wardens.blueprint",
+      "Buildings/Landscaping/Floodgate/Floodgate.Wardens.blueprint",
+      "Buildings/Landscaping/DoubleFloodgate/DoubleFloodgate.Wardens.blueprint",
+      "Buildings/Paths/SuspensionBridge2x1/SuspensionBridge2x1.Wardens.blueprint",
+      "Buildings/Paths/SuspensionBridge3x1/SuspensionBridge3x1.Wardens.blueprint",
+      "Buildings/Paths/SuspensionBridge4x1/SuspensionBridge4x1.Wardens.blueprint",
       "Buildings/Metal/ScavengerFlag/ScavengerFlag.IronTeeth.blueprint"
     ]
   }

@@ -19,6 +19,8 @@ Produces
   Buildings/Paths/Stairs (alias Stairs.Folktails), Paths/Platform, Landscaping/Dam, Storage/Rack,
   DistrictManagement/HaulingPost, Wellbeing/Deck                the ported tutorial's building set
   Buildings/DistrictManagement/MapGate/MapGate.Wardens         the Gate: a district on another map, linked in
+  Buildings/Landscaping/Levee, Landscaping/Floodgate, Landscaping/DoubleFloodgate,
+  Paths/SuspensionBridge2x1, 3x1, 4x1                           level 02 The Sump: water control and crossings
   NaturalResources/Crops/SludgeReed/SludgeReed                cattail re-spec: land crop, ignores contamination
   Goods/Good.Biomass, collections, faction wiring, recipes, loc rows, csproj glob
 Every building ships with ScienceCost 0: the whole bar is open from the first frame of every level
@@ -280,6 +282,27 @@ gate["BuildingSpec"]["SelectionSoundName"] = "Pile"
 cost(gate, ("ScrapMetal", 30))
 building("DistrictManagement/MapGate", "MapGate", gate)
 
+# --- chapter: The Sump (level 02) — water control and crossings -------------------------------------
+# Iron Teeth bodies at Scrap prices, vanilla tool groups (Landscaping beside the Dam, Paths beside the
+# Stairs) and vanilla tool orders. Fresh "Wardens*" loc keys: the vanilla Building.Levee/Floodgate/
+# SuspensionBridge rows stay the other factions' text.
+for name, key, amount in (("Levee", "WardensLevee", 6),
+                          ("Floodgate", "WardensFloodgate", 10),
+                          ("DoubleFloodgate", "WardensDoubleFloodgate", 16)):
+    d = vanilla(f"Buildings/Landscaping/{name}/{name}.IronTeeth")
+    rename(d, f"{name}.Wardens")
+    labeled(d, key)
+    cost(d, ("ScrapMetal", amount))
+    building(f"Landscaping/{name}", name, d)
+
+for span, amount in ((2, 12), (3, 18), (4, 24)):
+    name = f"SuspensionBridge{span}x1"
+    d = vanilla(f"Buildings/Paths/{name}/{name}.IronTeeth")
+    rename(d, f"{name}.Wardens")
+    labeled(d, f"Wardens{name}")
+    cost(d, ("ScrapMetal", amount))
+    building(f"Paths/{name}", name, d)
+
 # --- Sludge Reed: cattail models on a land-crop body, immune to contamination and drought ------------
 reed = vanilla("NaturalResources/Crops/Cattail/Cattail")
 land = vanilla("NaturalResources/Crops/Kohlrabi/Kohlrabi")
@@ -402,6 +425,25 @@ rows = [
     ("Building.MapGate.DisplayName", "Gate", "Wardens: links a district on another map"),
     ("Building.MapGate.Description", "Links a district you left on another map. What it produced beyond its own needs arrives here every day, for the haulers to carry in.", ""),
     ("Building.MapGate.FlavorDescription", "The maps are not separate. They were never separate; we only lacked the link.", ""),
+    # chapter: The Sump (level 02)
+    ("Building.WardensLevee.DisplayName", "Levee", "Wardens levee"),
+    ("Building.WardensLevee.Description", "A solid block one tile high. Holds water back completely and lets none through. Stacks.", ""),
+    ("Building.WardensLevee.FlavorDescription", "Scrap, packed tight. Water does not argue with it.", ""),
+    ("Building.WardensFloodgate.DisplayName", "Floodgate", "Wardens floodgate"),
+    ("Building.WardensFloodgate.Description", "A gate whose height you set, up to one tile: it holds water back up to that level and lets the rest over.", ""),
+    ("Building.WardensFloodgate.FlavorDescription", "Keep what the Sump needs. Let the rest go.", ""),
+    ("Building.WardensDoubleFloodgate.DisplayName", "Double Floodgate", "Wardens double floodgate"),
+    ("Building.WardensDoubleFloodgate.Description", "A gate whose height you set, up to two tiles: it holds water back up to that level and lets the rest over.", ""),
+    ("Building.WardensDoubleFloodgate.FlavorDescription", "Twice the height. The same rule.", ""),
+    ("Building.WardensSuspensionBridge2x1.DisplayName", "Cable Bridge (2)", "Wardens suspension bridge 2x1"),
+    ("Building.WardensSuspensionBridge2x1.Description", "Carries a path across a gap two tiles wide.", ""),
+    ("Building.WardensSuspensionBridge2x1.FlavorDescription", "Two tiles of nothing, crossed.", ""),
+    ("Building.WardensSuspensionBridge3x1.DisplayName", "Cable Bridge (3)", "Wardens suspension bridge 3x1"),
+    ("Building.WardensSuspensionBridge3x1.Description", "Carries a path across a gap three tiles wide.", ""),
+    ("Building.WardensSuspensionBridge3x1.FlavorDescription", "Load-tested once. It held.", ""),
+    ("Building.WardensSuspensionBridge4x1.DisplayName", "Cable Bridge (4)", "Wardens suspension bridge 4x1"),
+    ("Building.WardensSuspensionBridge4x1.Description", "Carries a path across a gap four tiles wide.", ""),
+    ("Building.WardensSuspensionBridge4x1.FlavorDescription", "Four tiles of air. Walk it anyway.", ""),
     # The Gate's panel (src/WardensGateFragment.cs)
     ("Wardens.Gate.Linked", "Linked: {0}, {1}.", "Gate panel; {0} district name, {1} settlement name"),
     ("Wardens.Gate.Rates", "Arrives per day: {0}", "Gate panel; {0} a list like 'Scrap Metal 2.4, Biomass 1.1'"),

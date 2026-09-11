@@ -294,6 +294,10 @@ reachable_scatter = ["first light", "near ruins", "south of the pad"]
 # The opening has to be playable before a single Stairs: the 10 starting scrap buy two Charging Posts,
 # and the first flags work these. Wardens walk only on one level (PLAYTEST.md, 2026-09-11, 0.4.14).
 on_foot_scatter = ["first light"]
+# The river enters from the north edge with its source at the head, so part of that source's water
+# drains off the edge. Every playtest and the water fill below ran on that; changing it would re-balance
+# the Sump. Kept on purpose, and named so the check stays quiet about it.
+off_map_ok = ["river"]
 
 # --- the level design, as geometry ------------------------------------------------------------------
 

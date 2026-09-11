@@ -213,6 +213,17 @@ Wardens.Cutscene.FirstLight.Crossing,The river lies between the spring and the C
 Wardens.Cutscene.FirstLight.Core,"The Core. {0} Wardens online, charged to full. Power: the Core, and nothing else.",Level 01 opening caption (Cutscenes/FirstLight.json)
 Wardens.Cutscene.FirstLight.Warden,A Warden out of charge stops where it stands. The first Charging Post goes up before anything else.,Level 01 opening caption (Cutscenes/FirstLight.json)
 Wardens.Cutscene.FirstLight.Directive,Chapter 1: First Light. Keep the machines charged. Find metal.,Level 01 opening caption (Cutscenes/FirstLight.json)
+Wardens.Cutscene.TheSump.Arrival,"Level 02: The Sump. The bearing held: a river, poison at its mouth and clean at its source.",Level 02 opening caption (Cutscenes/TheSump.json)
+Wardens.Cutscene.TheSump.Head,Badwater rises from one source by the west edge and runs east down the whole valley.,Level 02 opening caption (Cutscenes/TheSump.json)
+Wardens.Cutscene.TheSump.River,Its banks stand two above the bed almost the whole way. Nowhere along here holds it.,Level 02 opening caption (Cutscenes/TheSump.json)
+Wardens.Cutscene.TheSump.Spring,"High on the north wall, a clean spring. The only trees on the map grow on its terrace and along its creek.",Level 02 opening caption (Cutscenes/TheSump.json)
+Wardens.Cutscene.TheSump.Creek,"Its creek runs south, down to the river.",Level 02 opening caption (Cutscenes/TheSump.json)
+Wardens.Cutscene.TheSump.Confluence,They meet here. Clean water that reaches the river is badwater from then on.,Level 02 opening caption (Cutscenes/TheSump.json)
+Wardens.Cutscene.TheSump.Gorge,"Downstream the walls close in: one gorge, the only place a dam spans the river bank to bank.",Level 02 opening caption (Cutscenes/TheSump.json)
+Wardens.Cutscene.TheSump.Wrecks,"Three wrecks on the Core's own level, more on the way to the gorge. Scrap for the dams.",Level 02 opening caption (Cutscenes/TheSump.json)
+Wardens.Cutscene.TheSump.Downstream,"Past the gorge, the richer wrecks, across the water.",Level 02 opening caption (Cutscenes/TheSump.json)
+Wardens.Cutscene.TheSump.Core,"The Core. {0} Wardens online, charged to full, and ten Scrap Metal.",Level 02 opening caption (Cutscenes/TheSump.json); {0} bots
+Wardens.Cutscene.TheSump.Directive,Level 02: The Sump. Keep the clean water clean: close the creek before you touch the gorge.,Level 02 opening caption (Cutscenes/TheSump.json)
 Wardens.Cutscene.Badwater.Scrap,Scrap: {0}. The first thing this ground gave us.,Chapter 2 scene (Cutscenes/Badwater.json); {0} scrap in stock
 Wardens.Cutscene.Badwater.Sump,"The Sump holds badwater now, and the river keeps it full. Pump it, and keep every Warden above half charge.",Chapter 2 scene
 Wardens.Cutscene.Signal.Shifts,The shifts are set. The Wardens do not tire. That is not the same as being fine.,Chapter 3 scene (Cutscenes/Signal.json)
@@ -260,6 +271,23 @@ Wardens.Task.01.Power,Second power,Level 01 task (Levels/01.tasks.json)
 Wardens.Task.01.Power.Text,"A Badwater Cell touching the power network, burning Badwater. The Core alone makes 150, and the Posts and Pods want more.",Level 01 task (Levels/01.tasks.json)
 Wardens.Task.01.FirstLight,First Light,Level 01 task (Levels/01.tasks.json)
 Wardens.Task.01.FirstLight.Text,"A Breeding Pod on the network, stocked with Biomass. The level ends when the first beaver wakes.",Level 01 task (Levels/01.tasks.json)
+Wardens.Tasks.In,{0} in {1},"Task panel (WardensTaskPanel.cs); {0} building(s), {1} a place (Wardens.Task.*.Where.*)"
+Wardens.Tasks.Check.built_in,{0}: {1}/{2},"Task panel (WardensTaskPanel.cs) check; {0} building in a place, {1} have, {2} need"
+Wardens.Tasks.Check.clean_water,Clean water in {0}: {1}/{2} tiles,"Task panel (WardensTaskPanel.cs) check; {0} a place, {1} have, {2} need"
+Wardens.Task.02.Where.Creek,the creek,Level 02 task (Levels/02.tasks.json); the creek above the confluence
+Wardens.Task.02.Where.Gorge,the gorge,Level 02 task (Levels/02.tasks.json); the river's narrows
+Wardens.Task.02.Salvage,Salvage,Level 02 task (Levels/02.tasks.json)
+Wardens.Task.02.Salvage.Text,"Two Scavenger Flags by the three wrecks on the Core's level, and paths to the Core. The dams will cost scrap.",Level 02 task (Levels/02.tasks.json)
+Wardens.Task.02.Creek,Close the creek,Level 02 task (Levels/02.tasks.json)
+Wardens.Task.02.Creek.Text,"Stairs down to the clean creek, then two Floodgates, Dams or Levees across it above the point where it meets the river. Clean water that reaches the river is lost.",Level 02 task (Levels/02.tasks.json)
+Wardens.Task.02.Clean,Keep it clean,Level 02 task (Levels/02.tasks.json)
+Wardens.Task.02.Clean.Text,"Let the creek fill behind them. Forty tiles of clean water above the confluence, and no badwater in it.",Level 02 task (Levels/02.tasks.json)
+Wardens.Task.02.Drain,Drain the river,Level 02 task (Levels/02.tasks.json)
+Wardens.Task.02.Drain.Text,"Two Sludge Pumps on the badwater river, and tanks for what they lift. Every block of badwater in a tank is one that does not reach the creek.",Level 02 task (Levels/02.tasks.json)
+Wardens.Task.02.Gorge,Hold the gorge,Level 02 task (Levels/02.tasks.json)
+Wardens.Task.02.Gorge.Text,"Three Dams, Levees or Floodgates across the river where the walls close in. The river backs up behind them: close the creek first.",Level 02 task (Levels/02.tasks.json)
+Wardens.Task.02.Power,Second power,Level 02 task (Levels/02.tasks.json)
+Wardens.Task.02.Power.Text,"A Badwater Cell on the power network, burning what the pumps lift. The Core alone makes 150.",Level 02 task (Levels/02.tasks.json)
 Wardens.Cutscene.Archive.Day,"ARCHIVE. Day {0}, cycle {1}.","Archive reading (Cutscenes/Archive.json); {0} day, {1} cycle"
 Wardens.Cutscene.Archive.Population,Wardens: {0}. Beavers: {1}.,"Archive reading; {0} bots, {1} beavers"
 Wardens.Cutscene.Archive.Stock,Data Cores: {0}. Science: {1}. Scrap: {2}.,"Archive reading; {0} Data Cores, {1} science points, {2} scrap"
@@ -275,6 +303,24 @@ Wardens.Gate.Unlinked,Not linked. Districts on other maps you can link: {0}.,Gat
 Wardens.Gate.None,No district on another map yet. Every map you leave records what its districts produce beyond their needs.,Gate panel
 Wardens.Gate.Next,Link next,Gate panel button
 Wardens.Gate.Unlink,Unlink,Gate panel button
+Building.WardensLevee.DisplayName,Levee,Wardens levee
+Building.WardensLevee.Description,A solid block one tile high. Holds water back completely and lets none through. Stacks.,
+Building.WardensLevee.FlavorDescription,"Scrap, packed tight. Water does not argue with it.",
+Building.WardensFloodgate.DisplayName,Floodgate,Wardens floodgate
+Building.WardensFloodgate.Description,"A gate whose height you set, up to one tile: it holds water back up to that level and lets the rest over.",
+Building.WardensFloodgate.FlavorDescription,Keep what the Sump needs. Let the rest go.,
+Building.WardensDoubleFloodgate.DisplayName,Double Floodgate,Wardens double floodgate
+Building.WardensDoubleFloodgate.Description,"A gate whose height you set, up to two tiles: it holds water back up to that level and lets the rest over.",
+Building.WardensDoubleFloodgate.FlavorDescription,Twice the height. The same rule.,
+Building.WardensSuspensionBridge2x1.DisplayName,Cable Bridge (2),Wardens suspension bridge 2x1
+Building.WardensSuspensionBridge2x1.Description,Carries a path across a gap two tiles wide.,
+Building.WardensSuspensionBridge2x1.FlavorDescription,"Two tiles of nothing, crossed.",
+Building.WardensSuspensionBridge3x1.DisplayName,Cable Bridge (3),Wardens suspension bridge 3x1
+Building.WardensSuspensionBridge3x1.Description,Carries a path across a gap three tiles wide.,
+Building.WardensSuspensionBridge3x1.FlavorDescription,Load-tested once. It held.,
+Building.WardensSuspensionBridge4x1.DisplayName,Cable Bridge (4),Wardens suspension bridge 4x1
+Building.WardensSuspensionBridge4x1.Description,Carries a path across a gap four tiles wide.,
+Building.WardensSuspensionBridge4x1.FlavorDescription,Four tiles of air. Walk it anyway.,
 Tutorial.Wardens.ColdBoot,Cold Boot,Tutorial title
 Tutorial.Wardens.ColdBoot.Wake,"SYSTEM RESTART.
 

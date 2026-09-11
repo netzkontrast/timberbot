@@ -1,0 +1,56 @@
+{
+  "level": "02",
+  "about": "Level 02, The Sump: keep the clean water clean. Six tasks in play order; the boxes are grid tiles of the 2026-09-11 map (the creek above the confluence at 39,44; the gorge's narrows at 62,48). WardensLevelTasks.cs checks them; the loc rows are Wardens.Task.02.* in Localizations/enUS.csv.",
+  "tasks": [
+    {
+      "id": "Salvage",
+      "title": "Wardens.Task.02.Salvage",
+      "text": "Wardens.Task.02.Salvage.Text",
+      "checks": [
+        { "type": "built", "template": "ScavengerFlag.IronTeeth", "count": 2 },
+        { "type": "stock", "good": "ScrapMetal", "count": 40 }
+      ]
+    },
+    {
+      "id": "Creek",
+      "title": "Wardens.Task.02.Creek",
+      "text": "Wardens.Task.02.Creek.Text",
+      "checks": [
+        { "type": "built_in", "templates": ["Floodgate.Wardens", "DoubleFloodgate.Wardens", "Dam.Wardens", "Levee.Wardens"],
+          "box": [28, 20, 40, 42], "where": "Wardens.Task.02.Where.Creek", "count": 2 }
+      ]
+    },
+    {
+      "id": "Clean",
+      "title": "Wardens.Task.02.Clean",
+      "text": "Wardens.Task.02.Clean.Text",
+      "checks": [
+        { "type": "clean_water", "box": [24, 8, 40, 42], "where": "Wardens.Task.02.Where.Creek", "count": 40 }
+      ]
+    },
+    {
+      "id": "Drain",
+      "title": "Wardens.Task.02.Drain",
+      "text": "Wardens.Task.02.Drain.Text",
+      "checks": [
+        { "type": "built", "template": "SludgePump.Wardens", "count": 2 },
+        { "type": "stock", "good": "Badwater", "count": 100 }
+      ]
+    },
+    {
+      "id": "Gorge",
+      "title": "Wardens.Task.02.Gorge",
+      "text": "Wardens.Task.02.Gorge.Text",
+      "checks": [
+        { "type": "built_in", "templates": ["Dam.Wardens", "Levee.Wardens", "Floodgate.Wardens", "DoubleFloodgate.Wardens"],
+          "box": [56, 43, 68, 52], "where": "Wardens.Task.02.Where.Gorge", "count": 3 }
+      ]
+    },
+    {
+      "id": "Power",
+      "title": "Wardens.Task.02.Power",
+      "text": "Wardens.Task.02.Power.Text",
+      "checks": [ { "type": "generating", "template": "BadwaterCell.Wardens", "count": 1 } ]
+    }
+  ]
+}

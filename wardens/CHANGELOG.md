@@ -4,6 +4,22 @@ The patch number moves with every local build (`tools/bump_version.py`, run by t
 version marks a milestone (`bump_version.py --minor`) and gets an entry here. Nothing below has been
 verified in-game yet; `../AGENTS.md`, "The Wardens: state", says what the first run must answer.
 
+## 0.4.24: level 02 reworked, with its opening, its tasks and water-control buildings
+
+- **Level 02's river reaches the gorge.** Played over MCP, the first map was a lake: the creek, carved
+  after the river, raised its bed into a sill at the confluence, and the river began off the west edge and
+  spilled its source there. mapsmith now lowers, never raises, an earlier watercourse's bed, and
+  `check_watercourses` fails a sill and warns about a river that starts off the map. The river starts at
+  its source; three first wrecks stand on the Core's level.
+- **The Sump's opening** (`Cutscenes/TheSump.json`, `level:02`): 11 shots, 88 s — the valley, the source,
+  the river, the spring and its creek, the confluence, the gorge, the wrecks, the far bank, the Core, the
+  directive.
+- **Six tasks** (`Levels/02.tasks.json`): Salvage · Close the creek · Keep it clean · Drain the river · Hold
+  the gorge · Second power. Two new check types: `built_in` (a building in a box of the map) and
+  `clean_water` (tiles of clean water in a box).
+- **New buildings from Iron Teeth, scrap only:** Levee (6), Floodgate (10), Double Floodgate (16), Cable
+  Bridge 2/3/4 (12/18/24).
+
 ## 0.4.20: level tasks, and the level-end card that starts level 02
 
 - **Tasks for the player** (`Levels/<id>.tasks.json`, `WardensLevelTasks.cs`), shown in a panel top right

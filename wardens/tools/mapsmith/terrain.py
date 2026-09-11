@@ -127,19 +127,27 @@ def op_river(b: MapBuild, *, points, bed: float = 4.0, width: float = 1.7, valle
     steps = sorted(([float(d), float(h)] for d, h in (valley or [])), key=lambda s: -s[0])
     size = b.size
     bed_mask = Mask(size)
+    # A tributary carved after its trunk must not raise the trunk's bed where they meet: level 02's
+    # creek (bed 6) overwrote the river (bed 5) at the confluence, and the game pooled the river
+    # behind that one-level sill and never let it past (PLAYTEST.md, 2026-09-11).
+    earlier = [m for n, m in b.masks.items() if n in b.path_tags or n in ("water", "badwater", "clean")]
     for i, d in enumerate(dist.cells):
         x, y = i % size, i // size
         for limit, cap in steps:
             if d <= limit:
                 b.height.cells[i] = min(b.height.cells[i], cap)
         if d <= width:
-            b.height.cells[i] = float(bed)
+            if any(m.at(x, y) for m in earlier):
+                b.height.cells[i] = min(b.height.cells[i], float(bed))
+            else:
+                b.height.cells[i] = float(bed)
             bed_mask.set(x, y)
     b.tag(tag, bed_mask)
     key = name or f"{tag}#{len(b.path_tags.get(tag, [])) + 1}"
     if key in b.paths:
         raise SpecError(f"river: two watercourses are both called {key!r}; give each a distinct `name`")
     b.paths[key] = path
+    b.path_beds[key] = float(bed)
     b.path_tags.setdefault(tag, []).append(key)
     b.path_tag_of[key] = tag
     b.anchor(name, path[len(path) // 2])
