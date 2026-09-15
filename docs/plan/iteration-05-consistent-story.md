@@ -126,6 +126,14 @@ Each item is small and each blocks the story being consistent.
   not a creek); Hold the gorge moves its box to x ≥ 57 and adds ≥ 20 tiles ≥ 1.0 deep upstream of it
   (x 44–56). The task texts say "raise the gates to 1.0" in words. Alternative the author may prefer:
   keep the counts and only move the box. `check_level_tasks.py` learns the type.
+  > **Correction (2026-09-15, from a mapsmith rebuild of level 02, not yet seen in the game):** "≥ 1.0
+  > deep upstream" does not need a dam: the running river is already 1.1–1.5 deep in x 44–56. The
+  > narrows (banks ≥ 3 above bed 5) are x 57–67; at x 56 the channel is y 46–49, so the playtest's three
+  > Levees at y 46–48 left y 49 open; a one-block Levee tops out at 6, below the river's own surface
+  > 6.1–6.5. Proposed instead: walls counted in `[57,44,67,51]` and ≥ 20 tiles ≥ 2.0 deep in
+  > `[44,43,56,52]` (surface ≥ 7: the river backed up to its banks). 2.0 against 1.8 (two Levee courses)
+  > is the author's call, settled by one in-game measurement. A draft diff with passing checker tests
+  > is in the skill-eval workspace (`gorge.diff`); nothing in the repo is changed.
 - [ ] **3. The balance read, before any tuning** (cloud: decompile; `ilspycmd` is on the game
   machine). Read `Timberborn.Bots` (the Energy need's effects, what a bot at 0 does) and where 13 Wardens
   became 19 (`BotFactory` is called once in the mod; the growth is vanilla: read `BotAssembler`-less
