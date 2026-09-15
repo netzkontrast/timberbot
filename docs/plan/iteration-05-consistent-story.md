@@ -552,6 +552,29 @@ start to end early; 05 and 09 carry the readings and the wonder. The full ten-le
   keyframe | write`), and the `wardens-level-workshop` skill carries the level-by-level loop and the
   repo's working knowledge.
 
+### WP8a: level 02 on level 01's land, grown east to the spring [cloud → game]
+
+The package the decision above creates; it comes before level 03.
+
+1. **Can the game load a rectangle?** `world.json` stores `MapSize.Size.X` and `.Y` separately, and
+   mapsmith writes `size` as a square. Build a 144×96 test map (a flat base, a start, one ruin) and load
+   it (game, 10 min). If it loads, level 02 is 144×96 and every level-01 coordinate stays. If it does not,
+   it is 144×144 with the new rows south of level 01 left as rim, and the coordinates still stay.
+2. **mapsmith `extends`**: a spec names a parent spec; the parent is built at its own size and pasted at
+   `offset = [0, 0]`, then the child's ops run only where the child says (`region`, default outside the
+   parent). Level 01's `noise` is seeded per size, so rebuilding the parent at 144 would change its land:
+   the paste, not a rebuild, is what keeps it identical. New contract `same_as_parent` (every parent tile
+   equal except the named `pass` cut through the east rim). Tests for the paste, the pass and the contract.
+3. **The land east of the spring**: level 01's east rim opened into a pass north of the spring hill (82,14),
+   a green valley fed by the spring's creek, ruins for scrap, and the extension's own contract (the spring
+   the only clean source, reachable on foot from the pass).
+4. **The level**: the row in `WardensCampaign.cs` and `levels.toml` (a new map name; the title is the
+   author's — working title *The Spring*), `Levels/02.tasks.json` for the new colony (clean water for the
+   first beaver with the Iron Teeth Water Pump, a Field, wood from a Lumberjack Flag), the opening and a
+   beat per task, and the start: WP2's `beavers` phase open, the first beaver carried (WP7, or the pod
+   fallback).
+5. *The Sump*'s map, tasks and scenes stay in the repo; its campaign slot is asked when level 03 is designed.
+
 ## 2. Out of scope
 
 The full arc's levels 04, 06, 07, 08; custom 3D art (the Ark reuses the vanilla wonder); the Leaf
